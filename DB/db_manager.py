@@ -93,6 +93,7 @@ class Customer(Base):
     payments = relationship("Payment", back_populates="customer", cascade="all, delete-orphan")
     communications = relationship("CommunicationLog", back_populates="customer", cascade="all, delete-orphan")
     accounts = relationship("Account", back_populates="customer", cascade="all, delete-orphan")
+    scheduled_calls = relationship("ScheduledCall", back_populates="customer", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Customer(id={self.id}, name='{self.first_name} {self.last_name}', phone='{self.phone_primary}')>"
@@ -225,6 +226,36 @@ class Account(Base):
     
     def __repr__(self):
         return f"<Account(id={self.id}, type={self.account_type}, account_number={self.account_number[:4]}***, customer_id={self.customer_id})>"
+
+
+class ScheduledCall(Base):
+    """Scheduled calls table for tracking planned customer calls"""
+    __tablename__ = 'scheduled_calls'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    customer_id = Column(Integer, ForeignKey('customers.id'), nullable=False)
+    
+    # Scheduling Information
+    scheduled_time = Column(DateTime, nullable=False)
+    status = Column(String(50), default='pending', nullable=False)  # pending, completed, cancelled, missed
+    
+    # Call Details
+    agent_id = Column(String(100), nullable=True)  # ID of the agent who scheduled it
+    notes = Column(Text, nullable=True)  # Pre-call notes or reason for call
+    
+    # Result (linked to CommunicationLog after call)
+    communication_log_id = Column(Integer, ForeignKey('communication_logs.id'), nullable=True)
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    customer = relationship("Customer", back_populates="scheduled_calls")
+    communication_log = relationship("CommunicationLog", foreign_keys=[communication_log_id])
+    
+    def __repr__(self):
+        return f"<ScheduledCall(id={self.id}, customer_id={self.customer_id}, scheduled_time={self.scheduled_time}, status={self.status})>"
 
 
 class DatabaseManager:
@@ -499,6 +530,54 @@ class DatabaseManager:
         session = self.get_session()
         try:
             return session.query(Account).filter(Account.customer_id == customer_id).all()
+        finally:
+            session.close()
+    
+    # Scheduled Call Operations
+    def create_scheduled_call(self, customer_id: int, scheduled_time: datetime, **kwargs) -> ScheduledCall:
+        """Create a scheduled call"""
+        session = self.get_session()
+        try:
+            scheduled_call = ScheduledCall(customer_id=customer_id, scheduled_time=scheduled_time, **kwargs)
+            session.add(scheduled_call)
+            session.commit()
+            session.refresh(scheduled_call)
+            return scheduled_call
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise Exception(f"Error creating scheduled call: {str(e)}")
+        finally:
+            session.close()
+    
+    def get_scheduled_calls(self, customer_id: Optional[int] = None, status: Optional[str] = None) -> List[ScheduledCall]:
+        """Get scheduled calls, optionally filtered by customer or status"""
+        session = self.get_session()
+        try:
+            query = session.query(ScheduledCall)
+            if customer_id:
+                query = query.filter(ScheduledCall.customer_id == customer_id)
+            if status:
+                query = query.filter(ScheduledCall.status == status)
+            return query.order_by(ScheduledCall.scheduled_time.asc()).all()
+        finally:
+            session.close()
+    
+    def update_scheduled_call(self, call_id: int, **kwargs) -> Optional[ScheduledCall]:
+        """Update a scheduled call"""
+        session = self.get_session()
+        try:
+            scheduled_call = session.query(ScheduledCall).filter(ScheduledCall.id == call_id).first()
+            if scheduled_call:
+                for key, value in kwargs.items():
+                    if hasattr(scheduled_call, key):
+                        setattr(scheduled_call, key, value)
+                scheduled_call.updated_at = datetime.utcnow()
+                session.commit()
+                session.refresh(scheduled_call)
+            return scheduled_call
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise Exception(f"Error updating scheduled call: {str(e)}")
         finally:
             session.close()
     
