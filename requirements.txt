@@ -1,6 +1,24 @@
+# Core dependencies
 elevenlabs
 python-dotenv
 requests
 openai
 sounddevice
 numpy
+
+# VAD (Voice Activity Detection)
+torch>=2.0.0
+torchaudio>=2.0.0
+# Note: silero-vad will be loaded via torch.hub, no separate install needed
+webrtcvad>=2.0.10
+
+# Audio processing
+scipy>=1.9.0
+
+# Twilio integration
+twilio>=8.0.0
+websockets>=12.0
+flask>=3.0.0
+
+# Optional: for MP3 conversion (used in audio processor)
+pydub>=0.25.0
