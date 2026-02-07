@@ -1,0 +1,189 @@
+{
+    "customer": {
+        "first_name": "Linda",
+        "last_name": "Martinez",
+        "middle_name": "Rosa",
+        "date_of_birth": "1962-11-05",
+        "ssn": "012-34-5678",
+        "email": "linda.martinez.tx@gmail.com",
+        "phone_primary": "+12105559012",
+        "phone_secondary": "+12105559013",
+        "address_line1": "4456 Fredericksburg Road",
+        "address_line2": null,
+        "city": "San Antonio",
+        "state": "TX",
+        "zip_code": "78201",
+        "country": "USA",
+        "employer_name": "Northside Independent School District",
+        "employment_status": "employed",
+        "annual_income": 58000.0,
+        "account_status": "active",
+        "credit_score": 695,
+        "notes": "Elementary school teacher for 28 years. Husband Carlos passed away September 2024 after 8-month battle with pancreatic cancer. Dealing with his remaining medical debt and funeral expenses. Very communicative and trying hard to manage. Has adult daughter helping with finances."
+    },
+    "debts": [
+        {
+            "debt_type": "medical_debt",
+            "original_amount": 35000.0,
+            "current_balance": 32500.0,
+            "interest_rate": 0.0,
+            "minimum_payment": 450.0,
+            "issue_date": "2024-02-15",
+            "due_date": "2025-01-01",
+            "last_payment_date": "2024-12-01",
+            "status": "active",
+            "days_past_due": 35,
+            "account_number": "MED-3344-5566",
+            "reference_number": "REF-LM-2024-001",
+            "notes": "Husband's cancer treatment costs after insurance. Hospital agreed to 0% interest payment plan."
+        },
+        {
+            "debt_type": "credit_card",
+            "original_amount": 10000.0,
+            "current_balance": 8900.0,
+            "interest_rate": 18.99,
+            "minimum_payment": 265.0,
+            "issue_date": "2022-05-10",
+            "due_date": "2025-01-05",
+            "last_payment_date": "2024-12-03",
+            "status": "active",
+            "days_past_due": 31,
+            "account_number": "CC-7766-5544",
+            "reference_number": "REF-LM-2022-001",
+            "notes": "Used for funeral expenses and household costs during husband's illness. Was nearly paid off before illness."
+        },
+        {
+            "debt_type": "auto_loan",
+            "original_amount": 22000.0,
+            "current_balance": 12500.0,
+            "interest_rate": 5.9,
+            "minimum_payment": 385.0,
+            "issue_date": "2022-09-01",
+            "due_date": "2025-01-10",
+            "last_payment_date": "2024-12-08",
+            "status": "active",
+            "days_past_due": 26,
+            "account_number": "AUTO-1122-3344",
+            "reference_number": "REF-LM-2022-002",
+            "notes": "2022 Honda CR-V. Reliable transportation to work. Has never missed payment before husband's passing."
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "medical_debt",
+            "amount": 450.0,
+            "payment_date": "2024-12-01",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-LM-2024-12-001",
+            "status": "completed",
+            "notes": "Regular payment on medical debt"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 265.0,
+            "payment_date": "2024-12-03",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-LM-2024-12-002",
+            "status": "completed",
+            "notes": "Minimum payment"
+        },
+        {
+            "debt_type": "auto_loan",
+            "amount": 385.0,
+            "payment_date": "2024-12-08",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-LM-2024-12-003",
+            "status": "completed",
+            "notes": "Regular payment"
+        },
+        {
+            "debt_type": "medical_debt",
+            "amount": 450.0,
+            "payment_date": "2024-11-01",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-LM-2024-11-001",
+            "status": "completed",
+            "notes": "Regular payment"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 300.0,
+            "payment_date": "2024-11-05",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-LM-2024-11-002",
+            "status": "completed",
+            "notes": "Above minimum payment"
+        },
+        {
+            "debt_type": "auto_loan",
+            "amount": 385.0,
+            "payment_date": "2024-11-08",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-LM-2024-11-003",
+            "status": "completed",
+            "notes": "Regular payment"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-2233-4455",
+            "routing_number": "114000093",
+            "bank_name": "Frost Bank",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "Now sole account holder after husband's passing"
+        },
+        {
+            "account_type": "savings",
+            "account_number": "SAV-2233-4456",
+            "routing_number": "114000093",
+            "bank_name": "Frost Bank",
+            "is_active": true,
+            "is_primary": false,
+            "notes": "Emergency fund - depleted during illness, slowly rebuilding"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "call",
+            "direction": "inbound",
+            "duration_seconds": 1200,
+            "contact_phone": "+12105559012",
+            "outcome": "hardship_reported",
+            "notes": "Customer called to explain situation. Husband passed September 15. She was sole caregiver last 3 months. Just returned to teaching in November. Very emotional but determined to pay debts. Daughter Maria helping review finances. Requested temporary reduced payments for 3 months.",
+            "timestamp": "2024-11-25T17:00:00",
+            "agent_id": "agent_010"
+        },
+        {
+            "communication_type": "email",
+            "direction": "outbound",
+            "duration_seconds": null,
+            "contact_email": "linda.martinez.tx@gmail.com",
+            "outcome": "information_sent",
+            "notes": "Sent bereavement hardship program information and required documentation list. Expressed condolences.",
+            "timestamp": "2024-11-26T10:00:00",
+            "agent_id": "agent_010"
+        },
+        {
+            "communication_type": "call",
+            "direction": "inbound",
+            "duration_seconds": 480,
+            "contact_phone": "+12105559013",
+            "outcome": "documentation_discussed",
+            "notes": "Daughter Maria called on mother's behalf. Has power of attorney. Submitted death certificate and documentation. Asking about consolidation options and reduced interest rates given circumstances.",
+            "timestamp": "2024-12-10T14:30:00",
+            "agent_id": "agent_010"
+        },
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 360,
+            "contact_phone": "+12105559012",
+            "outcome": "payment_plan_discussed",
+            "notes": "Called to check in. Customer doing better emotionally. Expecting husband's small life insurance payout ($15K) in February. Plans to apply majority to debts. Daughter helping budget. Can pay $400 total across accounts in January.",
+            "timestamp": "2025-01-08T11:00:00",
+            "agent_id": "agent_010"
+        }
+    ]
+}

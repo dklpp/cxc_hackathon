@@ -1,0 +1,137 @@
+{
+    "customer": {
+        "first_name": "Emmanuel",
+        "last_name": "Okafor",
+        "middle_name": "Chukwuemeka",
+        "date_of_birth": "1999-08-20",
+        "ssn": "123-45-6789",
+        "email": "emmanuel.okafor.cs@gmail.com",
+        "phone_primary": "+14695557890",
+        "phone_secondary": null,
+        "address_line1": "2901 Swiss Avenue",
+        "address_line2": "Apt 205",
+        "city": "Dallas",
+        "state": "TX",
+        "zip_code": "75204",
+        "country": "USA",
+        "employer_name": "Texas Instruments",
+        "employment_status": "employed",
+        "annual_income": 92000.0,
+        "account_status": "active",
+        "credit_score": 712,
+        "notes": "Recent computer science graduate from UT Austin (May 2024). First professional job started January 6, 2025. First paycheck received January 17. Had been living on savings and graduation money since May. First ever missed payment - didn't realize student loan grace period ended."
+    },
+    "debts": [
+        {
+            "debt_type": "student_loan",
+            "original_amount": 65000.0,
+            "current_balance": 65000.0,
+            "interest_rate": 5.5,
+            "minimum_payment": 685.0,
+            "issue_date": "2020-08-15",
+            "due_date": "2025-01-25",
+            "last_payment_date": null,
+            "status": "active",
+            "days_past_due": 12,
+            "account_number": "SL-8899-0011",
+            "reference_number": "REF-EO-2020-001",
+            "notes": "Federal student loans for CS degree. Grace period ended December 25, 2024. First payment due Jan 25. Customer was unaware grace period was only 6 months post-graduation."
+        },
+        {
+            "debt_type": "credit_card",
+            "original_amount": 3000.0,
+            "current_balance": 2100.0,
+            "interest_rate": 19.99,
+            "minimum_payment": 63.0,
+            "issue_date": "2023-05-01",
+            "due_date": "2025-02-01",
+            "last_payment_date": "2025-01-15",
+            "status": "active",
+            "days_past_due": 0,
+            "account_number": "CC-4433-2211",
+            "reference_number": "REF-EO-2023-001",
+            "notes": "Student credit card. Used for moving expenses to Dallas. Payment current."
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "credit_card",
+            "amount": 200.0,
+            "payment_date": "2025-01-15",
+            "payment_method": "debit_card",
+            "transaction_id": "TXN-EO-2025-01-001",
+            "status": "completed",
+            "notes": "First payment after receiving paycheck"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 63.0,
+            "payment_date": "2024-12-28",
+            "payment_method": "debit_card",
+            "transaction_id": "TXN-EO-2024-12-001",
+            "status": "completed",
+            "notes": "Minimum payment from savings"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 63.0,
+            "payment_date": "2024-11-28",
+            "payment_method": "debit_card",
+            "transaction_id": "TXN-EO-2024-11-001",
+            "status": "completed",
+            "notes": "Minimum payment from savings"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-7788-0099",
+            "routing_number": "111000614",
+            "bank_name": "Chase Bank",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "New account for TI direct deposit"
+        },
+        {
+            "account_type": "savings",
+            "account_number": "SAV-7788-0100",
+            "routing_number": "111000614",
+            "bank_name": "Chase Bank",
+            "is_active": true,
+            "is_primary": false,
+            "notes": "Building emergency fund"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "email",
+            "direction": "outbound",
+            "duration_seconds": null,
+            "contact_email": "emmanuel.okafor.cs@gmail.com",
+            "outcome": "payment_reminder",
+            "notes": "Automated payment reminder for student loan - first payment due Jan 25",
+            "timestamp": "2025-01-20T09:00:00",
+            "agent_id": "system_auto"
+        },
+        {
+            "communication_type": "email",
+            "direction": "outbound",
+            "duration_seconds": null,
+            "contact_email": "emmanuel.okafor.cs@gmail.com",
+            "outcome": "past_due_notice",
+            "notes": "First past due notice sent",
+            "timestamp": "2025-01-28T09:00:00",
+            "agent_id": "system_auto"
+        },
+        {
+            "communication_type": "call",
+            "direction": "inbound",
+            "duration_seconds": 540,
+            "contact_phone": "+14695557890",
+            "outcome": "payment_arranged",
+            "notes": "Customer called after receiving past due notice. Very apologetic. Genuinely didn't realize grace period ended - thought he had until February. Just started first job 3 weeks ago. Has funds now and set up autopay. Paid $700 immediately over phone. Will pay remaining balance and set up ongoing autopay.",
+            "timestamp": "2025-02-03T12:15:00",
+            "agent_id": "agent_003"
+        }
+    ]
+}

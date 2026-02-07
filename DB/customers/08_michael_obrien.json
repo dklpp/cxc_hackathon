@@ -1,0 +1,171 @@
+{
+    "customer": {
+        "first_name": "Michael",
+        "last_name": "O'Brien",
+        "middle_name": "Patrick",
+        "date_of_birth": "1975-03-17",
+        "ssn": "901-23-4567",
+        "email": "mike.obrien.construction@yahoo.com",
+        "phone_primary": "+17205552345",
+        "phone_secondary": "+17205552346",
+        "address_line1": "7823 West Colfax Avenue",
+        "address_line2": null,
+        "city": "Lakewood",
+        "state": "CO",
+        "zip_code": "80214",
+        "country": "USA",
+        "employer_name": "O'Brien Home Renovations LLC (self-employed)",
+        "employment_status": "self_employed",
+        "annual_income": 85000.0,
+        "account_status": "active",
+        "credit_score": 598,
+        "notes": "Self-employed contractor specializing in kitchen/bath remodels. Business has been slow since October due to housing market cooldown and seasonal factors. Usually picks up significantly in spring. Has 18 years in business with generally good history. Two employees he's trying to keep on payroll."
+    },
+    "debts": [
+        {
+            "debt_type": "business_line_of_credit",
+            "original_amount": 50000.0,
+            "current_balance": 42000.0,
+            "interest_rate": 12.5,
+            "minimum_payment": 875.0,
+            "issue_date": "2021-04-01",
+            "due_date": "2024-11-01",
+            "last_payment_date": "2024-10-28",
+            "status": "active",
+            "days_past_due": 95,
+            "account_number": "BLC-7788-9900",
+            "reference_number": "REF-MO-2021-001",
+            "notes": "Used for equipment purchases and working capital. Last payment made before slow season hit hard."
+        },
+        {
+            "debt_type": "credit_card",
+            "original_amount": 15000.0,
+            "current_balance": 13800.0,
+            "interest_rate": 19.99,
+            "minimum_payment": 415.0,
+            "issue_date": "2019-08-15",
+            "due_date": "2024-11-10",
+            "last_payment_date": "2024-10-08",
+            "status": "active",
+            "days_past_due": 87,
+            "account_number": "CC-2211-3344",
+            "reference_number": "REF-MO-2019-001",
+            "notes": "Business expenses card. Balance increased due to covering payroll during slow period."
+        },
+        {
+            "debt_type": "auto_loan",
+            "original_amount": 45000.0,
+            "current_balance": 28000.0,
+            "interest_rate": 7.5,
+            "minimum_payment": 650.0,
+            "issue_date": "2022-06-15",
+            "due_date": "2024-11-15",
+            "last_payment_date": "2024-10-12",
+            "status": "active",
+            "days_past_due": 82,
+            "account_number": "AUTO-5544-3322",
+            "reference_number": "REF-MO-2022-001",
+            "notes": "2022 Ford Transit work van. Essential for business operations."
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "business_line_of_credit",
+            "amount": 875.0,
+            "payment_date": "2024-10-28",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-MO-2024-10-001",
+            "status": "completed",
+            "notes": "Last full payment"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 415.0,
+            "payment_date": "2024-10-08",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-MO-2024-10-002",
+            "status": "completed",
+            "notes": "Minimum payment"
+        },
+        {
+            "debt_type": "auto_loan",
+            "amount": 650.0,
+            "payment_date": "2024-10-12",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-MO-2024-10-003",
+            "status": "completed",
+            "notes": "Regular payment"
+        },
+        {
+            "debt_type": "business_line_of_credit",
+            "amount": 1000.0,
+            "payment_date": "2024-09-28",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-MO-2024-09-001",
+            "status": "completed",
+            "notes": "Extra payment when business was busy"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-6677-8899",
+            "routing_number": "102001017",
+            "bank_name": "FirstBank Colorado",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "Business operating account"
+        },
+        {
+            "account_type": "checking",
+            "account_number": "CHK-9988-7766",
+            "routing_number": "102001017",
+            "bank_name": "FirstBank Colorado",
+            "is_active": true,
+            "is_primary": false,
+            "notes": "Personal account"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 600,
+            "contact_phone": "+17205552345",
+            "outcome": "payment_discussion",
+            "notes": "Reached customer. Explained slow season situation. Has two signed contracts starting in March (total $85K). Expecting significant cash flow improvement by mid-March. Asked about deferral options for 60-90 days.",
+            "timestamp": "2024-12-10T15:00:00",
+            "agent_id": "agent_008"
+        },
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 420,
+            "contact_phone": "+17205552345",
+            "outcome": "partial_payment_arranged",
+            "notes": "Customer received deposit on one job. Can pay $500 now and $500 in two weeks. Committed to resuming full payments in March. Sent photos of signed contracts as documentation.",
+            "timestamp": "2025-01-15T10:30:00",
+            "agent_id": "agent_008"
+        },
+        {
+            "communication_type": "email",
+            "direction": "inbound",
+            "duration_seconds": null,
+            "contact_email": "mike.obrien.construction@yahoo.com",
+            "outcome": "documentation_received",
+            "notes": "Customer emailed copies of two signed renovation contracts totaling $85,000 with start dates in early March.",
+            "timestamp": "2025-01-16T08:45:00",
+            "agent_id": "agent_008"
+        },
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 180,
+            "contact_phone": "+17205552345",
+            "outcome": "payment_confirmed",
+            "notes": "Confirmed $500 payment received. Customer confirmed second $500 payment scheduled for Jan 30.",
+            "timestamp": "2025-01-20T14:00:00",
+            "agent_id": "agent_008"
+        }
+    ]
+}
