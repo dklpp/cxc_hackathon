@@ -25,8 +25,10 @@ import wave
 from pathlib import Path
 from dotenv import load_dotenv
 import websockets
-from websockets.server import serve
 import numpy as np
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import our modules
 from vad.voice_activity_detector import VoiceActivityDetector
@@ -400,7 +402,7 @@ class TwilioVoiceServer:
         print(f"\nWaiting for incoming calls...")
         print(f"Press Ctrl+C to stop\n")
 
-        async with serve(self.handle_call, host, port, subprotocols=['media-stream']):
+        async with websockets.serve(self.handle_call, host, port, subprotocols=['media-stream']):
             await asyncio.Future()  # Run forever
 
 

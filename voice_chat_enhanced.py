@@ -25,6 +25,9 @@ import tempfile
 import numpy as np
 from pathlib import Path
 
+# Add current directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent))
+
 # Import VAD and audio processor
 from vad.voice_activity_detector import VoiceActivityDetector
 from audio.audio_processor import AudioProcessor

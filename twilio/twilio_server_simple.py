@@ -12,8 +12,13 @@ Environment Variables:
 """
 
 import os
+import sys
+from pathlib import Path
 from flask import Flask, Response, request
 from dotenv import load_dotenv
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 load_dotenv()
 
