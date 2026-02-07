@@ -75,8 +75,8 @@ class GeminiStrategy:
 class GeminiStrategyGenerator:
     def __init__(self, db: DatabaseManager, api_key: Optional[str] = None, 
                  model: str = "google/gemini-2.5-pro",
-                 institution_name: str = "First National Bank",
-                 agent_name: str = "Alex",
+                 institution_name: str = "Tangerine Bank",
+                 agent_name: str = "John Doe",
                  support_phone: str = "1-800-555-0123",
                  support_email: str = "support@bank.com",
                  payment_portal_url: str = "https://pay.bank.com"):
