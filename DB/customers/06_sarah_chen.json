@@ -1,0 +1,145 @@
+{
+    "customer": {
+        "first_name": "Sarah",
+        "last_name": "Chen",
+        "middle_name": "Wei",
+        "date_of_birth": "1991-07-29",
+        "ssn": "789-01-2345",
+        "email": "sarah.w.chen@protonmail.com",
+        "phone_primary": "+12125554567",
+        "phone_secondary": null,
+        "address_line1": "445 East 78th Street",
+        "address_line2": "Apt 8C",
+        "city": "New York",
+        "state": "NY",
+        "zip_code": "10075",
+        "country": "USA",
+        "employer_name": "Goldman Sachs (starting Feb 15)",
+        "employment_status": "employed",
+        "annual_income": 165000.0,
+        "account_status": "active",
+        "credit_score": 738,
+        "notes": "Just transitioned from boutique consulting firm to Goldman Sachs. Gap between last paycheck (Jan 15) and first new paycheck (Feb 28). Proactively called to request 2-week grace period. Has excellent history and strong income. Very responsible."
+    },
+    "debts": [
+        {
+            "debt_type": "credit_card",
+            "original_amount": 15000.0,
+            "current_balance": 4200.0,
+            "interest_rate": 17.49,
+            "minimum_payment": 126.0,
+            "issue_date": "2020-09-01",
+            "due_date": "2025-01-30",
+            "last_payment_date": "2024-12-28",
+            "status": "active",
+            "days_past_due": 8,
+            "account_number": "CC-6677-8899",
+            "reference_number": "REF-SC-2020-001",
+            "notes": "Premium travel card. Customer called ahead of due date to discuss timing issue."
+        },
+        {
+            "debt_type": "student_loan",
+            "original_amount": 45000.0,
+            "current_balance": 28000.0,
+            "interest_rate": 5.5,
+            "minimum_payment": 380.0,
+            "issue_date": "2015-08-15",
+            "due_date": "2025-02-01",
+            "last_payment_date": "2024-12-30",
+            "status": "active",
+            "days_past_due": 6,
+            "account_number": "SL-2233-4455",
+            "reference_number": "REF-SC-2015-001",
+            "notes": "MBA loan from Columbia. Consistently paid above minimum."
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "credit_card",
+            "amount": 500.0,
+            "payment_date": "2024-12-28",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-SC-2024-12-001",
+            "status": "completed",
+            "notes": "Paid well above minimum"
+        },
+        {
+            "debt_type": "student_loan",
+            "amount": 500.0,
+            "payment_date": "2024-12-30",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-SC-2024-12-002",
+            "status": "completed",
+            "notes": "Extra payment before job transition"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 600.0,
+            "payment_date": "2024-11-28",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-SC-2024-11-001",
+            "status": "completed",
+            "notes": "Regular above-minimum payment"
+        },
+        {
+            "debt_type": "student_loan",
+            "amount": 450.0,
+            "payment_date": "2024-11-30",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-SC-2024-11-002",
+            "status": "completed",
+            "notes": "Regular payment"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-1234-5678",
+            "routing_number": "021000021",
+            "bank_name": "JPMorgan Chase",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "Primary account"
+        },
+        {
+            "account_type": "savings",
+            "account_number": "SAV-1234-5679",
+            "routing_number": "021000021",
+            "bank_name": "JPMorgan Chase",
+            "is_active": true,
+            "is_primary": false,
+            "notes": "Emergency fund - has 3 months expenses but prefers not to touch"
+        },
+        {
+            "account_type": "checking",
+            "account_number": "CHK-8765-4321",
+            "routing_number": "026009593",
+            "bank_name": "Bank of America",
+            "is_active": true,
+            "is_primary": false,
+            "notes": "New account for Goldman direct deposit"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "call",
+            "direction": "inbound",
+            "duration_seconds": 360,
+            "contact_phone": "+12125554567",
+            "outcome": "grace_period_requested",
+            "notes": "Customer called proactively on Jan 28, two days before due date. Explained job transition timing. Requested 2-week extension to Feb 14 when she'll have received first paycheck. Offered to pay $50 good faith payment now. Very articulate and responsible. Start date confirmed Feb 15 at Goldman.",
+            "timestamp": "2025-01-28T18:30:00",
+            "agent_id": "agent_006"
+        },
+        {
+            "communication_type": "email",
+            "direction": "inbound",
+            "duration_seconds": null,
+            "contact_email": "sarah.w.chen@protonmail.com",
+            "outcome": "documentation_received",
+            "notes": "Customer sent Goldman offer letter as proof of upcoming employment and income.",
+            "timestamp": "2025-01-29T09:15:00",
+            "agent_id": "agent_006"
+        }
+    ]
+}

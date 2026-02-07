@@ -1,0 +1,102 @@
+{
+    "customer": {
+        "first_name": "David",
+        "last_name": "Kim",
+        "middle_name": "Junho",
+        "date_of_birth": "1994-11-08",
+        "ssn": "312-45-6789",
+        "email": "david.kim.dev@gmail.com",
+        "phone_primary": "+12065559876",
+        "phone_secondary": null,
+        "address_line1": "1520 Minor Avenue",
+        "address_line2": "Unit 712",
+        "city": "Seattle",
+        "state": "WA",
+        "zip_code": "98101",
+        "country": "USA",
+        "employer_name": "Amazon Web Services",
+        "employment_status": "employed",
+        "annual_income": 145000.0,
+        "account_status": "active",
+        "credit_score": 752,
+        "notes": "Young professional. Tech-savvy, prefers digital communication. Autopay was set up but debit card expired 01/2025. Caught issue himself and called in."
+    },
+    "debts": [
+        {
+            "debt_type": "personal_loan",
+            "original_amount": 15000.0,
+            "current_balance": 8750.0,
+            "interest_rate": 8.5,
+            "minimum_payment": 425.0,
+            "issue_date": "2023-03-15",
+            "due_date": "2025-02-01",
+            "last_payment_date": "2024-12-28",
+            "status": "active",
+            "days_past_due": 5,
+            "account_number": "PL-8821-4455",
+            "reference_number": "REF-DK-2023-001",
+            "notes": "Debt consolidation loan. Excellent payment history until autopay card expired."
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "personal_loan",
+            "amount": 425.0,
+            "payment_date": "2024-12-28",
+            "payment_method": "debit_card",
+            "transaction_id": "TXN-DK-2024-12-001",
+            "status": "completed",
+            "notes": "On-time payment"
+        },
+        {
+            "debt_type": "personal_loan",
+            "amount": 425.0,
+            "payment_date": "2024-11-28",
+            "payment_method": "debit_card",
+            "transaction_id": "TXN-DK-2024-11-001",
+            "status": "completed",
+            "notes": "On-time payment"
+        },
+        {
+            "debt_type": "personal_loan",
+            "amount": 500.0,
+            "payment_date": "2024-10-28",
+            "payment_method": "debit_card",
+            "transaction_id": "TXN-DK-2024-10-001",
+            "status": "completed",
+            "notes": "Paid extra this month"
+        },
+        {
+            "debt_type": "personal_loan",
+            "amount": 425.0,
+            "payment_date": "2025-01-31",
+            "payment_method": "debit_card",
+            "transaction_id": "TXN-DK-2025-01-001",
+            "status": "failed",
+            "notes": "Card expired - autopay failed"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-5544-3322",
+            "routing_number": "125000024",
+            "bank_name": "US Bank",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "Main checking account"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "call",
+            "direction": "inbound",
+            "duration_seconds": 180,
+            "contact_phone": "+12065559876",
+            "outcome": "payment_arranged",
+            "notes": "Customer called after receiving failed payment notification. Updated card on file. Payment scheduled for Feb 6.",
+            "timestamp": "2025-02-05T11:15:00",
+            "agent_id": "agent_003"
+        }
+    ]
+}

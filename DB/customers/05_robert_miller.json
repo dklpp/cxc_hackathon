@@ -1,0 +1,163 @@
+{
+    "customer": {
+        "first_name": "Robert",
+        "last_name": "Miller",
+        "middle_name": "Allen",
+        "date_of_birth": "1970-12-18",
+        "ssn": "678-90-1234",
+        "email": "robmiller1970@gmail.com",
+        "phone_primary": "+16025558901",
+        "phone_secondary": null,
+        "address_line1": "2847 West Camelback Road",
+        "address_line2": "Apt 12",
+        "city": "Phoenix",
+        "state": "AZ",
+        "zip_code": "85017",
+        "country": "USA",
+        "employer_name": "Formerly: Honeywell Aerospace",
+        "employment_status": "unemployed",
+        "annual_income": 0.0,
+        "account_status": "active",
+        "credit_score": 485,
+        "notes": "Complex situation: Laid off March 2024, divorce finalized August 2024. Lost home in divorce settlement. Now renting. Had to pay significant legal fees. Depression diagnosis - seeing therapist. Multiple accounts now in collection status. Has been difficult to reach."
+    },
+    "debts": [
+        {
+            "debt_type": "credit_card",
+            "original_amount": 25000.0,
+            "current_balance": 27850.0,
+            "interest_rate": 24.99,
+            "minimum_payment": 835.0,
+            "issue_date": "2019-05-10",
+            "due_date": "2024-03-15",
+            "last_payment_date": "2024-03-01",
+            "status": "in_collection",
+            "days_past_due": 328,
+            "account_number": "CC-1111-2222",
+            "reference_number": "REF-RM-2019-001",
+            "notes": "Balance increased due to interest and fees. Was joint card with ex-wife, now solely his responsibility per divorce decree."
+        },
+        {
+            "debt_type": "personal_loan",
+            "original_amount": 20000.0,
+            "current_balance": 18500.0,
+            "interest_rate": 15.0,
+            "minimum_payment": 520.0,
+            "issue_date": "2022-11-01",
+            "due_date": "2024-04-01",
+            "last_payment_date": "2024-03-15",
+            "status": "in_collection",
+            "days_past_due": 312,
+            "account_number": "PL-9999-8888",
+            "reference_number": "REF-RM-2022-001",
+            "notes": "Used for home renovation before divorce. House went to ex-wife."
+        },
+        {
+            "debt_type": "credit_card",
+            "original_amount": 8000.0,
+            "current_balance": 9200.0,
+            "interest_rate": 22.49,
+            "minimum_payment": 275.0,
+            "issue_date": "2020-08-20",
+            "due_date": "2024-03-20",
+            "last_payment_date": "2024-02-28",
+            "status": "in_collection",
+            "days_past_due": 323,
+            "account_number": "CC-3333-4444",
+            "reference_number": "REF-RM-2020-001",
+            "notes": "Secondary card used primarily for legal fees during divorce"
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "credit_card",
+            "amount": 835.0,
+            "payment_date": "2024-03-01",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-RM-2024-03-001",
+            "status": "completed",
+            "notes": "Last payment on primary card"
+        },
+        {
+            "debt_type": "personal_loan",
+            "amount": 520.0,
+            "payment_date": "2024-03-15",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-RM-2024-03-002",
+            "status": "completed",
+            "notes": "Last payment before unemployment"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 275.0,
+            "payment_date": "2024-02-28",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-RM-2024-02-001",
+            "status": "completed",
+            "notes": "Minimum payment"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-5566-7788",
+            "routing_number": "122105278",
+            "bank_name": "Desert Financial Credit Union",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "New account opened after divorce. Very low balance."
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 0,
+            "contact_phone": "+16025558901",
+            "outcome": "no_answer",
+            "notes": "No answer, no voicemail set up",
+            "timestamp": "2024-05-10T10:00:00",
+            "agent_id": "agent_002"
+        },
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 0,
+            "contact_phone": "+16025558901",
+            "outcome": "no_answer",
+            "notes": "No answer",
+            "timestamp": "2024-06-15T14:30:00",
+            "agent_id": "agent_002"
+        },
+        {
+            "communication_type": "letter",
+            "direction": "outbound",
+            "duration_seconds": null,
+            "contact_phone": null,
+            "outcome": "sent",
+            "notes": "Sent formal collection notice via certified mail",
+            "timestamp": "2024-07-01T09:00:00",
+            "agent_id": "system_auto"
+        },
+        {
+            "communication_type": "call",
+            "direction": "inbound",
+            "duration_seconds": 900,
+            "contact_phone": "+16025558901",
+            "outcome": "hardship_discussion",
+            "notes": "Customer finally called back. Explained full situation - job loss, divorce, mental health struggles. Currently living on savings and occasional gig work. Therapist encouraged him to call. Open to settlement discussion but has very limited funds. Mentioned possible part-time work starting in February.",
+            "timestamp": "2024-11-20T16:45:00",
+            "agent_id": "agent_009"
+        },
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 420,
+            "contact_phone": "+16025558901",
+            "outcome": "settlement_discussed",
+            "notes": "Discussed potential settlement options. Customer may be able to get small loan from brother. Reviewing 40% settlement offer. Will call back after talking to family.",
+            "timestamp": "2025-01-08T11:00:00",
+            "agent_id": "agent_009"
+        }
+    ]
+}

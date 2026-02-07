@@ -1,1 +1,26 @@
 .env
+CLAUDE.md
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+uv.lock
+*.egg-info/
+dist/
+build/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Web dependencies
+web/node_modules/
+web/dist/
+web/.vite/
+web/package-lock.json
+web/yarn.lock
+web/pnpm-lock.yaml

@@ -1,0 +1,146 @@
+{
+    "customer": {
+        "first_name": "Tyrone",
+        "last_name": "Washington",
+        "middle_name": "Marcus",
+        "date_of_birth": "1982-09-03",
+        "ssn": "567-89-0123",
+        "email": "t.washington82@outlook.com",
+        "phone_primary": "+14045553456",
+        "phone_secondary": "+14045553457",
+        "address_line1": "892 Peachtree Street NE",
+        "address_line2": "Apt 1505",
+        "city": "Atlanta",
+        "state": "GA",
+        "zip_code": "30308",
+        "country": "USA",
+        "employer_name": "Delta Air Lines",
+        "employment_status": "employed",
+        "annual_income": 72000.0,
+        "account_status": "active",
+        "credit_score": 665,
+        "notes": "Ramp supervisor at Hartsfield-Jackson. Wife had emergency appendectomy in November - $8,500 in unexpected medical bills even after insurance. Still employed and committed to paying but budget severely strained."
+    },
+    "debts": [
+        {
+            "debt_type": "credit_card",
+            "original_amount": 12000.0,
+            "current_balance": 9800.0,
+            "interest_rate": 21.49,
+            "minimum_payment": 295.0,
+            "issue_date": "2021-07-15",
+            "due_date": "2024-12-10",
+            "last_payment_date": "2024-11-08",
+            "status": "active",
+            "days_past_due": 58,
+            "account_number": "CC-8877-6655",
+            "reference_number": "REF-TW-2021-001",
+            "notes": "Primary credit card. Balance increased due to medical emergency expenses."
+        },
+        {
+            "debt_type": "personal_loan",
+            "original_amount": 10000.0,
+            "current_balance": 6200.0,
+            "interest_rate": 11.5,
+            "minimum_payment": 275.0,
+            "issue_date": "2023-01-20",
+            "due_date": "2024-12-20",
+            "last_payment_date": "2024-11-18",
+            "status": "active",
+            "days_past_due": 48,
+            "account_number": "PL-3344-5566",
+            "reference_number": "REF-TW-2023-001",
+            "notes": "Home improvement loan for HVAC replacement"
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "credit_card",
+            "amount": 295.0,
+            "payment_date": "2024-11-08",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-TW-2024-11-001",
+            "status": "completed",
+            "notes": "Last payment before medical emergency"
+        },
+        {
+            "debt_type": "personal_loan",
+            "amount": 275.0,
+            "payment_date": "2024-11-18",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-TW-2024-11-002",
+            "status": "completed",
+            "notes": "Regular payment"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 350.0,
+            "payment_date": "2024-10-07",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-TW-2024-10-001",
+            "status": "completed",
+            "notes": "Paid above minimum"
+        },
+        {
+            "debt_type": "personal_loan",
+            "amount": 275.0,
+            "payment_date": "2024-10-18",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-TW-2024-10-002",
+            "status": "completed",
+            "notes": "Regular payment"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-7788-9900",
+            "routing_number": "061000104",
+            "bank_name": "Wells Fargo",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "Joint account with spouse"
+        },
+        {
+            "account_type": "savings",
+            "account_number": "SAV-7788-9901",
+            "routing_number": "061000104",
+            "bank_name": "Wells Fargo",
+            "is_active": true,
+            "is_primary": false,
+            "notes": "Emergency fund - depleted due to medical bills"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "call",
+            "direction": "inbound",
+            "duration_seconds": 540,
+            "contact_phone": "+14045553456",
+            "outcome": "hardship_reported",
+            "notes": "Customer called proactively to explain situation. Wife recovering well. Has set up payment plan with hospital ($350/month). Asked about temporary reduced payment options for 3 months.",
+            "timestamp": "2024-12-01T16:30:00",
+            "agent_id": "agent_004"
+        },
+        {
+            "communication_type": "email",
+            "direction": "outbound",
+            "duration_seconds": null,
+            "contact_email": "t.washington82@outlook.com",
+            "outcome": "information_sent",
+            "notes": "Sent hardship program application and documentation requirements.",
+            "timestamp": "2024-12-02T09:00:00",
+            "agent_id": "agent_004"
+        },
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 240,
+            "contact_phone": "+14045553456",
+            "outcome": "payment_promised",
+            "notes": "Customer confirmed he can resume partial payments of $300/month starting February. Tax refund expected in March which he will apply to balance.",
+            "timestamp": "2025-01-15T13:00:00",
+            "agent_id": "agent_004"
+        }
+    ]
+}

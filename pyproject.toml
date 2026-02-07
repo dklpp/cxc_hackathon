@@ -1,0 +1,16 @@
+[project]
+name = "cxc-hackathon"
+version = "0.1.0"
+description = "Banking system for customer data and debt tracking"
+requires-python = ">=3.9"
+dependencies = [
+    "sqlalchemy>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",
+]
+
+# Note: This project is a script-based application, not a package
+# Use `uv sync --no-install-project` to avoid build errors
