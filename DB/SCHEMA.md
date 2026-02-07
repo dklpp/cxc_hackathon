@@ -48,6 +48,7 @@ The database consists of 5 main tables designed to comprehensively track custome
   - `updated_at` (DateTime): Last update timestamp
   - `notes` (Text, Optional): Additional notes about the customer
 
+
 ### Relationships:
 - One-to-Many with `debts`
 - One-to-Many with `payments`
