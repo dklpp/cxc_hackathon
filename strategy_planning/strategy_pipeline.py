@@ -11,27 +11,15 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from dotenv import load_dotenv
-
-# Load environment variables
+import json
+import re
+import requests
 load_dotenv()
 
-# Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from DB.db_manager import (
-    DatabaseManager, DebtStatus, PaymentStatus, CommunicationType
-)
-
-# Import prompt template from same directory
+from DB.db_manager import (DatabaseManager, DebtStatus, PaymentStatus, CommunicationType)
 from prompt_template import build_strategy_prompt
-
-try:
-    import requests
-    REQUESTS_AVAILABLE = True
-except ImportError:
-    REQUESTS_AVAILABLE = False
-    print("Warning: requests not installed. Install with: uv add requests")
-
 
 @dataclass
 class GeminiStrategy:
@@ -58,19 +46,7 @@ class GeminiStrategy:
 
 class GeminiStrategyGenerator:
     """Uses OpenRouter (Gemini) API to generate personalized debt collection strategies"""
-    
     def __init__(self, db: DatabaseManager, api_key: Optional[str] = None, model: str = "google/gemini-2.5-pro"):
-        """
-        Initialize Gemini strategy generator using OpenRouter.
-        
-        Args:
-            db: DatabaseManager instance
-            api_key: OpenRouter API key (if None, reads from OPENROUTERS_API_KEY env var)
-            model: Model to use (default: google/gemini-2.5-pro)
-        """
-        if not REQUESTS_AVAILABLE:
-            raise ImportError("requests is not installed. Install with: uv add requests")
-        
         self.db = db
         self.api_key = api_key or os.getenv('OPENROUTERS_API_KEY')
         self.model = model
@@ -80,16 +56,6 @@ class GeminiStrategyGenerator:
             raise ValueError("OPENROUTERS_API_KEY not found. Set it in .env file or pass as parameter.")
     
     def generate_strategy(self, customer_id: int) -> GeminiStrategy:
-        """
-        Generate personalized strategy for a customer using Gemini AI.
-        
-        Args:
-            customer_id: ID of the customer to generate strategy for
-            
-        Returns:
-            GeminiStrategy object with AI-generated recommendations
-        """
-        # Get customer data
         summary = self.db.get_customer_summary(customer_id)
         if not summary:
             raise ValueError(f"Customer {customer_id} not found")
@@ -169,7 +135,7 @@ class GeminiStrategyGenerator:
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://github.com/your-repo",  # Optional: for OpenRouter analytics
+                "HTTP-Referer": "https://github.com/dklpp/cxc_hackathon",  # Optional: for OpenRouter analytics
             }
             
             payload = {
@@ -231,17 +197,13 @@ class GeminiStrategyGenerator:
     
     def _parse_gemini_response(self, customer_id: int, customer_name: str,
                               preferred_channel: str, response_text: str) -> GeminiStrategy:
-        """Parse Gemini's response into GeminiStrategy object"""
-        import json
-        import re
-        
+
         # Try to extract JSON from response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
             try:
                 data = json.loads(json_match.group())
             except json.JSONDecodeError:
-                # Fallback: create basic strategy from text
                 return self._create_fallback_strategy(customer_id, customer_name, preferred_channel, response_text)
         else:
             return self._create_fallback_strategy(customer_id, customer_name, preferred_channel, response_text)
@@ -278,65 +240,6 @@ class GeminiStrategyGenerator:
         )
 
 
-def print_gemini_strategy(strategy: GeminiStrategy):
-    """Pretty print a Gemini-generated strategy"""
-    print("=" * 80)
-    print(f"AI-GENERATED STRATEGY: {strategy.customer_name} (ID: {strategy.customer_id})")
-    print("=" * 80)
-    
-    print(f"\n📞 COMMUNICATION CHANNEL: {strategy.communication_channel.upper()}")
-    
-    if strategy.tone_recommendation:
-        print(f"🎭 TONE: {strategy.tone_recommendation.replace('_', ' ').title()}")
-    
-    if strategy.best_contact_time:
-        print(f"⏰ BEST TIME: {strategy.best_contact_time.upper()}")
-    
-    if strategy.key_talking_points:
-        print(f"\n💬 KEY TALKING POINTS:")
-        for i, point in enumerate(strategy.key_talking_points, 1):
-            print(f"  {i}. {point}")
-    
-    if strategy.call_script:
-        print(f"\n📞 CALL SCRIPT:")
-        print("-" * 80)
-        print(strategy.call_script)
-        print("-" * 80)
-    
-    if strategy.email_subject and strategy.email_body:
-        print(f"\n📧 EMAIL:")
-        print(f"Subject: {strategy.email_subject}")
-        print("-" * 80)
-        print(strategy.email_body)
-        print("-" * 80)
-    
-    if strategy.sms_message:
-        print(f"\n📱 SMS MESSAGE:")
-        print("-" * 80)
-        print(strategy.sms_message)
-        print(f"({len(strategy.sms_message)} characters)")
-        print("-" * 80)
-    
-    if strategy.message_content:
-        print(f"\n💬 MESSAGE CONTENT:")
-        print("-" * 80)
-        print(strategy.message_content)
-        print("-" * 80)
-    
-    if strategy.suggested_payment_amount:
-        print(f"\n💰 SUGGESTED PAYMENT: ${strategy.suggested_payment_amount:,.2f}")
-    
-    if strategy.payment_plan_suggestion:
-        print(f"\n💡 PAYMENT PLAN SUGGESTION:")
-        print(f"  {strategy.payment_plan_suggestion}")
-    
-    if strategy.reasoning:
-        print(f"\n🧠 REASONING:")
-        print(f"  {strategy.reasoning}")
-    
-    print()
-
-
 if __name__ == "__main__":
     import argparse
     
@@ -345,18 +248,8 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="google/gemini-2.5-pro", help="Gemini model to use")
     
     args = parser.parse_args()
-    
     db = DatabaseManager()
     
-    if not REQUESTS_AVAILABLE:
-        print("Error: requests not installed. Install with: uv add requests")
-        exit(1)
-    
-    try:
-        generator = GeminiStrategyGenerator(db, model=args.model)
-        strategy = generator.generate_strategy(args.customer_id)
-        print_gemini_strategy(strategy)
-    except Exception as e:
-        print(f"Error generating strategy: {e}")
-        import traceback
-        traceback.print_exc()
+    generator = GeminiStrategyGenerator(db, model=args.model)
+    strategy = generator.generate_strategy(args.customer_id)
+    print(strategy)
