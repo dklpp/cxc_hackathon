@@ -1,0 +1,25 @@
+# Core dependencies
+elevenlabs>=2.34.0
+python-dotenv>=1.0.0
+requests>=2.32.0
+
+# LLM integration
+google-generativeai>=0.3.0
+
+# Audio processing
+sounddevice>=0.4.6
+numpy>=1.24.0
+pydub>=0.25.1
+scipy>=1.10.0
+
+# Voice Activity Detection
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# Async HTTP
+aiohttp>=3.9.0
+
+# Optional: existing project dependencies
+flask>=3.0.0
+websockets>=15.0.0
+openai>=1.0.0
