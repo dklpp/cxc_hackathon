@@ -17,14 +17,14 @@ if not ELEVEN_LABS_API_KEY:
 
 def transcribe_audio(
     audio_file_path: str,
-    model: str = "eleven_multilingual_v2"
+    model: str = "eleven_flash_v2"
 ) -> Dict:
     """
     Transcribe audio file using Eleven Labs Speech-to-Text API
 
     Args:
         audio_file_path: Path to the audio file to transcribe
-        model: Model to use for transcription (default: eleven_multilingual_v2)
+        model: Model to use for transcription (default: eleven_flash_v2)
 
     Returns:
         dict: Transcription result containing text and metadata
