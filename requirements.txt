@@ -1,3 +1,6 @@
 elevenlabs
 python-dotenv
 requests
+openai
+sounddevice
+numpy
