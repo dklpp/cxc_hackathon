@@ -10,3 +10,8 @@ uv.lock
 *.egg-info/
 dist/
 build/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
