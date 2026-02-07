@@ -1,0 +1,75 @@
+{
+    "customer": {
+        "first_name": "Jane",
+        "last_name": "Smith",
+        "middle_name": "Elizabeth",
+        "date_of_birth": "1990-07-22",
+        "ssn": "987-65-4321",
+        "email": "jane.smith@example.com",
+        "phone_primary": "+1987654321",
+        "phone_secondary": "+1987654322",
+        "address_line1": "456 Oak Avenue",
+        "address_line2": "Suite 200",
+        "city": "Los Angeles",
+        "state": "CA",
+        "zip_code": "90001",
+        "country": "USA",
+        "employer_name": "Digital Solutions LLC",
+        "employment_status": "employed",
+        "annual_income": 85000.0,
+        "account_status": "active",
+        "credit_score": 720,
+        "notes": "Customer prefers phone communication during business hours"
+    },
+    "debts": [
+        {
+            "debt_type": "credit_card",
+            "original_amount": 5000.0,
+            "current_balance": 3500.0,
+            "interest_rate": 19.99,
+            "minimum_payment": 150.0,
+            "issue_date": "2024-01-15",
+            "due_date": "2025-02-15",
+            "last_payment_date": "2024-12-01",
+            "status": "active",
+            "days_past_due": 0,
+            "account_number": "CC-5555-6666",
+            "reference_number": "REF-2024-001",
+            "notes": "Premium credit card account"
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "credit_card",
+            "amount": 200.0,
+            "payment_date": "2024-12-01",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-2024-12-002",
+            "status": "completed",
+            "notes": "Monthly payment"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-7777-8888",
+            "routing_number": "121000248",
+            "bank_name": "West Coast Bank",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "Primary checking account"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 420,
+            "contact_phone": "+1987654321",
+            "outcome": "payment_promised",
+            "notes": "Customer committed to paying $500 by end of month",
+            "timestamp": "2024-12-20T14:30:00",
+            "agent_id": "agent_002"
+        }
+    ]
+}
