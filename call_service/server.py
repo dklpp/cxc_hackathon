@@ -2,12 +2,14 @@ import os
 import time
 import requests
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from dotenv import load_dotenv
 from config import build_prompt, parse_customer_data
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 app = Flask(__name__)
+CORS(app)
 
 API_KEY = os.getenv("ELEVEN_LABS_API_KEY")
 AGENT_ID = os.getenv("ELEVEN_LABS_AGENT_ID")

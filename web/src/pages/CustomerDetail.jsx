@@ -117,37 +117,42 @@ function CustomerDetail() {
     setShowPrepareConfirmModal(true)
   }
 
-  const handleMakeAICall = async () => {
-    if (!customer?.phone_primary) {
-      toast.error('Customer phone number is required to make a call', {
-        title: 'Missing Phone Number',
-      })
-      return
-    }
-
+  const handleMakeCall = async () => {
     try {
       setMakingCall(true)
-      const response = await api.post(`/customers/${id}/make-ai-call`)
-      
-      if (response.data?.success) {
-        toast.success('AI call initiated successfully!', {
-          title: 'Call Started',
-          message: `Calling ${customer.first_name} ${customer.last_name} at ${customer.phone_primary}`,
-          duration: 5000,
-        })
-        // Refresh customer details to show the new call
-        await fetchCustomerDetail()
+      toast.info('Call in progress... This may take a few minutes.', { title: 'Make a Call', duration: 10000 })
+
+      const response = await fetch('/call-service/make_call', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer, debts, scheduled_calls: scheduledCalls, call_planning_scripts: callPlanningScripts, planned_emails: plannedEmails }),
+      })
+      console.log(response);
+      if (!response.ok) throw new Error('Call request failed')
+
+      const callResult = await response.json()
+
+      // Save transcript to database
+      if (callResult.transcript && callResult.transcript.length > 0) {
+        try {
+          await api.post(`/customers/${id}/save-transcript`, {
+            conversation_id: callResult.conversation_id || 'unknown',
+            status: callResult.status || 'done',
+            transcript: callResult.transcript,
+            customer_id: parseInt(id),
+          })
+          toast.success('Call completed and transcript saved!', { title: 'Make a Call', duration: 4000 })
+          fetchCustomerDetail()
+        } catch (saveErr) {
+          console.error('Failed to save transcript:', saveErr)
+          toast.warning('Call completed but failed to save transcript', { title: 'Make a Call', duration: 4000 })
+        }
       } else {
-        toast.error(response.data?.message || 'Failed to initiate call', {
-          title: 'Call Failed',
-        })
+        toast.success('Call completed!', { title: 'Make a Call', duration: 4000 })
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || err.message || 'Failed to initiate AI call'
-      toast.error(`Failed to initiate AI call: ${errorMsg}`, {
-        title: 'Error',
-      })
-      console.error('Make AI call error:', err)
+      console.error(err)
+      toast.error('Failed to initiate the call', { title: 'Make a Call', duration: 4000 })
     } finally {
       setMakingCall(false)
     }
@@ -534,14 +539,14 @@ function CustomerDetail() {
           </div>
           <div className="flex space-x-3">
             <button
-              onClick={handleMakeAICall}
-              disabled={makingCall || !customer.phone_primary}
-              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title={!customer.phone_primary ? "Customer phone number is required" : "Initiate an AI-powered call"}
+              onClick={handleMakeCall}
+              disabled={makingCall}
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               <Phone className="h-4 w-4 mr-2" />
               {makingCall ? 'Calling...' : 'Make AI Call'}
             </button>
+
             <button
               onClick={openPrepareConfirmModal}
               disabled={preparing}

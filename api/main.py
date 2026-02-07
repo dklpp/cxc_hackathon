@@ -2121,6 +2121,42 @@ async def make_ai_call(customer_id: int):
         print(f"Error initiating AI call: {error_details}")
         raise HTTPException(status_code=500, detail=f"Failed to initiate AI call: {str(e)}")
 
+CALL_SERVICE_URL = os.getenv("CALL_SERVICE_URL", "https://cxc-call-service.onrender.com")
+
+@app.post("/api/customers/{customer_id}/make-call")
+async def proxy_make_call(customer_id: int, background_tasks: BackgroundTasks):
+    """Proxy call request to the external call service (fire-and-forget)."""
+    customer = db_manager.get_customer(customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    debts = db_manager.get_debts_by_customer(customer_id)
+    scheduled_calls = db_manager.get_scheduled_calls(customer_id)
+
+    payload = {
+        "customer": {col.name: getattr(customer, col.name) for col in customer.__table__.columns},
+        "debts": [{col.name: getattr(d, col.name) for col in d.__table__.columns} for d in debts],
+        "scheduled_calls": [{col.name: getattr(c, col.name) for col in c.__table__.columns} for c in scheduled_calls],
+    }
+
+    # Serialize datetimes to strings
+    import json as _json
+    def _default(o):
+        if isinstance(o, (datetime,)):
+            return o.isoformat()
+        raise TypeError
+    serialized = _json.loads(_json.dumps(payload, default=_default))
+
+    def forward_call():
+        try:
+            requests.post(f"{CALL_SERVICE_URL}/make_call", json=serialized, timeout=300)
+        except Exception as e:
+            print(f"Call service error: {e}")
+
+    background_tasks.add_task(forward_call)
+    return {"success": True, "message": "Call is being initiated"}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -11,6 +11,11 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/call-service': {
+        target: 'https://cxc-call-service.onrender.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/call-service/, ''),
+      },
     },
   },
 })
