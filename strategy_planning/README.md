@@ -41,7 +41,7 @@ The Strategy Pipeline analyzes customer profiles, debt history, payment patterns
 
 ## Usage
 
-### Basic Usage
+### Basic Usage (Rule-Based Analysis)
 
 ```python
 from strategy_planning.strategy_pipeline import StrategyAnalyzer, print_strategy
@@ -54,6 +54,45 @@ analyzer = StrategyAnalyzer(db)
 # Analyze a specific customer
 strategy = analyzer.analyze_customer(customer_id=1)
 print_strategy(strategy)
+```
+
+### AI-Powered Strategy Generation with Gemini (via OpenRouter)
+
+Generate personalized strategies using Google's Gemini AI through OpenRouter:
+
+```python
+from strategy_planning.strategy_pipeline import GeminiStrategyGenerator, print_gemini_strategy
+from DB.db_manager import DatabaseManager
+
+# Initialize
+db = DatabaseManager()
+generator = GeminiStrategyGenerator(db)
+
+# Generate AI-powered strategy for a customer
+strategy = generator.generate_strategy(customer_id=1)
+print_gemini_strategy(strategy)
+```
+
+**Setup:**
+1. Get an OpenRouter API key from [OpenRouter](https://openrouter.ai/keys)
+2. Add to `.env` file:
+   ```
+   OPENROUTERS_API_KEY=your_api_key_here
+   ```
+3. Install dependencies:
+   ```bash
+   uv add requests
+   ```
+   
+**Note:** This uses OpenRouter to access Google's Gemini model. OpenRouter provides unified access to multiple AI models including Gemini.
+
+**Command Line Usage:**
+```bash
+# Generate strategy using Gemini AI
+uv run python strategy_planning/strategy_pipeline.py --customer-id 1 --use-gemini
+
+# Or use traditional rule-based analysis
+uv run python strategy_planning/strategy_pipeline.py --customer-id 1
 ```
 
 ### Generate Strategies for All Customers
@@ -199,6 +238,26 @@ uv run python strategy_planning/example_usage.py
 uv run python strategy_planning/strategy_pipeline.py
 ```
 
+## Gemini AI Integration (via OpenRouter)
+
+The Gemini AI integration uses OpenRouter to access Google's Gemini model. This provides:
+
+- **Personalized Call Scripts**: Full conversation scripts tailored to each customer
+- **Email Templates**: Subject lines and body content optimized for response
+- **SMS Messages**: Concise, action-oriented text messages
+- **Talking Points**: Key points to cover during conversations
+- **Context-Aware**: Considers customer's preferred communication method, payment history, and debt situation
+- **Empathetic Approach**: AI generates strategies that balance firmness with empathy
+
+### Example Output
+
+The Gemini generator creates:
+- **Call Scripts**: Natural conversation flow with greeting, main points, and closing
+- **Email Content**: Professional but warm tone with clear call-to-action
+- **SMS Messages**: Under 160 characters, friendly and action-oriented
+- **Payment Suggestions**: Realistic amounts based on customer income and debt
+- **Timing Recommendations**: Best time to contact based on customer profile
+
 ## Future Enhancements
 
 Potential improvements:
@@ -210,3 +269,23 @@ Potential improvements:
 - Performance tracking and optimization
 - Timezone-aware contact timing
 - Multi-language message generation
+- Fine-tuned Gemini models for debt collection
+
+## OpenRouter Integration
+
+This project uses [OpenRouter](https://openrouter.ai/) to access Gemini models. OpenRouter provides:
+- Unified API for multiple AI models
+- Easy API key management
+- Cost tracking and analytics
+- Access to various Gemini model variants (gemini-pro, gemini-pro-vision, etc.)
+
+To use a different Gemini model, pass the model name when initializing:
+```python
+generator = GeminiStrategyGenerator(db, model="google/gemini-2.5-pro")
+```
+
+Available Gemini models on OpenRouter:
+- `google/gemini-2.5-pro` (default)
+- `google/gemini-2.0-flash-exp`
+- `google/gemini-pro-vision`
+- See [OpenRouter Models](https://openrouter.ai/models) for the full list
