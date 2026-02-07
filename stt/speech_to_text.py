@@ -1,5 +1,6 @@
 
-import oimport sys
+import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 import requests
@@ -17,14 +18,14 @@ if not ELEVEN_LABS_API_KEY:
 
 def transcribe_audio(
     audio_file_path: str,
-    model: str = "eleven_flash_v2"
+    model: str = "scribe_v2"
 ) -> Dict:
     """
     Transcribe audio file using Eleven Labs Speech-to-Text API
 
     Args:
         audio_file_path: Path to the audio file to transcribe
-        model: Model to use for transcription (default: eleven_flash_v2)
+        model: Model to use for transcription (default: scribe_v2)
 
     Returns:
         dict: Transcription result containing text and metadata
@@ -46,11 +47,11 @@ def transcribe_audio(
     # Open and send the audio file
     with open(audio_file_path, 'rb') as audio_file:
         files = {
-            'audio': (os.path.basename(audio_file_path), audio_file, 'audio/mpeg')
+            'file': (os.path.basename(audio_file_path), audio_file, 'audio/mpeg')
         }
 
         data = {
-            'model': model
+            'model_id': model
         }
 
         response = requests.post(url, headers=headers, files=files, data=data)
@@ -88,11 +89,11 @@ def transcribe_with_timestamps(audio_file_path: str) -> Dict:
 
     with open(audio_file_path, 'rb') as audio_file:
         files = {
-            'audio': (os.path.basename(audio_file_path), audio_file, 'audio/mpeg')
+            'file': (os.path.basename(audio_file_path), audio_file, 'audio/mpeg')
         }
 
         data = {
-            'model': 'eleven_multilingual_v2',
+            'model_id': 'scribe_v2',
             'timestamp_granularities': 'word'
         }
 
