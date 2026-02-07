@@ -80,6 +80,9 @@ class Customer(Base):
     account_status = Column(String(50), default='active')  # active, closed, frozen, etc.
     credit_score = Column(Integer, nullable=True)
     
+    # Communication Preferences
+    preferred_communication_method = Column(Enum(CommunicationType), nullable=True)  # Preferred way to contact customer
+    
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

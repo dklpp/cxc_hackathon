@@ -43,6 +43,14 @@ The database consists of 5 main tables designed to comprehensively track custome
   - `account_status` (String, Default: 'active'): active, closed, frozen, etc.
   - `credit_score` (Integer, Optional): Current credit score
 
+- **Communication Preferences**:
+  - `preferred_communication_method` (Enum, Optional): Customer's preferred communication channel
+    - `CALL`: Phone call
+    - `EMAIL`: Email message
+    - `SMS`: Text message
+    - `LETTER`: Physical mail
+    - `IN_PERSON`: In-person meeting
+
 - **Metadata**:
   - `created_at` (DateTime): Record creation timestamp
   - `updated_at` (DateTime): Last update timestamp

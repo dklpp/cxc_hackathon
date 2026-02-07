@@ -298,7 +298,17 @@ class StrategyAnalyzer:
     def _determine_channel(self, customer, communications: List, 
                           urgency_level: UrgencyLevel, responsiveness: float) -> CommunicationChannel:
         """Determine best communication channel"""
-        # Check customer preferences from notes
+        # Check customer's preferred communication method (if set)
+        if customer.preferred_communication_method:
+            pref_type = customer.preferred_communication_method.value
+            if pref_type == "call":
+                return CommunicationChannel.CALL
+            elif pref_type == "email":
+                return CommunicationChannel.EMAIL
+            elif pref_type == "sms":
+                return CommunicationChannel.SMS
+        
+        # Fallback: Check customer preferences from notes (for backward compatibility)
         notes = customer.notes or ""
         if "email" in notes.lower() and "prefer" in notes.lower():
             return CommunicationChannel.EMAIL
