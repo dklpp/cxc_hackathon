@@ -153,13 +153,14 @@ def parse_date(date_string):
             return None
 
 
-def create_customer_from_json(db: DatabaseManager, json_data: dict):
+def create_customer_from_json(db: DatabaseManager, json_data: dict, verbose: bool = False):
     """
     Create a customer record and all related data from JSON structure.
     
     Args:
         db: DatabaseManager instance
         json_data: Dictionary containing customer data
+        verbose: If True, print detailed progress messages
     """
     customer_data = json_data.get('customer', {})
     
@@ -168,14 +169,17 @@ def create_customer_from_json(db: DatabaseManager, json_data: dict):
         customer_data['date_of_birth'] = parse_date(customer_data['date_of_birth'])
     
     # Create customer record
-    print("Creating customer record...")
+    if verbose:
+        print("Creating customer record...")
     customer = db.create_customer(**customer_data)
-    print(f"✓ Created customer: {customer.first_name} {customer.last_name} (ID: {customer.id})")
+    if verbose:
+        print(f"✓ Created customer: {customer.first_name} {customer.last_name} (ID: {customer.id})")
     
     # Create debts
     debts_map = {}  # Map debt_type to debt_id for payment matching
     if 'debts' in json_data:
-        print("\nCreating debt records...")
+        if verbose:
+            print("\nCreating debt records...")
         for debt_data in json_data['debts']:
             # Parse dates
             for date_field in ['issue_date', 'due_date', 'last_payment_date']:
@@ -190,11 +194,13 @@ def create_customer_from_json(db: DatabaseManager, json_data: dict):
             # Create debt
             debt = db.create_debt(customer_id=customer.id, **debt_data)
             debts_map[debt_data['debt_type']] = debt.id
-            print(f"✓ Created debt: {debt.debt_type} - ${debt.current_balance:.2f} (ID: {debt.id})")
+            if verbose:
+                print(f"✓ Created debt: {debt.debt_type} - ${debt.current_balance:.2f} (ID: {debt.id})")
     
     # Create payments
     if 'payments' in json_data:
-        print("\nCreating payment records...")
+        if verbose:
+            print("\nCreating payment records...")
         for payment_data in json_data['payments']:
             # Parse payment date
             if 'payment_date' in payment_data:
@@ -214,20 +220,25 @@ def create_customer_from_json(db: DatabaseManager, json_data: dict):
                     debt_id=debt_id,
                     **payment_data
                 )
-                print(f"✓ Created payment: ${payment.amount:.2f} for {debt_type} (ID: {payment.id})")
+                if verbose:
+                    print(f"✓ Created payment: ${payment.amount:.2f} for {debt_type} (ID: {payment.id})")
             else:
-                print(f"⚠ Warning: Could not find debt for payment type '{debt_type}'")
+                if verbose:
+                    print(f"⚠ Warning: Could not find debt for payment type '{debt_type}'")
     
     # Create accounts
     if 'accounts' in json_data:
-        print("\nCreating account records...")
+        if verbose:
+            print("\nCreating account records...")
         for account_data in json_data['accounts']:
             account = db.create_account(customer_id=customer.id, **account_data)
-            print(f"✓ Created account: {account.account_type} - {account.account_number[:4]}*** (ID: {account.id})")
+            if verbose:
+                print(f"✓ Created account: {account.account_type} - {account.account_number[:4]}*** (ID: {account.id})")
     
     # Create communication logs
     if 'communications' in json_data:
-        print("\nCreating communication logs...")
+        if verbose:
+            print("\nCreating communication logs...")
         for comm_data in json_data['communications']:
             # Parse timestamp
             if 'timestamp' in comm_data:
@@ -239,76 +250,114 @@ def create_customer_from_json(db: DatabaseManager, json_data: dict):
                 comm_data['communication_type'] = CommunicationType[comm_type_str] if hasattr(CommunicationType, comm_type_str) else CommunicationType.CALL
             
             log = db.log_communication(customer_id=customer.id, **comm_data)
-            print(f"✓ Created communication log: {log.communication_type.value} - {log.direction} (ID: {log.id})")
+            if verbose:
+                print(f"✓ Created communication log: {log.communication_type.value} - {log.direction} (ID: {log.id})")
     
     return customer
 
 
 def main():
-    """Main example function"""
+    """Main example function - Loads all 10 customers from JSON files"""
     # Initialize database
     print("Initializing database...")
     db = DatabaseManager()
     db.create_tables()
     print("✓ Database initialized\n")
     
-    # Parse JSON data
-    print("Parsing JSON data...")
-    json_data = json.loads(example_customer_json)
-    print("✓ JSON parsed\n")
+    # Get the customers directory path
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    customers_dir = os.path.join(current_dir, 'customers')
     
-    # Create customer from JSON
-    print("=" * 60)
-    print("CREATING CUSTOMER FROM JSON")
-    print("=" * 60)
-    customer = create_customer_from_json(db, json_data)
+    # Find all customer JSON files (excluding sample_customer.json)
+    customer_files = []
+    if os.path.exists(customers_dir):
+        for filename in sorted(os.listdir(customers_dir)):
+            if filename.endswith('.json') and filename != 'sample_customer.json':
+                customer_files.append(os.path.join(customers_dir, filename))
     
-    # Display summary
+    if not customer_files:
+        print("⚠ No customer JSON files found in customers/ directory")
+        print("Falling back to example customer...")
+        json_data = json.loads(example_customer_json)
+        customer = create_customer_from_json(db, json_data)
+        return
+    
+    print(f"Found {len(customer_files)} customer files to load\n")
+    print("=" * 60)
+    print(f"LOADING {len(customer_files)} CUSTOMERS INTO DATABASE")
+    print("=" * 60)
+    
+    customers_loaded = []
+    
+    # Load each customer
+    for i, file_path in enumerate(customer_files, 1):
+        filename = os.path.basename(file_path)
+        print(f"\n[{i}/{len(customer_files)}] Loading {filename}...")
+        print("-" * 60)
+        
+        try:
+            customer = load_customer_from_file(db, file_path, verbose=False)
+            customers_loaded.append(customer)
+            
+            # Get quick summary
+            summary = db.get_customer_summary(customer.id)
+            print(f"✓ {customer.first_name} {customer.last_name} (ID: {customer.id})")
+            print(f"  Debt: ${summary['total_debt']:.2f} | Payments: {summary['payment_count']} | Communications: {len(summary['recent_communications'])}")
+        except Exception as e:
+            print(f"✗ Error loading {filename}: {str(e)}")
+            continue
+    
+    # Display summary statistics
     print("\n" + "=" * 60)
-    print("CUSTOMER SUMMARY")
+    print("LOADING SUMMARY")
     print("=" * 60)
-    summary = db.get_customer_summary(customer.id)
+    print(f"\nTotal customers loaded: {len(customers_loaded)}")
     
-    print(f"\nCustomer: {summary['customer'].first_name} {summary['customer'].last_name}")
-    print(f"Phone: {summary['customer'].phone_primary}")
-    print(f"Email: {summary['customer'].email}")
-    print(f"Total Debt: ${summary['total_debt']:.2f}")
-    print(f"Active Debts: {summary['active_debt_count']}")
-    print(f"Total Paid: ${summary['total_paid']:.2f}")
-    print(f"Payment Count: {summary['payment_count']}")
-    print(f"Recent Communications: {len(summary['recent_communications'])}")
+    if customers_loaded:
+        total_debt = sum(db.get_total_debt(c.id) for c in customers_loaded)
+        total_customers = len(customers_loaded)
+        
+        print(f"Total debt across all customers: ${total_debt:,.2f}")
+        print(f"Average debt per customer: ${total_debt/total_customers:,.2f}")
+        
+        # Show first 3 customers as examples
+        print("\n" + "-" * 60)
+        print("SAMPLE CUSTOMER SUMMARIES (First 3):")
+        print("-" * 60)
+        
+        for customer in customers_loaded[:3]:
+            summary = db.get_customer_summary(customer.id)
+            print(f"\n{customer.first_name} {customer.last_name} (ID: {customer.id})")
+            print(f"  Phone: {customer.phone_primary}")
+            print(f"  Email: {customer.email}")
+            print(f"  Total Debt: ${summary['total_debt']:.2f}")
+            print(f"  Active Debts: {summary['active_debt_count']}")
+            print(f"  Total Paid: ${summary['total_paid']:.2f}")
+            print(f"  Payment Count: {summary['payment_count']}")
+            print(f"  Communications: {len(summary['recent_communications'])}")
+        
+        if len(customers_loaded) > 3:
+            print(f"\n... and {len(customers_loaded) - 3} more customers")
     
-    print("\n" + "-" * 60)
-    print("Debt Details:")
-    for debt in summary['debts']:
-        print(f"  • {debt.debt_type}: ${debt.current_balance:.2f} (Status: {debt.status.value})")
-    
-    print("\n" + "-" * 60)
-    print("Recent Payments:")
-    for payment in summary['payments'][:5]:  # Show last 5 payments
-        print(f"  • ${payment.amount:.2f} on {payment.payment_date.strftime('%Y-%m-%d')} ({payment.status.value})")
-    
-    print("\n" + "-" * 60)
-    print("Recent Communications:")
-    for comm in summary['recent_communications'][:5]:  # Show last 5 communications
-        print(f"  • {comm.communication_type.value} ({comm.direction}) on {comm.timestamp.strftime('%Y-%m-%d %H:%M')}")
-        if comm.outcome:
-            print(f"    Outcome: {comm.outcome}")
+    print("\n" + "=" * 60)
+    print("✓ Database population complete!")
+    print("=" * 60)
 
 
 # Example: Loading from a JSON file
-def load_customer_from_file(db: DatabaseManager, file_path: str):
+def load_customer_from_file(db: DatabaseManager, file_path: str, verbose: bool = False):
     """
     Load customer data from a JSON file and create database records.
     
     Args:
         db: DatabaseManager instance
         file_path: Path to JSON file
+        verbose: If True, print detailed progress messages
     """
     with open(file_path, 'r') as f:
         json_data = json.load(f)
     
-    return create_customer_from_json(db, json_data)
+    return create_customer_from_json(db, json_data, verbose=verbose)
 
 
 # Example: Loading multiple customers from JSON array
