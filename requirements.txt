@@ -1,0 +1,3 @@
+elevenlabs
+python-dotenv
+requests
