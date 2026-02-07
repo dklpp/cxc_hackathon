@@ -1,1 +1,12 @@
 .env
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+uv.lock
+*.egg-info/
+dist/
+build/
