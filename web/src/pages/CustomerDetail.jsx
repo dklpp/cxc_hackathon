@@ -284,18 +284,6 @@ function CustomerDetail() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Active Debts</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {debts.filter((d) => d.status === 'active').length}
-              </p>
-            </div>
-            <FileText className="h-8 w-8 text-gray-500" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
               <p className="text-sm text-gray-600">Credit Score</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">
                 {customer.credit_score || 'N/A'}
@@ -653,14 +641,14 @@ function CustomerDetail() {
               <div>
                 <button
                   onClick={() => setPrepareScriptExpanded(!prepareScriptExpanded)}
-                  className="w-full flex items-center justify-between text-left mb-2"
+                  className="w-full flex items-center text-left mb-2"
                 >
-                  <span className="text-sm font-medium text-gray-700">Call Preparation Script</span>
                   {prepareScriptExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                    <ChevronDown className="h-4 w-4 text-gray-400 mr-2" />
                   ) : (
-                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                    <ChevronRight className="h-4 w-4 text-gray-400 mr-2" />
                   )}
+                  <span className="text-sm font-medium text-gray-700">Call Preparation Script</span>
                 </button>
                 {prepareScriptExpanded && (
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -803,14 +791,14 @@ function CustomerDetail() {
               <div>
                 <button
                   onClick={() => setViewScriptExpanded(!viewScriptExpanded)}
-                  className="w-full flex items-center justify-between text-left mb-2"
+                  className="w-full flex items-center text-left mb-2"
                 >
-                  <span className="text-sm font-medium text-gray-700">Strategy Content</span>
                   {viewScriptExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                    <ChevronDown className="h-4 w-4 text-gray-400 mr-2" />
                   ) : (
-                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                    <ChevronRight className="h-4 w-4 text-gray-400 mr-2" />
                   )}
+                  <span className="text-sm font-medium text-gray-700">Strategy Content</span>
                 </button>
                 {viewScriptExpanded && (
                   <div className="prose max-w-none bg-gray-50 p-4 rounded-lg border border-gray-200">

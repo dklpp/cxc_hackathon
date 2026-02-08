@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ChevronDown,
   Plus,
+  Trash2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import ReactMarkdown from 'react-markdown'
@@ -163,6 +164,46 @@ function CallHistory() {
       console.error(err)
     } finally {
       setUploading(false)
+    }
+  }
+
+  const handleDeleteFile = async (fileType) => {
+    if (!selectedCall) return
+    
+    if (!window.confirm(`Are you sure you want to delete this ${fileType} file?`)) {
+      return
+    }
+
+    try {
+      // Determine call_id for the API
+      let callId = selectedCall.id
+      if (callId.startsWith('scheduled_')) {
+        callId = callId.replace('scheduled_', '')
+      } else if (selectedCall.scheduled_call_id) {
+        callId = selectedCall.scheduled_call_id.toString()
+      } else if (fileType === 'transcript' && selectedCall.type === 'completed') {
+        callId = selectedCall.id.toString()
+      }
+
+      await api.delete(`/call-history/${callId}/file`, {
+        params: { file_type: fileType }
+      })
+      
+      alert(`${fileType.charAt(0).toUpperCase() + fileType.slice(1)} file deleted successfully!`)
+      
+      // Clear the content from state
+      if (fileType === 'planning') {
+        setPlanningContent(null)
+      } else if (fileType === 'transcript') {
+        setTranscriptContent(null)
+      }
+      
+      // Refresh call history and details
+      fetchCallHistory()
+      handleViewDetails(selectedCall)
+    } catch (err) {
+      alert(`Failed to delete ${fileType} file`)
+      console.error(err)
     }
   }
 
@@ -380,17 +421,26 @@ function CallHistory() {
                 {/* Planning File */}
                 {planningContent && (
                   <div>
-                    <button
-                      onClick={() => setPlanningExpanded(!planningExpanded)}
-                      className="w-full flex items-center justify-between text-left mb-2"
-                    >
-                      <h4 className="text-lg font-semibold text-gray-900">Planning File</h4>
-                      {planningExpanded ? (
-                        <ChevronDown className="h-5 w-5 text-gray-400" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-gray-400" />
-                      )}
-                    </button>
+                    <div className="w-full flex items-center justify-between mb-2">
+                      <button
+                        onClick={() => setPlanningExpanded(!planningExpanded)}
+                        className="flex items-center text-left flex-1"
+                      >
+                        {planningExpanded ? (
+                          <ChevronDown className="h-5 w-5 text-gray-400 mr-2" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 text-gray-400 mr-2" />
+                        )}
+                        <h4 className="text-lg font-semibold text-gray-900">Planning File</h4>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteFile('planning')}
+                        className="ml-2 p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                        title="Delete planning file"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </div>
                     {planningExpanded && (
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 prose max-w-none">
                         <ReactMarkdown>{planningContent}</ReactMarkdown>
@@ -402,17 +452,26 @@ function CallHistory() {
                 {/* Transcript */}
                 {transcriptContent && (
                   <div>
-                    <button
-                      onClick={() => setTranscriptExpanded(!transcriptExpanded)}
-                      className="w-full flex items-center justify-between text-left mb-2"
-                    >
-                      <h4 className="text-lg font-semibold text-gray-900">Transcript</h4>
-                      {transcriptExpanded ? (
-                        <ChevronDown className="h-5 w-5 text-gray-400" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-gray-400" />
-                      )}
-                    </button>
+                    <div className="w-full flex items-center justify-between mb-2">
+                      <button
+                        onClick={() => setTranscriptExpanded(!transcriptExpanded)}
+                        className="flex items-center text-left flex-1"
+                      >
+                        {transcriptExpanded ? (
+                          <ChevronDown className="h-5 w-5 text-gray-400 mr-2" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 text-gray-400 mr-2" />
+                        )}
+                        <h4 className="text-lg font-semibold text-gray-900">Transcript</h4>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteFile('transcript')}
+                        className="ml-2 p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                        title="Delete transcript file"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </div>
                     {transcriptExpanded && (
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 prose max-w-none">
                         <ReactMarkdown>{transcriptContent}</ReactMarkdown>

@@ -809,6 +809,72 @@ async def get_transcript_file(call_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/api/call-history/{call_id}/file")
+async def delete_call_file(
+    call_id: str,
+    file_type: str  # "planning" or "transcript"
+):
+    """Delete a file associated with a call"""
+    try:
+        # Handle both numeric IDs and "scheduled_{id}" format
+        if call_id.startswith("scheduled_"):
+            call_id_int = int(call_id.replace("scheduled_", ""))
+        else:
+            call_id_int = int(call_id)
+        
+        # Determine file path based on file type
+        if file_type == "planning":
+            file_path = FILES_DIR.parent / f"call_files/planning/call_{call_id_int}_planning.md"
+        elif file_type == "transcript":
+            # For transcripts, check if this is a scheduled call with a communication_log_id
+            scheduled_call = db_manager.get_session().query(ScheduledCall).filter(
+                ScheduledCall.id == call_id_int
+            ).first()
+            
+            if scheduled_call and scheduled_call.communication_log_id:
+                # Use communication_log_id for the transcript file
+                transcript_id = scheduled_call.communication_log_id
+            else:
+                # Use call_id directly (it's a communication_log_id)
+                transcript_id = call_id_int
+            
+            file_path = FILES_DIR.parent / f"call_files/transcripts/call_{transcript_id}_transcript.md"
+        else:
+            raise HTTPException(status_code=400, detail="Invalid file_type. Must be 'planning' or 'transcript'")
+        
+        # Check if file exists
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"{file_type.capitalize()} file not found")
+        
+        # Delete the file
+        file_path.unlink()
+        
+        # If it's a planning file, also clear the database reference
+        if file_type == "planning":
+            # Get the scheduled call to find associated planning scripts
+            scheduled_call = db_manager.get_session().query(ScheduledCall).filter(
+                ScheduledCall.id == call_id_int
+            ).first()
+            
+            if scheduled_call:
+                # Delete planning script records from database
+                planning_scripts = db_manager.get_session().query(CallPlanningScript).filter(
+                    CallPlanningScript.scheduled_call_id == call_id_int
+                ).all()
+                
+                for script in planning_scripts:
+                    db_manager.get_session().delete(script)
+                db_manager.get_session().commit()
+        
+        return {
+            "success": True,
+            "message": f"{file_type.capitalize()} file deleted successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 class SchedulePlannedCallRequest(BaseModel):
     scheduled_time: Optional[datetime] = None
     use_auto_time: bool = False
