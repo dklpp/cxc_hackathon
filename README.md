@@ -47,7 +47,6 @@ A four-stage automated pipeline that analyzes customer data, generates personali
 ### AI/ML Services
 - **Google Gemini** (via OpenRouter) - Strategy generation & transcript analysis
 - **ElevenLabs** - AI voice synthesis for outbound calls
-- **OpenAI Realtime API** - Voice processing
 - **Deepgram** - Speech-to-text transcription
 
 ### Communication
@@ -141,8 +140,6 @@ Edit `.env` with your API keys:
 ```
 TWILIO_ACCOUNT_SID=your_twilio_sid
 TWILIO_AUTH_TOKEN=your_twilio_token
-OPENAI_API_KEY=your_openai_key
-OPENROUTERS_API_KEY=your_openrouter_key
 ELEVEN_LABS_API_KEY=your_elevenlabs_key
 DEEPGRAM_API_KEY=your_deepgram_key
 ```
@@ -235,7 +232,3 @@ The system includes 10 realistic customer profiles:
 - Reduce research and preparation time per client interaction
 - Scale personalized outreach without proportional increases in resources
 - Improve customer satisfaction through relevant, well-timed communications
-
-## License
-
-MIT
