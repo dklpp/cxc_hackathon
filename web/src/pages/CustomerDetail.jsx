@@ -24,6 +24,8 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronRight,
+  Edit,
+  Check,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import ReactMarkdown from 'react-markdown'
@@ -59,6 +61,17 @@ function CustomerDetail() {
   const [viewScriptExpanded, setViewScriptExpanded] = useState(false)
   const [showCancelCallModal, setShowCancelCallModal] = useState(false)
   const [callToCancel, setCallToCancel] = useState(null)
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [emailType, setEmailType] = useState('email') // 'email' or 'sms'
+  const [preparingEmail, setPreparingEmail] = useState(false)
+  const [plannedEmails, setPlannedEmails] = useState([])
+  const [showEmailPreviewModal, setShowEmailPreviewModal] = useState(false)
+  const [previewEmail, setPreviewEmail] = useState(null)
+  const [editingEmail, setEditingEmail] = useState(false)
+  const [editedEmailContent, setEditedEmailContent] = useState('')
+  const [editedEmailSubject, setEditedEmailSubject] = useState('')
+  const [savingEmail, setSavingEmail] = useState(false)
+  const [checkingEmailStatus, setCheckingEmailStatus] = useState(false)
 
   useEffect(() => {
     fetchCustomerDetail()
@@ -89,6 +102,7 @@ function CustomerDetail() {
       setDebts(response.data.debts)
       setScheduledCalls(response.data.scheduled_calls)
       setCallPlanningScripts(response.data.call_planning_scripts || [])
+      setPlannedEmails(response.data.planned_emails || [])
       setError(null)
     } catch (err) {
       setError('Failed to load customer details')
@@ -279,6 +293,169 @@ function CustomerDetail() {
     }
   }
 
+  const handlePrepareEmail = async () => {
+    try {
+      setPreparingEmail(true)
+      setShowEmailModal(false)
+      const response = await api.post(`/customers/${id}/prepare-email`, {
+        communication_type: emailType
+      })
+      
+      const emailId = response.data.email_id
+      
+      const loadingToastId = toast.loading('Generating email content...', {
+        title: 'Email Generation',
+      })
+      
+      setCheckingEmailStatus(true)
+      
+      // Poll for email content generation completion
+      let checkCount = 0
+      const maxChecks = 60 // Maximum 60 checks (120 seconds) - email generation can take longer
+      
+      const checkEmailReady = async () => {
+        checkCount++
+        try {
+          const emailResponse = await api.get(`/customers/${id}/planned-email/${emailId}`)
+          const email = emailResponse.data
+          
+          // Check if content is generated (not just placeholder)
+          if (email.content && email.content !== 'Generating email content...' && email.status === 'planned') {
+            // Check if there's an error in the content
+            if (email.content.startsWith('Error:')) {
+              toast.removeToast(loadingToastId)
+              toast.error(email.content, {
+                title: 'Generation Failed',
+              })
+              setCheckingEmailStatus(false)
+              return
+            }
+            
+            toast.removeToast(loadingToastId)
+            setPreviewEmail(email)
+            setEditedEmailContent(email.content)
+            setEditedEmailSubject(email.subject || '')
+            setShowEmailPreviewModal(true)
+            setEditingEmail(false)
+            setCheckingEmailStatus(false)
+            fetchCustomerDetail()
+          } else if (checkCount < maxChecks) {
+            // Check again in 2 seconds
+            setTimeout(checkEmailReady, 2000)
+          } else {
+            // Timeout - stop checking
+            toast.removeToast(loadingToastId)
+            // Check if there's an error message in notes or content
+            if (email.notes && email.notes.includes('Error')) {
+              toast.error(email.notes, {
+                title: 'Generation Failed',
+              })
+            } else if (email.content && email.content.includes('Error:')) {
+              toast.error(email.content, {
+                title: 'Generation Failed',
+              })
+            } else {
+              toast.error('Email generation is taking longer than expected. The email may still be generating in the background. Check the "Last Interactions" section.', {
+                title: 'Generation Timeout',
+              })
+            }
+            setCheckingEmailStatus(false)
+          }
+        } catch (err) {
+          console.error('Error checking email status:', err)
+          if (checkCount < maxChecks) {
+            setTimeout(checkEmailReady, 2000)
+          } else {
+            toast.removeToast(loadingToastId)
+            toast.error('Failed to check email status', {
+              title: 'Error',
+            })
+            setCheckingEmailStatus(false)
+          }
+        }
+      }
+      
+      // Start checking after 3 seconds
+      setTimeout(checkEmailReady, 3000)
+    } catch (err) {
+      toast.remove()
+      toast.error('Failed to prepare email: ' + (err.response?.data?.detail || err.message), {
+        title: 'Email Preparation Failed',
+      })
+      console.error(err)
+    } finally {
+      setPreparingEmail(false)
+    }
+  }
+
+  const handleSendEmail = async (emailId) => {
+    try {
+      await api.post(`/customers/${id}/send-email/${emailId}`)
+      toast.success('Email sent successfully', {
+        title: 'Email Sent',
+      })
+      setShowEmailPreviewModal(false)
+      setPreviewEmail(null)
+      fetchCustomerDetail()
+    } catch (err) {
+      toast.error('Failed to send email: ' + (err.response?.data?.detail || err.message), {
+        title: 'Send Failed',
+      })
+      console.error(err)
+    }
+  }
+
+  const handleDeclineEmail = async () => {
+    if (!previewEmail) return
+    
+    try {
+      await api.delete(`/customers/${id}/planned-email/${previewEmail.id}`)
+      toast.success('Email cancelled', {
+        title: 'Email Cancelled',
+      })
+      setShowEmailPreviewModal(false)
+      setPreviewEmail(null)
+      fetchCustomerDetail()
+    } catch (err) {
+      toast.error('Failed to cancel email: ' + (err.response?.data?.detail || err.message), {
+        title: 'Cancel Failed',
+      })
+      console.error(err)
+    }
+  }
+
+  const handleSaveEditedEmail = async () => {
+    if (!previewEmail) return
+    
+    try {
+      setSavingEmail(true)
+      await api.put(`/customers/${id}/planned-email/${previewEmail.id}`, {
+        subject: editedEmailSubject,
+        content: editedEmailContent
+      })
+      
+      toast.success('Email updated successfully', {
+        title: 'Email Updated',
+      })
+      
+      // Update preview email with edited content
+      setPreviewEmail({
+        ...previewEmail,
+        subject: editedEmailSubject,
+        content: editedEmailContent
+      })
+      setEditingEmail(false)
+      fetchCustomerDetail()
+    } catch (err) {
+      toast.error('Failed to save email: ' + (err.response?.data?.detail || err.message), {
+        title: 'Save Failed',
+      })
+      console.error(err)
+    } finally {
+      setSavingEmail(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -333,6 +510,13 @@ function CustomerDetail() {
             >
               <Phone className="h-4 w-4 mr-2" />
               Schedule Automatic Call
+            </button>
+            <button
+              onClick={() => setShowEmailModal(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Prepare Email
             </button>
           </div>
         </div>
@@ -520,7 +704,7 @@ function CustomerDetail() {
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Last Calls</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Last Interactions</h2>
               <Link
                 to={`/customer/${id}/call-history`}
                 className="inline-flex items-center px-3 py-1.5 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
@@ -529,116 +713,197 @@ function CustomerDetail() {
                 View All
               </Link>
             </div>
-            {scheduledCalls.length === 0 ? (
-              <p className="text-gray-500 text-sm">No calls</p>
+            {scheduledCalls.length === 0 && plannedEmails.length === 0 ? (
+              <p className="text-gray-500 text-sm">No interactions</p>
             ) : (
               <div className="space-y-3">
-                {scheduledCalls
+                {[
+                  ...scheduledCalls.map(call => ({ ...call, interactionType: 'call' })),
+                  ...plannedEmails.map(email => ({ ...email, interactionType: 'email' }))
+                ]
+                  .filter(item => item.status !== 'cancelled') // Filter out cancelled interactions
                   .sort((a, b) => {
-                    // Sort by scheduled_time or created_at, most recent first
-                    const dateA = a.scheduled_time ? new Date(a.scheduled_time) : new Date(a.created_at)
-                    const dateB = b.scheduled_time ? new Date(b.scheduled_time) : new Date(b.created_at)
+                    // Sort by scheduled_time/sent_at or created_at, most recent first
+                    const dateA = a.scheduled_time ? new Date(a.scheduled_time) 
+                      : a.sent_at ? new Date(a.sent_at)
+                      : new Date(a.created_at)
+                    const dateB = b.scheduled_time ? new Date(b.scheduled_time)
+                      : b.sent_at ? new Date(b.sent_at)
+                      : new Date(b.created_at)
                     return dateB - dateA
                   })
                   .slice(0, 3)
-                  .map((call) => (
-                  <div
-                    key={call.id}
-                    className={`border border-gray-200 rounded-lg p-3 ${
-                      call.status === 'planned' ? 'bg-purple-50' 
-                      : call.status === 'pending' ? 'bg-yellow-50'
-                      : call.status === 'completed' ? 'bg-green-50'
-                      : 'bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-900">
-                        {call.scheduled_time
-                          ? format(new Date(call.scheduled_time), 'MMM d, yyyy h:mm a')
-                          : call.created_at
-                          ? format(new Date(call.created_at), 'MMM d, yyyy h:mm a')
-                          : 'Not scheduled yet'}
-                      </span>
-                      <div className="flex items-center space-x-2">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(
-                            call.status
-                          )}`}
+                  .map((item) => {
+                    if (item.interactionType === 'email') {
+                      const email = item
+                      return (
+                        <div
+                          key={`email_${email.id}`}
+                          className={`border border-gray-200 rounded-lg p-3 ${
+                            email.status === 'planned' ? 'bg-purple-50' 
+                            : email.status === 'sent' ? 'bg-green-50'
+                            : 'bg-gray-50'
+                          }`}
                         >
-                          {call.status === 'pending' ? 'automatic' : call.status}
-                        </span>
-                        {call.status === 'planned' && (
-                          <button
-                            onClick={async () => {
-                              // Get planning script for this call
-                              try {
-                                const scriptsResponse = await api.get(`/customers/${id}/call-planning-scripts`, {
-                                  params: { scheduled_call_id: call.id }
-                                })
-                                if (scriptsResponse.data.length > 0) {
-                                  const script = scriptsResponse.data[0]
-                                  setSuggestedTime(script.suggested_time)
-                                  setSuggestedDay(script.suggested_day)
-                                }
-                                setSchedulingPlannedCallId(call.id)
-                                setShowScheduleModal(true)
-                                setScheduleNotes(`Scheduling planned call ${call.id}`)
-                              } catch (err) {
-                                setSchedulingPlannedCallId(call.id)
-                                setShowScheduleModal(true)
-                              }
-                            }}
-                            className="text-primary-600 hover:text-primary-800 text-xs font-medium"
-                            title="Schedule this call"
-                          >
-                            Schedule
-                          </button>
-                        )}
-                        {(call.status === 'pending' || call.status === 'planned') && (
-                          <button
-                            onClick={() => handleCancelCallClick(call.id)}
-                            className="text-red-600 hover:text-red-800"
-                            title="Cancel call"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {call.planning_script ? (
-                      <div className="mt-2 p-2 bg-white rounded border border-gray-200">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-gray-700">Planning Script</span>
-                          <button
-                            onClick={() => {
-                              setSelectedScript(call.planning_script)
-                              setShowScriptModal(true)
-                            }}
-                            className="text-xs text-primary-600 hover:text-primary-700"
-                          >
-                            View
-                          </button>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center space-x-2">
+                              <Mail className="h-4 w-4 text-gray-500" />
+                              <span className="text-sm font-medium text-gray-900">
+                                {email.sent_at
+                                  ? format(new Date(email.sent_at), 'MMM d, yyyy h:mm a')
+                                  : email.scheduled_send_time
+                                  ? format(new Date(email.scheduled_send_time), 'MMM d, yyyy h:mm a')
+                                  : email.created_at
+                                  ? format(new Date(email.created_at), 'MMM d, yyyy h:mm a')
+                                  : 'Not scheduled yet'}
+                              </span>
+                              <span className="text-xs text-gray-500 uppercase">
+                                {email.communication_type}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(
+                                  email.status
+                                )}`}
+                              >
+                                {email.status}
+                              </span>
+                              {email.status === 'planned' && (
+                                <button
+                                  onClick={() => handleSendEmail(email.id)}
+                                  className="text-primary-600 hover:text-primary-800 text-xs font-medium"
+                                  title="Send email"
+                                >
+                                  Send
+                                </button>
+                              )}
+                              {email.status === 'planned' && (
+                                <button
+                                  onClick={() => handleCancelCallClick(`email_${email.id}`)}
+                                  className="text-red-600 hover:text-red-800"
+                                  title="Cancel email"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {email.subject && (
+                            <p className="text-xs font-medium text-gray-700 mt-1">Subject: {email.subject}</p>
+                          )}
+                          {email.content && (
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{email.content.substring(0, 100)}...</p>
+                          )}
                         </div>
-                        {call.planning_script.suggested_time && (
-                          <p className="text-xs text-gray-500">
-                            Suggested: {call.planning_script.suggested_time}
-                            {call.planning_script.suggested_day && ` on ${call.planning_script.suggested_day}`}
-                          </p>
-                        )}
-                      </div>
-                    ) : call.status === 'planned' && call.planning_file_path === null && (
-                      <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-3 w-3 text-yellow-600 animate-spin" />
-                          <span className="text-xs text-yellow-700">Generating planning script...</span>
+                      )
+                    } else {
+                      const call = item
+                      return (
+                        <div
+                          key={call.id}
+                          className={`border border-gray-200 rounded-lg p-3 ${
+                            call.status === 'planned' ? 'bg-purple-50' 
+                            : call.status === 'pending' ? 'bg-yellow-50'
+                            : call.status === 'completed' ? 'bg-green-50'
+                            : 'bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center space-x-2">
+                              <Phone className="h-4 w-4 text-gray-500" />
+                              <span className="text-sm font-medium text-gray-900">
+                                {call.scheduled_time
+                                  ? format(new Date(call.scheduled_time), 'MMM d, yyyy h:mm a')
+                                  : call.created_at
+                                  ? format(new Date(call.created_at), 'MMM d, yyyy h:mm a')
+                                  : 'Not scheduled yet'}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(
+                                  call.status
+                                )}`}
+                              >
+                                {call.status === 'pending' ? 'automatic' : call.status}
+                              </span>
+                              {call.status === 'planned' && (
+                                <button
+                                  onClick={async () => {
+                                    // Get planning script for this call
+                                    try {
+                                      const scriptsResponse = await api.get(`/customers/${id}/call-planning-scripts`, {
+                                        params: { scheduled_call_id: call.id }
+                                      })
+                                      if (scriptsResponse.data.length > 0) {
+                                        const script = scriptsResponse.data[0]
+                                        setSuggestedTime(script.suggested_time)
+                                        setSuggestedDay(script.suggested_day)
+                                      }
+                                      setSchedulingPlannedCallId(call.id)
+                                      setShowScheduleModal(true)
+                                      setScheduleNotes(`Scheduling planned call ${call.id}`)
+                                    } catch (err) {
+                                      setSchedulingPlannedCallId(call.id)
+                                      setShowScheduleModal(true)
+                                    }
+                                  }}
+                                  className="text-primary-600 hover:text-primary-800 text-xs font-medium"
+                                  title="Schedule this call"
+                                >
+                                  Schedule
+                                </button>
+                              )}
+                              {(call.status === 'pending' || call.status === 'planned') && (
+                                <button
+                                  onClick={() => handleCancelCallClick(call.id)}
+                                  className="text-red-600 hover:text-red-800"
+                                  title="Cancel call"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {call.planning_script || call.planning_file_path ? (
+                            <div className="mt-2 p-2 bg-white rounded border border-gray-200">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-medium text-gray-700">Planning Script</span>
+                                {call.planning_script && (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedScript(call.planning_script)
+                                      setShowScriptModal(true)
+                                    }}
+                                    className="text-xs text-primary-600 hover:text-primary-700"
+                                  >
+                                    View
+                                  </button>
+                                )}
+                              </div>
+                              {call.planning_script?.suggested_time && (
+                                <p className="text-xs text-gray-500">
+                                  Suggested: {call.planning_script.suggested_time}
+                                  {call.planning_script.suggested_day && ` on ${call.planning_script.suggested_day}`}
+                                </p>
+                              )}
+                            </div>
+                          ) : call.status === 'planned' && (
+                            <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
+                              <div className="flex items-center space-x-2">
+                                <Clock className="h-3 w-3 text-yellow-600 animate-spin" />
+                                <span className="text-xs text-yellow-700">Generating planning script...</span>
+                              </div>
+                            </div>
+                          )}
+                          {call.notes && (
+                            <p className="text-xs text-gray-600 mt-1">{call.notes}</p>
+                          )}
                         </div>
-                      </div>
-                    )}
-                    {call.notes && (
-                      <p className="text-xs text-gray-600 mt-1">{call.notes}</p>
-                    )}
-                  </div>
-                ))}
+                      )
+                    }
+                  })}
               </div>
             )}
           </div>
@@ -773,6 +1038,72 @@ function CustomerDetail() {
                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Modal */}
+      {showEmailModal && customer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Customize Email</h3>
+              <button
+                onClick={() => setShowEmailModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Communication Type
+                </label>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setEmailType('email')}
+                    className={`flex-1 px-4 py-2 rounded-lg border-2 transition-colors ${
+                      emailType === 'email'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Mail className="h-4 w-4 mx-auto mb-1" />
+                    Email
+                  </button>
+                  <button
+                    onClick={() => setEmailType('sms')}
+                    className={`flex-1 px-4 py-2 rounded-lg border-2 transition-colors ${
+                      emailType === 'sms'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Phone className="h-4 w-4 mx-auto mb-1" />
+                    SMS
+                  </button>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600">
+                This will generate a personalized {emailType === 'email' ? 'email' : 'SMS'} using AI strategy planning.
+              </p>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowEmailModal(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePrepareEmail}
+                disabled={preparingEmail}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {preparingEmail ? 'Preparing...' : `Create ${emailType === 'email' ? 'Email' : 'SMS'}`}
               </button>
             </div>
           </div>
@@ -1052,6 +1383,135 @@ function CustomerDetail() {
         confirmButtonClass="bg-red-600 hover:bg-red-700"
         isLoading={false}
       />
+
+      {/* Email Preview Modal */}
+      {showEmailPreviewModal && previewEmail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">
+                {previewEmail.communication_type === 'email' ? 'Email' : 'SMS'} Preview
+              </h3>
+              <button
+                onClick={() => {
+                  setShowEmailPreviewModal(false)
+                  setPreviewEmail(null)
+                  setEditingEmail(false)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {previewEmail.communication_type === 'email' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Subject
+                  </label>
+                  {editingEmail ? (
+                    <input
+                      type="text"
+                      value={editedEmailSubject}
+                      onChange={(e) => setEditedEmailSubject(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Email subject"
+                    />
+                  ) : (
+                    <p className="text-sm font-medium text-gray-900 bg-gray-50 p-3 rounded-lg">
+                      {previewEmail.subject || 'No subject'}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {previewEmail.communication_type === 'email' ? 'Email' : 'SMS'} Content
+                </label>
+                {editingEmail ? (
+                  <textarea
+                    value={editedEmailContent}
+                    onChange={(e) => setEditedEmailContent(e.target.value)}
+                    rows={15}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                    placeholder="Email content"
+                  />
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="prose max-w-none whitespace-pre-wrap text-sm">
+                      {previewEmail.content}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+              {editingEmail ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setEditingEmail(false)
+                      setEditedEmailContent(previewEmail.content)
+                      setEditedEmailSubject(previewEmail.subject || '')
+                    }}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEditedEmail}
+                    disabled={savingEmail}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                  >
+                    {savingEmail ? (
+                      <>
+                        <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        <span>Save</span>
+                      </>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleDeclineEmail}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+                  >
+                    <X className="h-4 w-4" />
+                    <span>Decline</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingEmail(true)
+                      setEditedEmailContent(previewEmail.content)
+                      setEditedEmailSubject(previewEmail.subject || '')
+                    }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    onClick={() => handleSendEmail(previewEmail.id)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                  >
+                    <Check className="h-4 w-4" />
+                    <span>Confirm & Send</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

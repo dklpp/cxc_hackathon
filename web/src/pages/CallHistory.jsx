@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../api/client'
 import { useToastContext } from '../App'
@@ -6,6 +6,7 @@ import ConfirmModal from '../components/ConfirmModal'
 import {
   ArrowLeft,
   Phone,
+  Mail,
   Upload,
   FileText,
   Calendar,
@@ -20,12 +21,17 @@ import {
   ChevronDown,
   Plus,
   Trash2,
+  Edit,
+  Check,
+  Send,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import ReactMarkdown from 'react-markdown'
 
 function CallHistory() {
+  console.log('CallHistory component rendering')
   const { id } = useParams()
+  console.log('Customer ID from params:', id)
   const toast = useToastContext()
   const [plannedCalls, setPlannedCalls] = useState([])
   const [automaticCalls, setAutomaticCalls] = useState([])
@@ -47,43 +53,107 @@ function CallHistory() {
   const [callToCancel, setCallToCancel] = useState(null)
   const [showDeleteFileModal, setShowDeleteFileModal] = useState(false)
   const [fileToDelete, setFileToDelete] = useState(null)
+  const [editingEmail, setEditingEmail] = useState(false)
+  const [editedEmailContent, setEditedEmailContent] = useState('')
+  const [editedEmailSubject, setEditedEmailSubject] = useState('')
+  const [savingEmail, setSavingEmail] = useState(false)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [scheduleDateTime, setScheduleDateTime] = useState('')
+  const [scheduleNotes, setScheduleNotes] = useState('')
+  const [useAutoTime, setUseAutoTime] = useState(false)
+  const [suggestedTime, setSuggestedTime] = useState(null)
+  const [suggestedDay, setSuggestedDay] = useState(null)
+  const [schedulingPlannedCallId, setSchedulingPlannedCallId] = useState(null)
+  const [timeSlots, setTimeSlots] = useState([])
+  const [loadingTimeSlots, setLoadingTimeSlots] = useState(false)
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null)
+  const [scheduling, setScheduling] = useState(false)
+  const isPollingRef = useRef(false)
+
+  const fetchCallHistory = async () => {
+    if (!id) {
+      setError('Customer ID is required')
+      setLoading(false)
+      return Promise.resolve()
+    }
+    
+    try {
+      // Don't set loading to true if we're just polling (to avoid scroll reset)
+      // Only show loading on initial load or manual refresh
+      // Only show loading spinner on initial load
+      const isInitialLoad = loading && plannedCalls.length === 0 && automaticCalls.length === 0 && completedCalls.length === 0
+      if (isInitialLoad) {
+        setLoading(true)
+      }
+      setError(null)
+      const response = await api.get(`/customers/${id}/call-history`)
+      console.log('Call history response:', response.data)
+      
+      // Ensure we have arrays
+      const planned = Array.isArray(response.data?.planned) ? response.data.planned : []
+      const automatic = Array.isArray(response.data?.automatic) ? response.data.automatic : []
+      const completed = Array.isArray(response.data?.completed) ? response.data.completed : []
+      
+      // Only update state if data actually changed (to prevent unnecessary re-renders and scroll reset)
+      setPlannedCalls(prev => {
+        const prevStr = JSON.stringify(prev)
+        const newStr = JSON.stringify(planned)
+        return prevStr === newStr ? prev : planned
+      })
+      setAutomaticCalls(prev => {
+        const prevStr = JSON.stringify(prev)
+        const newStr = JSON.stringify(automatic)
+        return prevStr === newStr ? prev : automatic
+      })
+      setCompletedCalls(prev => {
+        const prevStr = JSON.stringify(prev)
+        const newStr = JSON.stringify(completed)
+        return prevStr === newStr ? prev : completed
+      })
+    } catch (err) {
+      const errorMessage = err.response?.data?.detail || err.message || 'Failed to load call history'
+      setError(errorMessage)
+      console.error('Error loading call history:', err)
+      console.error('Error response:', err.response)
+      
+      // Set empty arrays on error so UI still renders
+      setPlannedCalls([])
+      setAutomaticCalls([])
+      setCompletedCalls([])
+    } finally {
+      setLoading(false)
+    }
+    return Promise.resolve()
+  }
 
   useEffect(() => {
-    fetchCallHistory()
+    if (id) {
+      fetchCallHistory()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
   
-  // Poll for planning script updates
+  // Poll for planning script updates (only when there are planned calls without scripts)
   useEffect(() => {
-    if (!plannedCalls || plannedCalls.length === 0) return
+    // Don't poll if loading, no planned calls, or already polling
+    if (loading || !plannedCalls || plannedCalls.length === 0 || isPollingRef.current) return
     
     const interval = setInterval(() => {
       // Check if there are planned calls without planning scripts
       const hasPendingPlanning = plannedCalls.some(
         call => !call.planning_script
       )
-      if (hasPendingPlanning) {
-        fetchCallHistory()
+      if (hasPendingPlanning && !loading && !isPollingRef.current) {
+        isPollingRef.current = true
+        fetchCallHistory().finally(() => {
+          isPollingRef.current = false
+        })
       }
     }, 5000) // Poll every 5 seconds
     
     return () => clearInterval(interval)
-  }, [id, plannedCalls])
-
-  const fetchCallHistory = async () => {
-    try {
-      setLoading(true)
-      const response = await api.get(`/customers/${id}/call-history`)
-      setPlannedCalls(response.data.planned || [])
-      setAutomaticCalls(response.data.automatic || [])
-      setCompletedCalls(response.data.completed || [])
-      setError(null)
-    } catch (err) {
-      setError('Failed to load call history')
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, plannedCalls, loading])
 
   const handleViewDetails = async (call) => {
     setSelectedCall(call)
@@ -93,6 +163,9 @@ function CallHistory() {
     setTranscriptContent(null)
     setPlanningExpanded(false)
     setTranscriptExpanded(false)
+    setEditingEmail(false)
+    setEditedEmailContent('')
+    setEditedEmailSubject('')
 
     try {
       // Load planning file if exists
@@ -105,6 +178,8 @@ function CallHistory() {
             // Fallback to loading from file
             const planningId = call.id.startsWith('scheduled_') 
               ? call.id.replace('scheduled_', '')
+              : call.id.startsWith('email_')
+              ? call.id.replace('email_', '')
               : call.scheduled_call_id || call.id
             const response = await api.get(`/call-history/scheduled_${planningId}/planning-file`)
             setPlanningContent(response.data.content)
@@ -113,6 +188,8 @@ function CallHistory() {
           console.warn('Could not load planning file:', err)
         }
       }
+      
+      // For emails, content is shown separately in the email content section
 
       // Load transcript if exists
       if (call.transcript_file_path || (call.type === 'completed' && !call.planning_script)) {
@@ -227,6 +304,172 @@ function CallHistory() {
     }
   }
 
+  const handleSendEmail = async (emailId) => {
+    try {
+      await api.post(`/customers/${id}/send-email/${emailId}`)
+      toast.success('Email sent successfully', {
+        title: 'Email Sent',
+      })
+      fetchCallHistory()
+      handleViewDetails(selectedCall) // Refresh details
+    } catch (err) {
+      toast.error('Failed to send email: ' + (err.response?.data?.detail || err.message), {
+        title: 'Send Failed',
+      })
+      console.error(err)
+    }
+  }
+
+  const handleSaveEditedEmail = async () => {
+    if (!selectedCall) return
+    
+    // Extract email ID from call
+    const callIdStr = String(selectedCall.id || '')
+    let emailId = null
+    if (callIdStr.startsWith('email_')) {
+      emailId = callIdStr.replace('email_', '')
+    } else if (selectedCall.communication_type === 'email' || selectedCall.communication_type === 'sms') {
+      // If it's an email but doesn't have email_ prefix, try to get ID from the call object
+      emailId = selectedCall.id
+    }
+    
+    if (!emailId) {
+      toast.error('Could not determine email ID', {
+        title: 'Error',
+      })
+      return
+    }
+    
+    try {
+      setSavingEmail(true)
+      await api.put(`/customers/${id}/planned-email/${emailId}`, {
+        subject: editedEmailSubject,
+        content: editedEmailContent
+      })
+      
+      toast.success('Email updated successfully', {
+        title: 'Email Updated',
+      })
+      
+      // Update selected call with edited content
+      setSelectedCall({
+        ...selectedCall,
+        subject: editedEmailSubject,
+        content: editedEmailContent
+      })
+      setEditingEmail(false)
+      fetchCallHistory()
+      handleViewDetails(selectedCall) // Refresh details
+    } catch (err) {
+      toast.error('Failed to save email: ' + (err.response?.data?.detail || err.message), {
+        title: 'Save Failed',
+      })
+      console.error(err)
+    } finally {
+      setSavingEmail(false)
+    }
+  }
+
+  const openScheduleModal = async (callId) => {
+    setSchedulingPlannedCallId(callId)
+    setShowScheduleModal(true)
+    setLoadingTimeSlots(true)
+    setSelectedTimeSlot(null)
+    
+    try {
+      // Fetch suggested time slots
+      const response = await api.get(`/customers/${id}/suggested-time-slots`)
+      setTimeSlots(response.data.time_slots || [])
+      
+      // Get planning script for this call to extract suggested time
+      try {
+        const scriptsResponse = await api.get(`/customers/${id}/call-planning-scripts`, {
+          params: { scheduled_call_id: callId }
+        })
+        if (scriptsResponse.data.length > 0) {
+          const script = scriptsResponse.data[0]
+          setSuggestedTime(script.suggested_time)
+          setSuggestedDay(script.suggested_day)
+        }
+      } catch (err) {
+        // Planning script might not exist yet, that's okay
+        console.warn('Could not load planning script:', err)
+      }
+    } catch (err) {
+      toast.error('Failed to load time slots: ' + (err.response?.data?.detail || err.message), {
+        title: 'Error',
+      })
+      console.error(err)
+    } finally {
+      setLoadingTimeSlots(false)
+    }
+  }
+
+  const handleScheduleCall = async () => {
+    // Determine the scheduled time: selected slot > manual input > auto
+    let finalDateTime = null
+    if (selectedTimeSlot) {
+      finalDateTime = selectedTimeSlot.start_time
+    } else if (scheduleDateTime) {
+      finalDateTime = scheduleDateTime
+    } else if (useAutoTime) {
+      // Will be handled by backend
+    } else {
+      toast.info('Please select a time slot, enter a date/time manually, or choose automatic time selection', {
+        title: 'Time Selection Required',
+      })
+      return
+    }
+
+    try {
+      setScheduling(true)
+      
+      // Convert to ISO string format if needed
+      let scheduledTimeForAPI = null
+      if (finalDateTime) {
+        // If it's already an ISO string from time slot, use as-is
+        if (finalDateTime.includes('T') && finalDateTime.includes('Z')) {
+          scheduledTimeForAPI = finalDateTime
+        } else if (finalDateTime.includes('T')) {
+          // ISO string without Z, add it
+          scheduledTimeForAPI = finalDateTime + 'Z'
+        } else {
+          // Convert datetime-local to ISO
+          scheduledTimeForAPI = new Date(finalDateTime).toISOString()
+        }
+      }
+      
+      const response = await api.post(`/scheduled-calls/${schedulingPlannedCallId}/schedule`, {
+        scheduled_time: scheduledTimeForAPI || null,
+        use_auto_time: useAutoTime && !finalDateTime,
+      })
+      
+      toast.success('Call scheduled successfully!', {
+        title: 'Call Scheduled',
+        message: 'Strategy planning has started in the background. The planning file will be available shortly.',
+        duration: 6000,
+      })
+      
+      setShowScheduleModal(false)
+      setScheduleDateTime('')
+      setScheduleNotes('')
+      setUseAutoTime(false)
+      setSchedulingPlannedCallId(null)
+      setSuggestedTime(null)
+      setSuggestedDay(null)
+      setSelectedTimeSlot(null)
+      setTimeSlots([])
+      fetchCallHistory()
+    } catch (err) {
+      toast.error('Failed to schedule call: ' + (err.response?.data?.detail || err.message), {
+        title: 'Scheduling Failed',
+      })
+      console.error(err)
+    } finally {
+      setScheduling(false)
+    }
+  }
+
   const getStatusBadge = (status) => {
     const badges = {
       pending: 'bg-yellow-100 text-yellow-800',
@@ -258,23 +501,35 @@ function CallHistory() {
     if (!callToCancel) return
 
     try {
-      // Extract the actual scheduled call ID
-      let scheduledCallId = callToCancel
-      if (callToCancel.startsWith('scheduled_')) {
-        scheduledCallId = callToCancel.replace('scheduled_', '')
+      const callIdStr = String(callToCancel)
+      
+      // Check if it's an email (starts with "email_")
+      if (callIdStr.startsWith('email_')) {
+        const emailId = callIdStr.replace('email_', '')
+        await api.delete(`/customers/${id}/planned-email/${emailId}`)
+        
+        toast.success('Email cancelled successfully', {
+          title: 'Email Cancelled',
+        })
+      } else {
+        // It's a scheduled call
+        let scheduledCallId = callToCancel
+        if (callToCancel.startsWith('scheduled_')) {
+          scheduledCallId = callToCancel.replace('scheduled_', '')
+        }
+        
+        await api.delete(`/scheduled-calls/${scheduledCallId}`)
+        
+        toast.success('Call cancelled successfully', {
+          title: 'Call Cancelled',
+        })
       }
-      
-      await api.delete(`/scheduled-calls/${scheduledCallId}`)
-      
-      toast.success('Call cancelled successfully', {
-        title: 'Call Cancelled',
-      })
       
       setShowCancelCallModal(false)
       setCallToCancel(null)
       fetchCallHistory()
     } catch (err) {
-      toast.error('Failed to cancel call: ' + (err.response?.data?.detail || err.message), {
+      toast.error('Failed to cancel: ' + (err.response?.data?.detail || err.message), {
         title: 'Cancel Failed',
       })
       console.error(err)
@@ -282,52 +537,102 @@ function CallHistory() {
   }
 
   const CallCard = ({ call }) => {
+    // Safety check
+    if (!call || call.id === undefined || call.id === null) {
+      return null
+    }
+    
     // Determine the call ID for cancellation
     const getCallId = () => {
-      if (call.id.startsWith('scheduled_')) {
-        return call.id
+      const idStr = String(call.id) // Convert to string for safe string operations
+      if (idStr.startsWith('scheduled_')) {
+        return idStr
+      } else if (idStr.startsWith('email_')) {
+        // Keep the full email_ prefix for emails so we can identify them
+        return idStr
       } else if (call.scheduled_call_id) {
         return `scheduled_${call.scheduled_call_id}`
       }
-      return call.id
+      return idStr
     }
 
     const canCancel = call.status === 'pending' || call.status === 'planned'
     const callId = getCallId()
+    const idStr = String(call.id || '')
+    const isEmail = call.communication_type === 'email' || call.communication_type === 'sms' || idStr.startsWith('email_')
+    const Icon = isEmail ? Mail : Phone
 
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-1">
-              <Phone className="h-4 w-4 text-gray-400" />
+              <Icon className="h-4 w-4 text-gray-400" />
               <span className="text-sm font-medium text-gray-900">
                 {call.scheduled_time 
                   ? format(new Date(call.scheduled_time), 'MMM d, h:mm a')
-                  : format(new Date(call.timestamp), 'MMM d, h:mm a')}
+                  : call.sent_at
+                  ? format(new Date(call.sent_at), 'MMM d, h:mm a')
+                  : call.timestamp
+                  ? format(new Date(call.timestamp), 'MMM d, h:mm a')
+                  : 'Date not available'}
               </span>
               {call.outcome && getOutcomeIcon(call.outcome)}
+              {isEmail && (
+                <span className="text-xs text-gray-500 uppercase">
+                  {call.communication_type || 'email'}
+                </span>
+              )}
             </div>
+            {call.subject && (
+              <p className="text-xs font-medium text-gray-700 mb-1">Subject: {call.subject}</p>
+            )}
             {call.planning_script?.suggested_time && (
               <p className="text-xs text-gray-500 mb-1">
                 Suggested: {call.planning_script.suggested_time}
                 {call.planning_script.suggested_day && ` on ${call.planning_script.suggested_day}`}
               </p>
             )}
-            {call.notes && (
-              <p className="text-xs text-gray-600 line-clamp-2">{call.notes}</p>
+            {(call.notes || call.content) && (
+              <p className="text-xs text-gray-600 line-clamp-2">{call.content || call.notes}</p>
             )}
-            {call.status === 'planned' && !call.planning_script && (
-              <div className="mt-1 flex items-center space-x-1">
-                <Clock className="h-3 w-3 text-yellow-600 animate-spin" />
-                <span className="text-xs text-yellow-600">Generating planning script...</span>
-              </div>
+            {call.status === 'planned' && (
+              // For emails, check if content exists and is not the placeholder
+              // For calls, check if planning_script or planning_file_path exists
+              (isEmail 
+                ? (!call.content || call.content === 'Generating email content...')
+                : (!call.planning_script && !call.planning_file_path)
+              ) && (
+                <div className="mt-1 flex items-center space-x-1">
+                  <Clock className="h-3 w-3 text-yellow-600 animate-spin" />
+                  <span className="text-xs text-yellow-600">
+                    {isEmail ? 'Generating email content...' : 'Generating planning script...'}
+                  </span>
+                </div>
+              )
             )}
           </div>
           <div className="flex items-center space-x-2">
             <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(call.status)}`}>
               {call.status === 'pending' ? 'automatic' : call.status}
             </span>
+            {call.status === 'planned' && !isEmail && (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  // Extract call ID (remove scheduled_ prefix if present)
+                  const callIdStr = String(call.id || '')
+                  const actualCallId = callIdStr.startsWith('scheduled_') 
+                    ? callIdStr.replace('scheduled_', '')
+                    : call.scheduled_call_id || callIdStr
+                  await openScheduleModal(parseInt(actualCallId))
+                }}
+                className="px-2 py-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded transition-colors"
+                title="Schedule this call"
+              >
+                Schedule
+              </button>
+            )}
             {canCancel && (
               <button
                 onClick={(e) => {
@@ -335,7 +640,7 @@ function CallHistory() {
                   handleCancelCallClick(callId)
                 }}
                 className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                title="Cancel call"
+                title={`Cancel ${isEmail ? 'email' : 'call'}`}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -353,6 +658,28 @@ function CallHistory() {
     )
   }
 
+  // Safety check for id - after all hooks
+  console.log('Rendering with id:', id)
+  
+  if (!id) {
+    console.log('No ID found, showing error')
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          Invalid customer ID
+        </div>
+        <Link
+          to="/"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 mt-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Customers
+        </Link>
+      </div>
+    )
+  }
+
+  console.log('Rendering main content')
   return (
     <div>
       {/* Header */}
@@ -366,8 +693,8 @@ function CallHistory() {
         </Link>
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Call History</h1>
-            <p className="text-gray-600 mt-1">Manage planned, scheduled, and completed calls</p>
+            <h1 className="text-3xl font-bold text-gray-900">Interaction History</h1>
+            <p className="text-gray-600 mt-1">Manage planned, scheduled, and completed interactions (calls, emails, SMS)</p>
           </div>
         </div>
       </div>
@@ -376,7 +703,7 @@ function CallHistory() {
       {loading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-          <p className="mt-2 text-gray-600">Loading call history...</p>
+          <p className="mt-2 text-gray-600">Loading interaction history...</p>
         </div>
       )}
 
@@ -388,17 +715,17 @@ function CallHistory() {
       )}
 
       {/* JIRA-like 3 Column Layout */}
-      {!loading && !error && (
+      {!loading && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Planned Calls Column */}
           <div>
             <div className="bg-purple-50 border border-purple-200 rounded-t-lg p-4">
-              <h2 className="text-lg font-semibold text-purple-900">Planned Calls</h2>
-              <p className="text-sm text-purple-700">{plannedCalls.length} calls</p>
+              <h2 className="text-lg font-semibold text-purple-900">Planned Interactions</h2>
+              <p className="text-sm text-purple-700">{plannedCalls.length} items</p>
             </div>
             <div className="bg-gray-50 border-x border-b border-gray-200 rounded-b-lg p-4 space-y-3 min-h-[400px]">
               {plannedCalls.length === 0 ? (
-                <p className="text-gray-500 text-sm text-center py-8">No planned calls</p>
+                <p className="text-gray-500 text-sm text-center py-8">No planned interactions</p>
               ) : (
                 plannedCalls.map((call) => <CallCard key={call.id} call={call} />)
               )}
@@ -423,12 +750,12 @@ function CallHistory() {
           {/* Completed Calls Column */}
           <div>
             <div className="bg-green-50 border border-green-200 rounded-t-lg p-4">
-              <h2 className="text-lg font-semibold text-green-900">Completed Calls</h2>
-              <p className="text-sm text-green-700">{completedCalls.length} calls</p>
+              <h2 className="text-lg font-semibold text-green-900">Completed Interactions</h2>
+              <p className="text-sm text-green-700">{completedCalls.length} items</p>
             </div>
             <div className="bg-gray-50 border-x border-b border-gray-200 rounded-b-lg p-4 space-y-3 min-h-[400px]">
               {completedCalls.length === 0 ? (
-                <p className="text-gray-500 text-sm text-center py-8">No completed calls</p>
+                <p className="text-gray-500 text-sm text-center py-8">No completed interactions</p>
               ) : (
                 completedCalls.map((call) => <CallCard key={call.id} call={call} />)
               )}
@@ -442,7 +769,7 @@ function CallHistory() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Call Details</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Interaction Details</h3>
               <button
                 onClick={() => {
                   setShowDetailsModal(false)
@@ -451,6 +778,9 @@ function CallHistory() {
                   setTranscriptContent(null)
                   setPlanningExpanded(false)
                   setTranscriptExpanded(false)
+                  setEditingEmail(false)
+                  setEditedEmailContent('')
+                  setEditedEmailSubject('')
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -473,7 +803,11 @@ function CallHistory() {
                       <span className="ml-2 font-medium">
                         {selectedCall.scheduled_time
                           ? format(new Date(selectedCall.scheduled_time), 'MMM d, yyyy h:mm a')
-                          : format(new Date(selectedCall.timestamp), 'MMM d, yyyy h:mm a')}
+                          : selectedCall.sent_at
+                          ? format(new Date(selectedCall.sent_at), 'MMM d, yyyy h:mm a')
+                          : selectedCall.timestamp
+                          ? format(new Date(selectedCall.timestamp), 'MMM d, yyyy h:mm a')
+                          : 'Date not available'}
                       </span>
                     </div>
                     <div>
@@ -498,6 +832,118 @@ function CallHistory() {
                     )}
                   </div>
                 </div>
+
+                {/* Email Content (for emails/SMS) */}
+                {(selectedCall.communication_type === 'email' || selectedCall.communication_type === 'sms') && selectedCall.content && (
+                  <div>
+                    <div className="w-full flex items-center justify-between mb-2">
+                      <h4 className="text-lg font-semibold text-gray-900">
+                        {selectedCall.communication_type === 'email' ? 'Email' : 'SMS'} Content
+                      </h4>
+                      {(selectedCall.status === 'planned' || selectedCall.status === 'pending') && (
+                        <div className="flex items-center space-x-2">
+                          {editingEmail ? (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setEditingEmail(false)
+                                  setEditedEmailContent(selectedCall.content || '')
+                                  setEditedEmailSubject(selectedCall.subject || '')
+                                }}
+                                className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={handleSaveEditedEmail}
+                                disabled={savingEmail}
+                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-1"
+                              >
+                                {savingEmail ? (
+                                  <>
+                                    <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                    <span>Saving...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Check className="h-3 w-3" />
+                                    <span>Save</span>
+                                  </>
+                                )}
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setEditingEmail(true)
+                                  setEditedEmailContent(selectedCall.content || '')
+                                  setEditedEmailSubject(selectedCall.subject || '')
+                                }}
+                                className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center space-x-1"
+                                title="Edit email"
+                              >
+                                <Edit className="h-3 w-3" />
+                                <span>Edit</span>
+                              </button>
+                              {selectedCall.status === 'planned' && (
+                                <button
+                                  onClick={() => {
+                                    const callIdStr = String(selectedCall.id || '')
+                                    const emailId = callIdStr.startsWith('email_') 
+                                      ? callIdStr.replace('email_', '') 
+                                      : selectedCall.id
+                                    handleSendEmail(emailId)
+                                  }}
+                                  className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 flex items-center space-x-1"
+                                  title="Send email"
+                                >
+                                  <Send className="h-3 w-3" />
+                                  <span>Send</span>
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {selectedCall.subject && (
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Subject
+                        </label>
+                        {editingEmail ? (
+                          <input
+                            type="text"
+                            value={editedEmailSubject}
+                            onChange={(e) => setEditedEmailSubject(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Email subject"
+                          />
+                        ) : (
+                          <p className="text-sm font-medium text-gray-900 bg-gray-50 p-3 rounded-lg">
+                            {selectedCall.subject || 'No subject'}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {editingEmail ? (
+                      <textarea
+                        value={editedEmailContent}
+                        onChange={(e) => setEditedEmailContent(e.target.value)}
+                        rows={15}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                        placeholder="Email content"
+                      />
+                    ) : (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <div className="prose max-w-none whitespace-pre-wrap text-sm">
+                          {selectedCall.content}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Planning File */}
                 {planningContent && (
@@ -573,6 +1019,145 @@ function CallHistory() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Call Modal */}
+      {showScheduleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              Schedule Planned Call
+            </h3>
+            {suggestedTime && (
+              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-900">
+                  <strong>Suggested from planning:</strong> {suggestedTime}
+                  {suggestedDay && ` on ${suggestedDay}`}
+                </p>
+              </div>
+            )}
+            <div className="space-y-4">
+              {/* Suggested Time Slots */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Suggested Time Slots (10-minute windows)
+                </label>
+                {loadingTimeSlots ? (
+                  <div className="text-center py-4">
+                    <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+                    <p className="text-xs text-gray-500 mt-2">Loading time slots...</p>
+                  </div>
+                ) : timeSlots.length > 0 ? (
+                  <div className="space-y-2">
+                    {timeSlots.map((slot, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => {
+                          setSelectedTimeSlot(slot)
+                          setScheduleDateTime('')
+                          setUseAutoTime(false)
+                        }}
+                        className={`w-full text-left px-4 py-3 border-2 rounded-lg transition-colors ${
+                          selectedTimeSlot?.start_time === slot.start_time
+                            ? 'border-primary-600 bg-primary-50'
+                            : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">{slot.display}</p>
+                            <p className="text-xs text-gray-500 mt-1">10-minute window</p>
+                          </div>
+                          {selectedTimeSlot?.start_time === slot.start_time && (
+                            <CheckCircle className="h-5 w-5 text-primary-600" />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No time slots available</p>
+                )}
+              </div>
+              
+              {/* Manual Date & Time Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Or Enter Date & Time Manually
+                </label>
+                <input
+                  type="datetime-local"
+                  value={scheduleDateTime}
+                  onChange={(e) => {
+                    setScheduleDateTime(e.target.value)
+                    setSelectedTimeSlot(null)
+                    setUseAutoTime(false)
+                  }}
+                  disabled={useAutoTime}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+              </div>
+              
+              {/* Automatic Time Selection */}
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="useAutoTime"
+                  checked={useAutoTime}
+                  onChange={(e) => {
+                    setUseAutoTime(e.target.checked)
+                    if (e.target.checked) {
+                      setScheduleDateTime('')
+                      setSelectedTimeSlot(null)
+                    }
+                  }}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="useAutoTime" className="ml-2 block text-sm text-gray-700">
+                  Use time from planning file
+                </label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes (optional)
+                </label>
+                <textarea
+                  value={scheduleNotes}
+                  onChange={(e) => setScheduleNotes(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Add any notes about this call..."
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowScheduleModal(false)
+                  setScheduleDateTime('')
+                  setScheduleNotes('')
+                  setUseAutoTime(false)
+                  setSchedulingPlannedCallId(null)
+                  setSuggestedTime(null)
+                  setSuggestedDay(null)
+                  setSelectedTimeSlot(null)
+                  setTimeSlots([])
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleScheduleCall}
+                disabled={scheduling}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              >
+                {scheduling ? 'Scheduling...' : 'Schedule Call'}
+              </button>
+            </div>
           </div>
         </div>
       )}

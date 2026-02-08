@@ -97,6 +97,7 @@ class Customer(Base):
     accounts = relationship("Account", back_populates="customer", cascade="all, delete-orphan")
     scheduled_calls = relationship("ScheduledCall", back_populates="customer", cascade="all, delete-orphan")
     call_planning_scripts = relationship("CallPlanningScript", back_populates="customer", cascade="all, delete-orphan")
+    planned_emails = relationship("PlannedEmail", back_populates="customer", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Customer(id={self.id}, name='{self.first_name} {self.last_name}', phone='{self.phone_primary}')>"
@@ -287,6 +288,44 @@ class ScheduledCall(Base):
     
     def __repr__(self):
         return f"<ScheduledCall(id={self.id}, customer_id={self.customer_id}, scheduled_time={self.scheduled_time}, status={self.status})>"
+
+
+class PlannedEmail(Base):
+    """Planned emails/SMS table for tracking email communications"""
+    __tablename__ = 'planned_emails'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    customer_id = Column(Integer, ForeignKey('customers.id'), nullable=False)
+    
+    # Email/SMS Information
+    communication_type = Column(Enum(CommunicationType), nullable=False)  # EMAIL or SMS
+    subject = Column(String(500), nullable=True)  # Subject line (for emails)
+    content = Column(Text, nullable=False)  # Email/SMS content
+    status = Column(String(50), default='planned', nullable=False)  # planned, sent, cancelled
+    
+    # Planning Script Reference
+    planning_script_id = Column(Integer, ForeignKey('call_planning_scripts.id'), nullable=True)
+    
+    # Sending Information
+    scheduled_send_time = Column(DateTime, nullable=True)  # When to send (optional)
+    sent_at = Column(DateTime, nullable=True)  # When it was actually sent
+    
+    # Result (linked to CommunicationLog after sending)
+    communication_log_id = Column(Integer, ForeignKey('communication_logs.id'), nullable=True)
+    
+    # Metadata
+    agent_id = Column(String(100), nullable=True)  # ID of the agent who created it
+    notes = Column(Text, nullable=True)  # Notes about the email
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    customer = relationship("Customer", back_populates="planned_emails")
+    planning_script = relationship("CallPlanningScript", foreign_keys=[planning_script_id])
+    communication_log = relationship("CommunicationLog", foreign_keys=[communication_log_id])
+    
+    def __repr__(self):
+        return f"<PlannedEmail(id={self.id}, customer_id={self.customer_id}, type={self.communication_type.value}, status={self.status})>"
 
 
 class DatabaseManager:
@@ -758,6 +797,70 @@ class DatabaseManager:
         session = self.get_session()
         try:
             return session.query(CallPlanningScript).filter(CallPlanningScript.id == script_id).first()
+        finally:
+            session.close()
+    
+    # Planned Email Operations
+    def create_planned_email(self, customer_id: int, communication_type: CommunicationType, content: str, **kwargs) -> PlannedEmail:
+        """Create a planned email/SMS"""
+        session = self.get_session()
+        try:
+            email = PlannedEmail(customer_id=customer_id, communication_type=communication_type, content=content, **kwargs)
+            session.add(email)
+            session.commit()
+            session.refresh(email)
+            return email
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise Exception(f"Error creating planned email: {str(e)}")
+        finally:
+            session.close()
+    
+    def get_planned_emails(self, customer_id: Optional[int] = None, status: Optional[str] = None) -> List[PlannedEmail]:
+        """Get planned emails for a customer"""
+        session = self.get_session()
+        try:
+            query = session.query(PlannedEmail)
+            if customer_id:
+                query = query.filter(PlannedEmail.customer_id == customer_id)
+            if status:
+                query = query.filter(PlannedEmail.status == status)
+            return query.order_by(PlannedEmail.created_at.desc()).all()
+        finally:
+            session.close()
+    
+    def update_planned_email(self, email_id: int, **kwargs) -> Optional[PlannedEmail]:
+        """Update a planned email"""
+        session = self.get_session()
+        try:
+            email = session.query(PlannedEmail).filter(PlannedEmail.id == email_id).first()
+            if email:
+                for key, value in kwargs.items():
+                    if hasattr(email, key):
+                        setattr(email, key, value)
+                email.updated_at = datetime.utcnow()
+                session.commit()
+                session.refresh(email)
+            return email
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise Exception(f"Error updating planned email: {str(e)}")
+        finally:
+            session.close()
+    
+    def delete_planned_email(self, email_id: int) -> bool:
+        """Delete a planned email"""
+        session = self.get_session()
+        try:
+            email = session.query(PlannedEmail).filter(PlannedEmail.id == email_id).first()
+            if email:
+                session.delete(email)
+                session.commit()
+                return True
+            return False
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise Exception(f"Error deleting planned email: {str(e)}")
         finally:
             session.close()
     

@@ -13,16 +13,18 @@ import os
 import json
 from pathlib import Path
 import asyncio
+import requests
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from DB.db_manager import (
-    DatabaseManager, Customer, Debt, CommunicationLog, ScheduledCall, CallPlanningScript,
+    DatabaseManager, Customer, Debt, CommunicationLog, ScheduledCall, CallPlanningScript, PlannedEmail,
     DebtStatus, PaymentStatus, CommunicationType
 )
 from transcript_analysis.transcript_analyzer import TranscriptAnalyzer
 from strategy_planning.strategy_pipeline import GeminiStrategyGenerator
+from strategy_planning.prompt_template import classify_profile_type
 import re
 
 app = FastAPI(title="Customer Debt Management API", version="1.0.0")
@@ -108,6 +110,9 @@ class ScheduledCallRequest(BaseModel):
     use_auto_time: bool = False  # If True, use time from strategy
     planning_script_id: Optional[int] = None  # If scheduling a planned call
 
+class PrepareEmailRequest(BaseModel):
+    communication_type: str  # "email" or "sms"
+
 class ScheduledCallResponse(BaseModel):
     id: int
     customer_id: int
@@ -186,6 +191,7 @@ async def get_customer_detail(customer_id: int):
         debts = summary['debts']
         communications = summary['recent_communications']
         scheduled_calls = db_manager.get_scheduled_calls(customer_id=customer_id)
+        planned_emails = db_manager.get_planned_emails(customer_id=customer_id)
         
         # Calculate max days past due
         active_debts = [d for d in debts if d.status.value == 'active']
@@ -271,6 +277,20 @@ async def get_customer_detail(customer_id: int):
                     ]), None),
                 }
                 for sc in scheduled_calls
+            ],
+            "planned_emails": [
+                {
+                    "id": pe.id,
+                    "communication_type": pe.communication_type.value,
+                    "subject": pe.subject,
+                    "content": pe.content,
+                    "status": pe.status,
+                    "scheduled_send_time": pe.scheduled_send_time.isoformat() if pe.scheduled_send_time else None,
+                    "sent_at": pe.sent_at.isoformat() if pe.sent_at else None,
+                    "created_at": pe.created_at.isoformat(),
+                    "planning_script_id": pe.planning_script_id,
+                }
+                for pe in planned_emails
             ],
         }
     except HTTPException:
@@ -872,19 +892,27 @@ async def get_call_planning_script(script_id: int):
 
 @app.get("/api/customers/{customer_id}/call-history")
 async def get_call_history(customer_id: int):
-    """Get call history for a customer (includes scheduled calls and communication logs)"""
+    """Get interaction history for a customer (includes calls, emails, SMS)"""
     try:
-        # Get communication logs (actual calls)
+        # Get communication logs (all types)
         communications = db_manager.get_communication_logs(customer_id, limit=100)
         calls = [c for c in communications if c.communication_type == CommunicationType.CALL]
+        emails_sms = [c for c in communications if c.communication_type in [CommunicationType.EMAIL, CommunicationType.SMS]]
         
         # Get scheduled calls (including planned)
         scheduled_calls = db_manager.get_scheduled_calls(customer_id=customer_id)
         
-        # Separate into planned, scheduled (automatic), and completed
+        # Get planned emails
+        planned_emails = db_manager.get_planned_emails(customer_id=customer_id)
+        
+        # Separate calls into planned, scheduled (automatic), and completed
         planned_calls = []
         automatic_calls = []
         completed_calls = []
+        
+        # Separate emails into planned and sent
+        planned_emails_list = []
+        sent_emails_list = []
         
         # Process scheduled calls
         for sc in scheduled_calls:
@@ -963,18 +991,94 @@ async def get_call_history(customer_id: int):
                 "scheduled_call_id": None,
             })
         
+        # Process planned emails
+        for pe in planned_emails:
+            # Get planning script if exists
+            planning_script = None
+            planning_file_path = None
+            if pe.planning_script_id:
+                script = db_manager.get_call_planning_script(pe.planning_script_id)
+                if script:
+                    planning_file_path = f"call_files/planning/email_{pe.id}_planning.md"
+                    planning_script = {
+                        "id": script.id,
+                        "strategy_content": script.strategy_content,
+                        "suggested_time": script.suggested_time,
+                        "suggested_day": script.suggested_day,
+                        "communication_channel": script.communication_channel,
+                        "created_at": script.created_at.isoformat(),
+                    }
+            
+            email_data = {
+                "id": f"email_{pe.id}",
+                "type": "email",
+                "customer_id": pe.customer_id,
+                "communication_type": pe.communication_type.value,
+                "direction": "outbound",
+                "timestamp": (pe.scheduled_send_time.isoformat() if pe.scheduled_send_time 
+                            else (pe.created_at.isoformat() if pe.created_at else datetime.utcnow().isoformat())),
+                "scheduled_time": pe.scheduled_send_time.isoformat() if pe.scheduled_send_time else None,
+                "status": pe.status,
+                "subject": pe.subject,
+                "content": pe.content or "",
+                "notes": pe.notes,
+                "planning_file_path": planning_file_path,
+                "planning_script": planning_script,
+                "sent_at": pe.sent_at.isoformat() if pe.sent_at else None,
+            }
+            
+            if pe.status == "planned":
+                planned_emails_list.append(email_data)
+            elif pe.status == "sent":
+                sent_emails_list.append(email_data)
+        
+        # Add sent emails from communication logs that aren't already represented
+        email_logs_represented = set()
+        for pe in planned_emails:
+            if pe.communication_log_id:
+                email_logs_represented.add(pe.communication_log_id)
+        
+        for comm in emails_sms:
+            if comm.id in email_logs_represented:
+                continue
+            
+            sent_emails_list.append({
+                "id": comm.id,
+                "type": "completed",
+                "customer_id": comm.customer_id,
+                "communication_type": comm.communication_type.value,
+                "direction": comm.direction,
+                "timestamp": comm.timestamp.isoformat(),
+                "scheduled_time": None,
+                "status": "completed",
+                "subject": None,
+                "content": comm.notes,  # Use notes as content for sent emails
+                "outcome": comm.outcome,
+                "notes": comm.notes,
+                "planning_file_path": None,
+                "planning_script": None,
+                "sent_at": comm.timestamp.isoformat(),
+            })
+        
         # Sort each list by timestamp (most recent first)
         planned_calls.sort(key=lambda x: x['timestamp'], reverse=True)
         automatic_calls.sort(key=lambda x: x['timestamp'], reverse=True)
         completed_calls.sort(key=lambda x: x['timestamp'], reverse=True)
+        planned_emails_list.sort(key=lambda x: x['timestamp'], reverse=True)
+        sent_emails_list.sort(key=lambda x: x['timestamp'], reverse=True)
         
         return {
-            "planned": planned_calls,
+            "planned": planned_calls + planned_emails_list,
             "automatic": automatic_calls,
-            "completed": completed_calls,
+            "completed": completed_calls + sent_emails_list,
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in get_call_history: {error_details}")
+        raise HTTPException(status_code=500, detail=f"Error fetching call history: {str(e)}")
 
 @app.get("/api/call-history/{call_id}/planning-file")
 async def get_planning_file(call_id: str):
@@ -1020,6 +1124,527 @@ async def get_transcript_file(call_id: str):
         return {
             "content": content,
             "file_path": file_path,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def generate_email_content_background(customer_id: int, planned_email_id: int, communication_type: str):
+    """Background task to generate email/SMS content using email master prompt"""
+    try:
+        # Generate strategy with forced email channel to use email master prompt
+        generator = GeminiStrategyGenerator(db=db_manager)
+        
+        # Get customer summary
+        summary = generator.db.get_customer_summary(customer_id)
+        if not summary:
+            raise ValueError(f"Customer {customer_id} not found")
+        
+        customer = summary['customer']
+        debts = summary['debts']
+        payments = summary['payments']
+        communications = summary['recent_communications']
+        
+        # Force email channel for email generation
+        active_debts = [d for d in debts if d.status == DebtStatus.ACTIVE]
+        total_debt = sum(d.current_balance for d in active_debts)
+        max_days_past_due = max((d.days_past_due for d in active_debts), default=0)
+        primary_debt = active_debts[0] if active_debts else None
+        
+        completed_payments = [p for p in payments if p.status == PaymentStatus.COMPLETED]
+        total_paid = sum(p.amount for p in completed_payments)
+        
+        # Calculate profile type for the prompt template
+        customer_tenure_years = (
+            int((datetime.now() - customer.created_at).days / 365.25)
+            if customer.created_at else 0
+        )
+        # Import classify_profile_type directly to ensure it's available
+        from strategy_planning.prompt_template import classify_profile_type
+        profile_type = classify_profile_type(
+            credit_score=customer.credit_score,
+            days_past_due=max_days_past_due,
+            employment_status=customer.employment_status,
+            customer_tenure_years=customer_tenure_years
+        )
+        
+        debt_details = []
+        for debt in active_debts:
+            interest_rate_str = f"{debt.interest_rate}%" if debt.interest_rate else "N/A"
+            debt_details.append(
+                f"- {debt.debt_type}: ${debt.current_balance:,.2f} "
+                f"(Original: ${debt.original_amount:,.2f}, "
+                f"Days Past Due: {debt.days_past_due}, "
+                f"Interest Rate: {interest_rate_str})"
+            )
+        
+        recent_payments = [
+            f'${p.amount:.2f} on {p.payment_date.strftime("%Y-%m-%d")}' 
+            for p in completed_payments[-3:]
+        ]
+        
+        comm_history = [
+            f"- {comm.communication_type.value} ({comm.direction}) on {comm.timestamp.strftime('%Y-%m-%d')}: "
+            f"{comm.outcome or 'no outcome recorded'}"
+            for comm in communications[:5]
+        ]
+        
+        age = generator._calculate_age(customer.date_of_birth) if customer.date_of_birth else None
+        address_parts = [p for p in [customer.address_line1, customer.address_line2] if p]
+        address = ", ".join(address_parts) if address_parts else None
+        
+        last_payment_date_str = None
+        if completed_payments:
+            last_payment = max(completed_payments, key=lambda p: p.payment_date)
+            last_payment_date_str = last_payment.payment_date.strftime("%Y-%m-%d")
+        
+        due_date_str = None
+        if primary_debt and primary_debt.due_date:
+            due_date_str = primary_debt.due_date.strftime("%Y-%m-%d")
+        
+        customer_data = generator._prepare_customer_data_dict(
+            customer=customer,
+            age=age,
+            total_debt=total_debt,
+            days_past_due=max_days_past_due,
+            debt_details=debt_details,
+            payment_history_count=len(completed_payments),
+            total_paid=total_paid,
+            recent_payments=recent_payments,
+            communication_history=comm_history,
+            address=address,
+            primary_debt=primary_debt,
+            due_date_str=due_date_str,
+            last_payment_date_str=last_payment_date_str
+        )
+        
+        # Add profile type and risk level to customer data for the template
+        customer_data["PROFILE_TYPE"] = str(profile_type)
+        # Determine risk level based on profile type
+        if profile_type in [1, 2]:
+            risk_level = "low"
+        elif profile_type == 3:
+            risk_level = "moderate"
+        elif profile_type == 4:
+            risk_level = "high"
+        else:
+            risk_level = "vip"
+        customer_data["RISK_LEVEL"] = risk_level
+        
+        # Force use of email prompt regardless of customer preference
+        from strategy_planning.prompt_template import build_email_prompt
+        prompt = build_email_prompt(customer_data)
+        
+        headers = {
+            "Authorization": f"Bearer {generator.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/dklpp/cxc_hackathon",
+        }
+        
+        payload = {
+            "model": generator.model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 4000
+        }
+        
+        response = requests.post(generator.api_url, headers=headers, json=payload, timeout=60)
+        response.raise_for_status()
+        
+        result = response.json()
+        if 'choices' not in result or not result['choices']:
+            raise ValueError(f"Unexpected API response format: {result}")
+        
+        strategy_text = result['choices'][0]['message']['content']
+        
+        # Extract email/SMS content from strategy
+        if communication_type == "email":
+            # Try to parse as JSON first
+            subject = "Payment Reminder"  # Default subject
+            content = strategy_text  # Default to full text
+            
+            try:
+                # Try to parse JSON from the response
+                # Look for JSON code blocks or raw JSON
+                json_text = strategy_text.strip()
+                
+                # Remove markdown code blocks if present
+                # Handle ```json (triple backticks) first
+                if '```json' in json_text.lower():
+                    start_idx = json_text.lower().find('```json')
+                    if start_idx != -1:
+                        end_idx = json_text.find('```', start_idx + 7)
+                        if end_idx != -1:
+                            json_text = json_text[start_idx + 7:end_idx].strip()
+                # Handle ``json (double backticks) - check this BEFORE generic ```
+                elif '``json' in json_text.lower() and not json_text.lower().startswith('```json'):
+                    start_idx = json_text.lower().find('``json')
+                    if start_idx != -1:
+                        # Look for closing backticks - could be `` or ``` or `
+                        end_idx = json_text.find('```', start_idx + 6)
+                        if end_idx == -1:
+                            end_idx = json_text.find('``', start_idx + 6)
+                        if end_idx == -1:
+                            end_idx = json_text.find('`', start_idx + 6)
+                        if end_idx != -1:
+                            json_text = json_text[start_idx + 6:end_idx].strip()
+                # Handle generic ``` code blocks
+                elif '```' in json_text:
+                    start_idx = json_text.find('```')
+                    if start_idx != -1:
+                        end_idx = json_text.find('```', start_idx + 3)
+                        if end_idx != -1:
+                            json_text = json_text[start_idx + 3:end_idx].strip()
+                # Handle single backticks wrapping the entire text
+                elif json_text.startswith('`') and json_text.endswith('`'):
+                    json_text = json_text.strip('`').strip()
+                
+                # Try to find JSON object boundaries if not already clean
+                if '{' in json_text and '}' in json_text:
+                    start_brace = json_text.find('{')
+                    end_brace = json_text.rfind('}')
+                    if start_brace != -1 and end_brace != -1 and end_brace > start_brace:
+                        json_text = json_text[start_brace:end_brace + 1]
+                        print(f"Extracted JSON object boundaries")
+                
+                print(f"Attempting to parse JSON (length: {len(json_text)}, first 200 chars: {json_text[:200]}...)")
+                
+                # Try to parse as JSON
+                parsed_json = json.loads(json_text)
+                
+                # Extract email_body and email_subject from parsed JSON
+                if 'email_body' in parsed_json:
+                    content = str(parsed_json['email_body']).strip()
+                    print(f"Found email_body in JSON")
+                elif 'body' in parsed_json:
+                    content = str(parsed_json['body']).strip()
+                    print(f"Found body in JSON")
+                elif 'message' in parsed_json:
+                    content = str(parsed_json['message']).strip()
+                    print(f"Found message in JSON")
+                else:
+                    raise KeyError(f"No email_body, body, or message field found in JSON. Available keys: {list(parsed_json.keys())}")
+                
+                if 'email_subject' in parsed_json:
+                    subject = str(parsed_json['email_subject']).strip()
+                elif 'subject' in parsed_json:
+                    subject = str(parsed_json['subject']).strip()
+                
+                print(f"✓ Successfully parsed JSON - extracted email_body (length: {len(content)}) and subject: {subject}")
+                print(f"  Content preview (first 100 chars): {content[:100]}...")
+                    
+            except (json.JSONDecodeError, KeyError, ValueError) as e:
+                # If JSON parsing fails, fall back to text extraction
+                print(f"Could not parse JSON, falling back to text extraction: {e}")
+                print(f"Response text (first 500 chars): {strategy_text[:500]}")
+                if 'json_text' in locals():
+                    print(f"Attempted to parse JSON text (first 500 chars): {json_text[:500]}")
+                
+                # Extract subject and body from text
+                subject_found = False
+                lines = strategy_text.split('\n')
+                
+                # Look for subject line patterns
+                for i, line in enumerate(lines):
+                    line_lower = line.lower().strip()
+                    # Check for subject patterns
+                    if ('subject:' in line_lower or 'email_subject:' in line_lower) and ':' in line:
+                        subject = line.split(':', 1)[1].strip().strip('"').strip("'")
+                        subject_found = True
+                        # Remove subject line from content
+                        lines.pop(i)
+                        break
+                
+                # Extract email body - remove subject line and any metadata
+                # Look for common email body markers
+                body_start_markers = [
+                    'dear', 'hi', 'hello', 'greetings',
+                    'email body:', 'body:', 'message:', 'content:'
+                ]
+                
+                body_start_idx = 0
+                for i, line in enumerate(lines):
+                    line_lower = line.lower().strip()
+                    # Skip empty lines and subject-related lines
+                    if not line.strip() or 'subject' in line_lower:
+                        continue
+                    # Check if this looks like the start of the email body
+                    if any(line_lower.startswith(marker) for marker in body_start_markers):
+                        body_start_idx = i
+                        # Remove the marker line if it exists
+                        if ':' in line:
+                            body_start_idx = i + 1
+                        break
+                
+                # Extract just the body content
+                if body_start_idx > 0 or subject_found:
+                    content = '\n'.join(lines[body_start_idx:]).strip()
+                else:
+                    # If no clear markers, use the full text but try to remove subject if found
+                    content = strategy_text
+                    if subject_found:
+                        # Remove subject line from content
+                        content = '\n'.join([l for l in lines if 'subject' not in l.lower()]).strip()
+                
+                # Clean up content - remove any remaining metadata markers
+                content = re.sub(r'^(subject|email_subject|email body|body|message|content):\s*', '', content, flags=re.IGNORECASE | re.MULTILINE)
+                content = content.strip()
+            
+        else:  # SMS
+            # For SMS, try to parse JSON first
+            try:
+                json_text = strategy_text.strip()
+                # Remove markdown code blocks if present
+                if '```json' in json_text.lower():
+                    start_idx = json_text.lower().find('```json')
+                    if start_idx != -1:
+                        end_idx = json_text.find('```', start_idx + 7)
+                        if end_idx != -1:
+                            json_text = json_text[start_idx + 7:end_idx].strip()
+                elif '```' in json_text:
+                    start_idx = json_text.find('```')
+                    if start_idx != -1:
+                        end_idx = json_text.find('```', start_idx + 3)
+                        if end_idx != -1:
+                            json_text = json_text[start_idx + 3:end_idx].strip()
+                
+                parsed_json = json.loads(json_text)
+                
+                if 'sms_message' in parsed_json:
+                    content = str(parsed_json['sms_message']).strip()
+                elif 'message' in parsed_json:
+                    content = str(parsed_json['message']).strip()
+                else:
+                    content = strategy_text
+            except (json.JSONDecodeError, KeyError, ValueError):
+                # If JSON parsing fails, use the full text
+                content = strategy_text
+            subject = None
+        
+        # Update planned email with generated content
+        db_manager.update_planned_email(
+            planned_email_id,
+            content=content,
+            subject=subject,
+            status="planned"
+        )
+        
+        print(f"✓ Email content generated for planned email {planned_email_id}")
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error generating email content in background: {error_details}")
+        try:
+            # Update email with error message so frontend can detect it
+            error_message = f"Error generating content: {str(e)}"
+            db_manager.update_planned_email(
+                planned_email_id,
+                content=f"Error: {error_message}. Please try again.",
+                notes=error_message,
+                status="planned"
+            )
+        except Exception as update_err:
+            print(f"Failed to update email with error: {update_err}")
+
+@app.post("/api/customers/{customer_id}/prepare-email")
+async def prepare_email(
+    customer_id: int,
+    request: PrepareEmailRequest,
+    background_tasks: BackgroundTasks
+):
+    """Generate email/SMS content and create planned email entry (async)"""
+    try:
+        # Validate communication type
+        if request.communication_type not in ["email", "sms"]:
+            raise HTTPException(status_code=400, detail="communication_type must be 'email' or 'sms'")
+        
+        # Create planned email immediately
+        comm_type = CommunicationType.EMAIL if request.communication_type == "email" else CommunicationType.SMS
+        planned_email = db_manager.create_planned_email(
+            customer_id=customer_id,
+            communication_type=comm_type,
+            content="Generating email content...",
+            status="planned",
+            agent_id="current_user",
+            notes="Planned email - generating content..."
+        )
+        
+        # Add background task to generate content
+        background_tasks.add_task(
+            generate_email_content_background,
+            customer_id,
+            planned_email.id,
+            request.communication_type
+        )
+        
+        return {
+            "success": True,
+            "email_id": planned_email.id,
+            "status": "processing",
+            "message": "Email content generation started. It will be available shortly.",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Unexpected error in prepare_email: {error_details}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+@app.get("/api/customers/{customer_id}/planned-email/{email_id}")
+async def get_planned_email(customer_id: int, email_id: int):
+    """Get a planned email for preview"""
+    try:
+        planned_email = db_manager.get_session().query(PlannedEmail).filter(
+            PlannedEmail.id == email_id,
+            PlannedEmail.customer_id == customer_id
+        ).first()
+        
+        if not planned_email:
+            raise HTTPException(status_code=404, detail="Planned email not found")
+        
+        return {
+            "id": planned_email.id,
+            "customer_id": planned_email.customer_id,
+            "communication_type": planned_email.communication_type.value,
+            "subject": planned_email.subject,
+            "content": planned_email.content,
+            "status": planned_email.status,
+            "created_at": planned_email.created_at.isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class UpdateEmailRequest(BaseModel):
+    subject: Optional[str] = None
+    content: Optional[str] = None
+
+@app.put("/api/customers/{customer_id}/planned-email/{email_id}")
+async def update_planned_email_content(
+    customer_id: int,
+    email_id: int,
+    request: UpdateEmailRequest
+):
+    """Update planned email content (for editing)"""
+    try:
+        planned_email = db_manager.get_session().query(PlannedEmail).filter(
+            PlannedEmail.id == email_id,
+            PlannedEmail.customer_id == customer_id
+        ).first()
+        
+        if not planned_email:
+            raise HTTPException(status_code=404, detail="Planned email not found")
+        
+        if planned_email.status != "planned":
+            raise HTTPException(status_code=400, detail=f"Email status is {planned_email.status}, cannot edit")
+        
+        update_data = {}
+        if request.content is not None:
+            update_data["content"] = request.content
+        if request.subject is not None:
+            update_data["subject"] = request.subject
+        
+        updated_email = db_manager.update_planned_email(email_id, **update_data)
+        
+        return {
+            "success": True,
+            "email": {
+                "id": updated_email.id,
+                "subject": updated_email.subject,
+                "content": updated_email.content,
+                "status": updated_email.status,
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/customers/{customer_id}/planned-email/{email_id}")
+async def delete_planned_email(customer_id: int, email_id: int):
+    """Delete a planned email"""
+    try:
+        planned_email = db_manager.get_session().query(PlannedEmail).filter(
+            PlannedEmail.id == email_id,
+            PlannedEmail.customer_id == customer_id
+        ).first()
+        
+        if not planned_email:
+            raise HTTPException(status_code=404, detail="Planned email not found")
+        
+        db_manager.delete_planned_email(email_id)
+        
+        return {
+            "success": True,
+            "message": "Planned email deleted successfully",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/customers/{customer_id}/send-email/{email_id}")
+async def send_email(customer_id: int, email_id: int):
+    """Send a planned email/SMS"""
+    try:
+        planned_email = db_manager.get_session().query(PlannedEmail).filter(
+            PlannedEmail.id == email_id,
+            PlannedEmail.customer_id == customer_id
+        ).first()
+        
+        if not planned_email:
+            raise HTTPException(status_code=404, detail="Planned email not found")
+        
+        if planned_email.status != "planned":
+            raise HTTPException(status_code=400, detail=f"Email status is {planned_email.status}, cannot send")
+        
+        # Get customer
+        customer = db_manager.get_customer(customer_id)
+        if not customer:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        
+        # Create communication log
+        contact_email = customer.email if planned_email.communication_type == CommunicationType.EMAIL else None
+        contact_phone = customer.phone_primary if planned_email.communication_type == CommunicationType.SMS else None
+        
+        # Store full email content in notes for visibility in completed interactions
+        email_notes = ""
+        if planned_email.subject:
+            email_notes += f"Subject: {planned_email.subject}\n\n"
+        if planned_email.content:
+            email_notes += planned_email.content
+        
+        comm_log = db_manager.log_communication(
+            customer_id=customer_id,
+            communication_type=planned_email.communication_type,
+            direction="outbound",
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            outcome="sent",
+            notes=email_notes or None,
+            agent_id="current_user"
+        )
+        
+        # Update planned email
+        db_manager.update_planned_email(
+            email_id,
+            status="sent",
+            sent_at=datetime.utcnow(),
+            communication_log_id=comm_log.id
+        )
+        
+        return {
+            "success": True,
+            "message": f"{planned_email.communication_type.value.capitalize()} sent successfully",
+            "communication_log_id": comm_log.id,
         }
     except HTTPException:
         raise
