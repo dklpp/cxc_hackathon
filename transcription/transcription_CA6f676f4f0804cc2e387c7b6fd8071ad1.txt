@@ -1,0 +1,26 @@
+gitCall ID: CA6f676f4f0804cc2e387c7b6fd8071ad1
+Date: 2026-02-08 02:03:06
+============================================================
+
+Agent: Hello! I'm calling on behalf of Tangerine Bank. Do you have a moment to speak?
+
+User: So, yes?
+
+Agent: Hello, this is [Your Name] calling from Tangerine Bank. How can I assist you today?
+
+User: So I would say planning five, but then [audio glitch] you know? You called me?
+
+Agent: I apologize for any confusion. Yes, I called on behalf of Tangerine Bank. Could you let me know if now is a good time to talk, and we can go over the details together?
+
+User: It's now, now it's okay?
+
+Agent: Great, thank you for confirming. Before we proceed, could I please verify your identity for security purposes? Could you provide your full name and the last four digits of your account number?
+
+User: My full name is Alfred Banjo?
+
+Agent: Thank you, Alfred. Could you also provide the last four digits of your account number to complete the verification?
+
+User: last numbers are three, two, five, two. Five, two, one, two?
+
+Agent: Thank you for that information, Alfred. I have successfully verified your account. How can I assist you today?
+
