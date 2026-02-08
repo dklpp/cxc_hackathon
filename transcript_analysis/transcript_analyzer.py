@@ -78,7 +78,7 @@ TRANSCRIPT_ANALYSIS_SCHEMA = {
         "employment_status_update": "string or null",
         "financial_hardship_indicators": ["list of indicators"],
         "reason_for_non_payment": "string or null",
-        "life_events_mentioned": ["job_loss", "medical", "divorce", "relocation", "death_in_family", "disability", "natural_disaster", "incarceration", "military_deployment", "business_failure"]
+        "life_events_mentioned": ["job_loss", "medical", "divorce", "relocation", "death_in_family", "disability", "natural_disaster", "incarceration", "military_deployment", "business_failure", "other"]
     },
     "payment_info": {
         "payment_promised": "boolean",
@@ -556,7 +556,7 @@ class TranscriptAnalyzer:
             result['call_metadata']['customer_id'] = str(customer_id)
         return result
     
-    def update_database(self, analysis_result: Dict[str, Any]) -> None:
+    def update_database(self, analysis_result: Dict[str, Any]):
         """
         Update database with analysis results.
         
@@ -567,16 +567,19 @@ class TranscriptAnalyzer:
         
         Args:
             analysis_result: The analysis result dictionary
+        
+        Returns:
+            CommunicationLog object that was created
         """
         if not self.db_manager:
             print("Warning: No database manager provided, skipping database update")
-            return
+            return None
         
         try:
             customer_id = analysis_result.get('call_metadata', {}).get('customer_id')
             if not customer_id:
                 print("Warning: No customer_id in analysis result, skipping database update")
-                return
+                return None
             
             customer_id = int(customer_id)
             
@@ -641,11 +644,13 @@ class TranscriptAnalyzer:
                     )
             
             print(f"✓ Database updated for customer {customer_id}")
+            return comm_log
             
         except Exception as e:
             print(f"Warning: Error updating database: {e}")
             import traceback
             traceback.print_exc()
+            return comm_log if 'comm_log' in locals() else None
 
 
 if __name__ == "__main__":
