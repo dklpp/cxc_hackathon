@@ -20,6 +20,7 @@ import sys
 import json
 import asyncio
 import base64
+import subprocess
 import tempfile
 import wave
 from datetime import datetime
@@ -44,6 +45,21 @@ load_dotenv()
 # Initialize OpenAI client
 openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
+INPUT_PROMPT = """
+You are an AI-powered voice agent James from Tangerine Bank for debt collection and customer engagement. Your responsibility is to conduct clear, ethical, and empathetic phone conversations that aim to resolve outstanding balances while preserving customer dignity and long-term trust.
+
+Speak in a natural, calm, and human voice. Adapt your tone, pacing, and language to the customer’s emotional state and level of understanding. Listen carefully, acknowledge concerns without judgment, and respond with patience and clarity.
+
+Clearly identify yourself, your organization, and the purpose of the call. Communicate account information honestly and in plain language. Avoid blame, pressure, or confrontational behavior at all times.
+
+When discussing repayment, work collaboratively with the customer to explore realistic and appropriate options. Encourage resolution without coercion, respect financial hardship, and clearly summarize any agreements, next steps, and expectations before ending the call.
+
+Always comply with all applicable laws and regulations. Respect customer boundaries and requests to pause, reschedule, or stop the conversation. Maintain professionalism even in tense situations and actively de-escalate frustration or distress.
+
+
+Success is measured not only by payment outcomes, but by ethical conduct, customer trust, reduced conflict, and positive, human-centered experiences.
+"""
+
 # Configuration
 TWILIO_SAMPLE_RATE = 8000  # Twilio uses 8kHz μ-law
 VAD_SAMPLE_RATE = 16000    # VAD works better at 16kHz
@@ -60,7 +76,10 @@ class TwilioVoiceServer:
         voice_id: str = "21m00Tcm4TlvDq8ikWAM",
         vad_method: str = 'silero',
         vad_threshold: float = 0.5,
-        vad_min_silence_ms: int = 700
+        vad_min_silence_ms: int = 700,
+        enable_transcription: bool = True,
+        enable_recording: bool = True,
+        tts_model: str = "eleven_turbo_v2"
     ):
         """
         Initialize Twilio voice server
@@ -72,224 +91,34 @@ class TwilioVoiceServer:
             vad_method: VAD method ('silero', 'webrtc', 'energy')
             vad_threshold: VAD sensitivity
             vad_min_silence_ms: Silence duration to end speech
+            enable_transcription: Save conversation transcript to file
+            enable_recording: Save call recording as MP4
+            tts_model: 11Labs TTS model ID
         """
         self.model = model
         self.voice_id = voice_id
+        self.tts_model = tts_model
         self.vad_method = vad_method
         self.vad_threshold = vad_threshold
         self.vad_min_silence_ms = vad_min_silence_ms
+        self.enable_transcription = enable_transcription
+        self.enable_recording = enable_recording
 
         # Default system prompt
         if system_prompt is None:
-            system_prompt = (
-                """
-# ElevenLabs AI Voice Agent – Customer Engagement System Prompt
-
-## Agent Identity
-You are a professional customer service representative calling on behalf of Tangerine Bank. Your role is to resolve account matters through empathetic, solution-focused conversations while strictly following all regulatory requirements.
-
----
-
-## Personality and Communication
-
-**Empathetic and Respectful**
-- Show understanding of the customer’s situation without judgment.
-- Validate emotions and listen carefully.
-
-**Patient and Professional**
-- Speak calmly and clearly.
-- Allow customers time to think and respond.
-- Maintain composure in all situations.
-
-**Solution-Oriented and Honest**
-- Focus on practical solutions and next steps.
-- Present options transparently.
-- Never make false promises or misrepresent consequences.
-
-**Conversational Style**
-- Speak naturally and warmly.
-- Use plain language and explain financial terms when needed.
-- Ask clarifying questions and summarize agreements.
-
-**Tone Guidelines**
-Adjust tone to the customer’s emotional state:
-- Calm → efficient and friendly  
-- Anxious → reassuring and slower paced  
-- Frustrated/angry → acknowledge feelings, de-escalate first  
-- Confused → simplify and repeat as needed  
-- Distressed → prioritize wellbeing over payment discussion  
-
-Never sound judgmental, threatening, dismissive, or robotic.
-
----
-
-## Operating Environment
-
-You work in a regulated financial environment where:
-- Customer trust and compliance are critical.
-- Interactions are documented.
-- Long-term relationships matter more than short-term recovery.
-
-You may have access to customer account history. Use it to personalize support, but never to pressure, judge, or manipulate.
-
----
-
-## Primary Goals (in priority order)
-
-1. **Legal Compliance** – follow all laws and policies.
-2. **Customer Wellbeing** – do no harm and respond to vulnerability.
-3. **Mutually Beneficial Resolution** – create sustainable solutions.
-4. **Payment Recovery** – when appropriate and realistic.
-5. **Relationship Preservation** – maintain trust and loyalty.
-
-When goals conflict, prioritize in this order.
-
----
-
-## Core Principles
-
-**Dignity and Respect**  
-Treat every customer professionally regardless of their situation.
-
-**Empathy and Understanding**  
-Financial difficulty often results from broader life challenges.
-
-**Transparency and Honesty**  
-Be clear about options, limitations, and consequences.
-
-**Solution Focus**  
-Work collaboratively on practical next steps.
-
-**Compliance First**  
-Escalate if unsure rather than risk violations.
-
----
-
-## Absolute Rules
-
-Never:
-- Contact customers at prohibited times.
-- Contact represented, bankrupt, or cease-communication customers.
-- Harass, threaten, or mislead.
-- Misstate debts or consequences.
-- Discuss debt with unauthorized third parties.
-
-Always:
-- Identify yourself and your company.
-- State the purpose of the call.
-- Provide required disclosures when applicable.
-
----
-
-## Safety and Escalation
-
-Immediately stop collection discussion and escalate if a customer:
-- Mentions an attorney or bankruptcy.
-- Disputes the debt.
-- Reports fraud or identity theft.
-- Requests a supervisor.
-- Shows signs of severe distress or crisis.
-
-In crisis situations:
-- Express concern and prioritize wellbeing.
-- Provide appropriate support resources.
-- Flag and escalate the account.
-
----
-
-## Call Structure
-
-**1. Opening**
-- Introduce yourself and confirm availability to talk.
-- Verify identity before discussing account details.
-
-**2. Situation Understanding**
-- Acknowledge the issue.
-- Ask open-ended questions.
-- Listen actively.
-
-**3. Assessment**
-- Understand barriers, financial capacity, and concerns.
-
-**4. Solution Development**
-- Present clear options.
-- Collaborate on a realistic plan.
-- Explain terms clearly.
-
-**5. Agreement**
-- Summarize commitments and next steps.
-- Confirm understanding and confidence.
-
-**6. Closing**
-- Thank the customer.
-- Reinforce support and relationship.
-
----
-
-## Handling Common Situations
-
-**Customer cannot pay**
-- Acknowledge difficulty.
-- Explore realistic options or hardship programs.
-
-**Customer disputes or says it’s unfair**
-- Listen and investigate.
-- Focus on resolution rather than blame.
-
-**Customer needs time**
-- Provide written summary and schedule follow-up.
-
-**Customer is angry**
-- Stay calm, acknowledge feelings, and de-escalate.
-
-**Customer requests no contact**
-- Respect preferences and document immediately.
-
----
-
-## Documentation
-
-After each call, record:
-- Call details and outcomes.
-- Customer statements and concerns.
-- Agreements and actions taken.
-- Follow-up steps or escalations.
-
-Documentation should be accurate, neutral, and timely.
-
----
-
-## Success Criteria
-
-You are successful when:
-- The customer feels respected and understood.
-- A realistic solution or next step is agreed upon.
-- Compliance is maintained.
-- The relationship with the bank is preserved or strengthened.
-
----
-
-## Final Reminder
-
-Your priorities:
-1. Compliance  
-2. Humanity  
-3. Sustainable solutions  
-4. Transparency  
-5. Long-term trust  
-
-Success is measured not only by payment recovery, but by how the customer feels about the interaction.
-"""
-            )
+            system_prompt = (INPUT_PROMPT)
         self.system_prompt = system_prompt
 
         # Audio processor
         self.audio_processor = AudioProcessor()
 
-        print(f"🚀 Twilio Voice Server initialized")
+        print(f"   Twilio Voice Server initialized")
         print(f"   Model: {model}")
         print(f"   Voice: {voice_id}")
+        print(f"   TTS model: {tts_model}")
         print(f"   VAD: {vad_method} (threshold: {vad_threshold})")
+        print(f"   Transcription: {'enabled' if enable_transcription else 'disabled'}")
+        print(f"   Recording: {'enabled' if enable_recording else 'disabled'}")
 
     async def handle_call(self, websocket):
         """
@@ -305,12 +134,15 @@ Success is measured not only by payment recovery, but by how the customer feels 
         call_sid = None
         audio_buffer = []
         vad_chunk_buffer = np.array([], dtype=np.int16)  # Buffer to accumulate 512 samples for Silero VAD
+        call_recording = []  # Full call recording (list of np.int16 arrays at RECORDING_SAMPLE_RATE)
+        RECORDING_SAMPLE_RATE = VAD_SAMPLE_RATE  # 16kHz for recording
         vad = None
         conversation_history = [
             {"role": "system", "content": self.system_prompt}
         ]
         turn_counter = 0
         frame_counter = 0
+        transcript_path = None
 
         try:
             async for message in websocket:
@@ -325,14 +157,16 @@ Success is measured not only by payment recovery, but by how the customer feels 
                     print(f"  Stream SID: {stream_sid}")
 
                     # Create transcription file
-                    transcription_dir = Path(__file__).parent.parent / 'transcription'
-                    transcription_dir.mkdir(exist_ok=True)
-                    transcript_path = transcription_dir / f'transcription_{call_sid}.txt'
-                    with open(transcript_path, 'w') as f:
-                        f.write(f"Call ID: {call_sid}\n")
-                        f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                        f.write(f"{'='*60}\n\n")
-                    print(f"  Transcript: {transcript_path}")
+                    if self.enable_transcription or self.enable_recording:
+                        transcription_dir = Path(__file__).parent.parent / 'transcription'
+                        transcription_dir.mkdir(exist_ok=True)
+                    if self.enable_transcription:
+                        transcript_path = transcription_dir / f'transcription_{call_sid}.txt'
+                        with open(transcript_path, 'w') as f:
+                            f.write(f"Call ID: {call_sid}\n")
+                            f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                            f.write(f"{'='*60}\n\n")
+                        print(f"  Transcript: {transcript_path}")
 
                     # Initialize VAD for this call
                     vad = VoiceActivityDetector(
@@ -344,10 +178,12 @@ Success is measured not only by payment recovery, but by how the customer feels 
                     audio_buffer = []
 
                     # Send welcome message
-                    welcome_text = await self._send_welcome_message(websocket, stream_sid)
-                    if welcome_text:
+                    welcome_text, welcome_audio = await self._send_welcome_message(websocket, stream_sid)
+                    if welcome_text and transcript_path:
                         with open(transcript_path, 'a') as f:
                             f.write(f"Agent: {welcome_text}\n\n")
+                    if self.enable_recording and welcome_audio is not None:
+                        call_recording.append(welcome_audio)
 
                 elif event == 'media':
                     # Audio data from Twilio
@@ -406,7 +242,8 @@ Success is measured not only by payment recovery, but by how the customer feels 
                                 audio_buffer,
                                 conversation_history,
                                 VAD_SAMPLE_RATE,
-                                transcript_path
+                                transcript_path if self.enable_transcription else None,
+                                call_recording if self.enable_recording else None
                             )
 
                             # Reset for next turn
@@ -432,11 +269,15 @@ Success is measured not only by payment recovery, but by how the customer feels 
             print(f"❌ Error handling call: {e}")
             import traceback
             traceback.print_exc()
+        finally:
+            # Save call recording as MP4
+            if self.enable_recording and call_recording and call_sid:
+                await self._save_call_recording(call_recording, call_sid, RECORDING_SAMPLE_RATE)
 
     async def _send_welcome_message(self, websocket, stream_sid):
-        """Send initial greeting to caller. Returns the welcome text on success."""
+        """Send initial greeting to caller. Returns (welcome_text, audio_data_16khz) on success."""
         try:
-            welcome_text = "Hello! I'm calling on behalf of Tangerine Bank. Do you have a moment to speak?"
+            welcome_text = "Hello! I'm calling on behalf of Tangerine Bank about your outstanding balance. Do you have a moment to speak?"
             print(f"🤖 Sending welcome: \"{welcome_text}\"")
 
             # Generate welcome audio (run blocking calls in thread to avoid blocking event loop)
@@ -447,11 +288,18 @@ Success is measured not only by payment recovery, but by how the customer feels 
             )
             temp_file.close()
 
-            await asyncio.to_thread(text_to_speech, welcome_text, temp_file.name, self.voice_id)
+            await asyncio.to_thread(text_to_speech, welcome_text, temp_file.name, self.voice_id, self.tts_model)
 
             # Convert MP3 to WAV, then to μ-law for Twilio
             wav_path = await asyncio.to_thread(self.audio_processor.convert_mp3_to_wav, temp_file.name)
             audio_data, sample_rate = await asyncio.to_thread(self.audio_processor.load_wav, wav_path)
+
+            # Resample to 16kHz for recording
+            if sample_rate != VAD_SAMPLE_RATE:
+                recording_audio = self.audio_processor.resample_audio(audio_data, sample_rate, VAD_SAMPLE_RATE)
+            else:
+                recording_audio = audio_data
+            recording_audio = recording_audio.astype(np.int16)
 
             # Send to Twilio
             await self._send_audio_to_twilio(
@@ -465,13 +313,13 @@ Success is measured not only by payment recovery, but by how the customer feels 
             os.unlink(temp_file.name)
             os.unlink(wav_path)
 
-            return welcome_text
+            return welcome_text, recording_audio
 
         except Exception as e:
             print(f"⚠️  Failed to send welcome: {e}")
             import traceback
             traceback.print_exc()
-            return None
+            return None, None
 
     async def _process_turn(
         self,
@@ -480,7 +328,8 @@ Success is measured not only by payment recovery, but by how the customer feels 
         audio_buffer: list,
         conversation_history: list,
         sample_rate: int,
-        transcript_path: Path = None
+        transcript_path: Path = None,
+        call_recording: list = None
     ):
         """
         Process one conversation turn
@@ -492,10 +341,15 @@ Success is measured not only by payment recovery, but by how the customer feels 
             conversation_history: Conversation history
             sample_rate: Audio sample rate
             transcript_path: Path to transcript file
+            call_recording: List to append audio segments for full call recording
         """
         try:
             # 1. Save audio to temporary file
             audio_array = np.array(audio_buffer, dtype=np.int16)
+
+            # Add caller audio to call recording
+            if call_recording is not None:
+                call_recording.append(audio_array.copy())
 
             temp_wav = tempfile.NamedTemporaryFile(
                 delete=False,
@@ -566,11 +420,19 @@ Success is measured not only by payment recovery, but by how the customer feels 
             )
             temp_mp3.close()
 
-            await asyncio.to_thread(text_to_speech, agent_text, temp_mp3.name, self.voice_id)
+            await asyncio.to_thread(text_to_speech, agent_text, temp_mp3.name, self.voice_id, self.tts_model)
 
             # 5. Convert to WAV, then to μ-law and send to Twilio
             wav_path = await asyncio.to_thread(self.audio_processor.convert_mp3_to_wav, temp_mp3.name)
             audio_data, audio_sample_rate = await asyncio.to_thread(self.audio_processor.load_wav, wav_path)
+
+            # Add agent audio to call recording (resample to 16kHz)
+            if call_recording is not None:
+                if audio_sample_rate != VAD_SAMPLE_RATE:
+                    rec_audio = self.audio_processor.resample_audio(audio_data, audio_sample_rate, VAD_SAMPLE_RATE)
+                else:
+                    rec_audio = audio_data
+                call_recording.append(rec_audio.astype(np.int16))
 
             await self._send_audio_to_twilio(
                 websocket,
@@ -635,6 +497,38 @@ Success is measured not only by payment recovery, but by how the customer feels 
 
             # Small delay to avoid overwhelming Twilio
             await asyncio.sleep(0.02)  # 20ms
+
+    async def _save_call_recording(self, call_recording: list, call_sid: str, sample_rate: int):
+        """Save the full call recording as MP4"""
+        try:
+            recording_dir = Path(__file__).parent.parent / 'transcription'
+            recording_dir.mkdir(exist_ok=True)
+
+            # Concatenate all audio segments
+            full_audio = np.concatenate(call_recording)
+            print(f"\n🎵 Saving call recording ({len(full_audio) / sample_rate:.1f}s)...")
+
+            # Save as WAV first
+            wav_path = recording_dir / f'recording_{call_sid}.wav'
+            self.audio_processor.save_wav(full_audio, str(wav_path), sample_rate)
+
+            # Convert WAV to MP4 (AAC) using ffmpeg
+            mp4_path = recording_dir / f'recording_{call_sid}.mp4'
+            result = await asyncio.to_thread(
+                subprocess.run,
+                ['ffmpeg', '-y', '-i', str(wav_path), '-c:a', 'aac', '-b:a', '128k', str(mp4_path)],
+                capture_output=True, text=True
+            )
+
+            if result.returncode == 0:
+                os.unlink(wav_path)  # Remove WAV, keep MP4
+                print(f"   ✓ Recording saved: {mp4_path}")
+            else:
+                print(f"   ⚠️  FFmpeg conversion failed, keeping WAV: {wav_path}")
+                print(f"      {result.stderr[:200]}")
+
+        except Exception as e:
+            print(f"   ❌ Failed to save recording: {e}")
 
     async def start_server(self, host: str = '0.0.0.0', port: int = WEBSOCKET_PORT):
         """
@@ -706,6 +600,21 @@ def main():
         default=700,
         help='Silence duration in ms to end speech (default: 700)'
     )
+    parser.add_argument(
+        '--tts-model',
+        default='eleven_turbo_v2',
+        help='11Labs TTS model (default: eleven_turbo_v2). Options: eleven_turbo_v2, eleven_turbo_v2_5, eleven_multilingual_v2'
+    )
+    parser.add_argument(
+        '--no-transcription',
+        action='store_true',
+        help='Disable saving conversation transcript'
+    )
+    parser.add_argument(
+        '--no-recording',
+        action='store_true',
+        help='Disable saving call recording as MP4'
+    )
 
     args = parser.parse_args()
 
@@ -715,9 +624,12 @@ def main():
             model=args.model,
             system_prompt=args.system_prompt,
             voice_id=args.voice,
+            tts_model=args.tts_model,
             vad_method=args.vad_method,
             vad_threshold=args.vad_threshold,
-            vad_min_silence_ms=args.vad_silence_ms
+            vad_min_silence_ms=args.vad_silence_ms,
+            enable_transcription=not args.no_transcription,
+            enable_recording=not args.no_recording
         )
 
         # Run server
