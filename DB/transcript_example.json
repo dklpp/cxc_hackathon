@@ -1,0 +1,98 @@
+{
+  "conversation_id": "conv_0501kgxmxqc5fwzssdkfvvx4rwbb",
+  "status": "done",
+  "transcript": [
+    {
+      "message": "Hello Maria, this is James calling from Tangerine Bank. Do you have a moment to talk?",
+      "role": "agent"
+    },
+    {
+      "message": "Hi, yes.",
+      "role": "user"
+    },
+    {
+      "message": "Thank you for taking the time to speak with me today, Maria. I know you’ve been traveling for work, and I truly appreciate you making the time to connect. I’m here to help make things simple and stress-free for you.",
+      "role": "agent"
+    },
+    {
+      "message": "What do you want?",
+      "role": "user"
+    },
+    {
+      "message": "I’m calling to check in about your account, Maria. I know you’ve been away on a work trip, and I want to make sure everything is clear and manageable for you. There’s a small payment that’s a bit past due, but I’m here to help you get back on track in a way that works for your situation.",
+      "role": "agent"
+    },
+    {
+      "message": "Fuck You!",
+      "role": "user"
+    },
+    {
+      "message": "I hear that you're feeling frustrated, Maria, and I want to acknowledge that. I’m truly sorry this situation has added stress, especially after your busy trip. I’m here to...",
+      "role": "agent"
+    },
+    {
+      "message": "I'm sorry!",
+      "role": "user"
+    },
+    {
+      "message": "Thank you for sharing that, Maria. I really appreciate your honesty, and I’m glad we’re able to talk. I completely understand how overwhelming things can feel, especially after a long trip. Let’s work together to get this sorted in a way that feels manageable for you.",
+      "role": "agent"
+    },
+    {
+      "message": "No, it's a nose. It's a nose. It's a nose. It's a nose. It was just like that? Yes, it was like that? Yes, it was like that? Yes, it was like that? Yes, yes... Yes... Yes... Yes... Yes... Yes... Yes... Yes.. Yes.. I'm so sorry, but I don't have any money.",
+      "role": "user"
+    },
+    {
+      "message": "I hear how overwhelmed you’re feeling, Maria, and I want you to know it’s okay. I’m here to help, not to add pressure. Let’s take a...",
+      "role": "agent"
+    },
+    {
+      "message": "Maria. No, Maria. Maria. Maria. No.",
+      "role": "user"
+    },
+    {
+      "message": "I understand you're feeling overwhelmed, Maria, and I want to...",
+      "role": "agent"
+    },
+    {
+      "message": "But...",
+      "role": "user"
+    },
+    {
+      "message": "I’m here with you,...",
+      "role": "agent"
+    },
+    {
+      "message": "I can pay you with bananas.",
+      "role": "user"
+    },
+    {
+      "message": "I appreciate your humor, Maria, and I truly hear that you're feeling stressed. Let’s take a breath together. I’m here to help find a solution that works for you—no matter what that looks like. We can explore options that fit your situation, and I’ll make sure you’re not alone in this.",
+      "role": "agent"
+    },
+    {
+      "message": "Okay, I can pay you 30 cents every month.",
+      "role": "user"
+    },
+    {
+      "message": "Thank you for being honest with me, Maria. I really appreciate that. While 30 cents a month isn’t enough to cover the balance, I want to make sure we find a path forward that works for you. Let’s talk about what you can manage, and I’ll help you set up a plan that’s realistic and kind to your situation.",
+      "role": "agent"
+    },
+    {
+      "message": "Okay, two Red Bulls.",
+      "role": "user"
+    },
+    {
+      "message": "I hear you, Maria, and I want to make sure you feel supported. Let’s take a moment to figure out a payment plan that works for you—something that’s doable and doesn’t add...",
+      "role": "agent"
+    },
+    {
+      "message": "Okay okay! I can give you five horses!",
+      "role": "user"
+    },
+    {
+      "message": "I appreciate your creativity, Maria, and I truly hear that you're feeling overwhelmed. Let’s take a deep breath together. I’m here to help you find a solution that works—something realistic and manageable. We can set up a payment plan that fits your situation,...",
+      "role": "agent"
+    }
+  ]
+}
