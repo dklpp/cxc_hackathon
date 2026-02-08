@@ -1,0 +1,353 @@
+{
+  "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+  "agent_name": "Tangerine Bank Collector",
+  "conversation_id": "conv_9201kgx2t8p7etmatjetkcdvpe2a",
+  "status": "done",
+  "user_id": "+15483906276",
+  "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+  "version_id": "agtvrsn_5701kgwrw3gcecar60b7jyf16jjv",
+  "transcript": [
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "Hi, I'm here to help collect any outstanding payments. Let's get started!",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 0,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.19142152299900772
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_turbo_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": null
+    },
+    {
+      "role": "user",
+      "agent_metadata": null,
+      "message": "Hi, so I don't want to pay you money. We'll break your legs!",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 4,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_asr_trailing_service_latency": {
+            "elapsed_time": 0.10993385999609018
+          }
+        },
+        "convai_asr_provider": "Original ASR",
+        "convai_tts_model": null
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": "audio"
+    },
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "I understand you may be feeling frustrated, but threats are not acceptable. My purpose in calling is to discuss your outstanding balance with the bank. Could you please confirm your full name and date of birth so I can access your account details?",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 19,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_llm_service_ttf_sentence": {
+            "elapsed_time": 1.8349882279944723
+          },
+          "convai_llm_service_ttfb": {
+            "elapsed_time": 1.8346709269972052
+          },
+          "convai_llm_service_tt_last_sentence": {
+            "elapsed_time": 1.8552144889981719
+          },
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.2608580029991572
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_turbo_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": {
+        "model_usage": {
+          "gemini-2.5-flash": {
+            "input": {
+              "tokens": 1019,
+              "price": 0.00015285
+            },
+            "input_cache_read": {
+              "tokens": 0,
+              "price": 0.0
+            },
+            "input_cache_write": {
+              "tokens": 0,
+              "price": 0.0
+            },
+            "output_total": {
+              "tokens": 47,
+              "price": 2.8199999999999998e-05
+            }
+          }
+        }
+      },
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": null
+    },
+    {
+      "role": "user",
+      "agent_metadata": null,
+      "message": "Yeah.",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 34,
+      "conversation_turn_metrics": null,
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": null
+    }
+  ],
+  "metadata": {
+    "start_time_unix_secs": 1770502575,
+    "accepted_time_unix_secs": 1770502575,
+    "call_duration_secs": 39,
+    "cost": 261,
+    "deletion_settings": {
+      "deletion_time_unix_secs": null,
+      "deleted_logs_at_time_unix_secs": null,
+      "deleted_audio_at_time_unix_secs": null,
+      "deleted_transcript_at_time_unix_secs": null,
+      "delete_transcript_and_pii": false,
+      "delete_audio": false
+    },
+    "feedback": {
+      "type": null,
+      "overall_score": null,
+      "likes": 0,
+      "dislikes": 0,
+      "rating": null,
+      "comment": null
+    },
+    "authorization_method": "signed_url",
+    "charging": {
+      "dev_discount": false,
+      "is_burst": false,
+      "tier": "creator",
+      "llm_usage": {
+        "irreversible_generation": {
+          "model_usage": {
+            "gemini-2.5-flash": {
+              "input": {
+                "tokens": 1019,
+                "price": 0.00015285
+              },
+              "input_cache_read": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "input_cache_write": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "output_total": {
+                "tokens": 47,
+                "price": 2.8199999999999998e-05
+              }
+            }
+          }
+        },
+        "initiated_generation": {
+          "model_usage": {
+            "gemini-2.5-flash": {
+              "input": {
+                "tokens": 4249,
+                "price": 0.0006373500000000001
+              },
+              "input_cache_read": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "input_cache_write": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "output_total": {
+                "tokens": 119,
+                "price": 7.139999999999999e-05
+              }
+            }
+          }
+        }
+      },
+      "llm_price": 0.0007087500000000001,
+      "llm_charge": 3,
+      "call_charge": 258,
+      "free_minutes_consumed": 0.0,
+      "free_llm_dollars_consumed": 0.0
+    },
+    "phone_call": {
+      "direction": "outbound",
+      "phone_number_id": "phnum_0901kgx2ske3e73rch9b0tvcnqvk",
+      "agent_number": "+12295141318",
+      "external_number": "+15483906276",
+      "type": "twilio",
+      "stream_sid": "MZ03ef1634bb94d5d8beae63aadb8eafb4",
+      "call_sid": "CA91ccdf6f37a5a98502b8681799e9f658"
+    },
+    "batch_call": null,
+    "termination_reason": "Call ended by remote party",
+    "error": null,
+    "warnings": [],
+    "main_language": "en",
+    "rag_usage": null,
+    "text_only": false,
+    "features_usage": {
+      "language_detection": {
+        "enabled": false,
+        "used": false
+      },
+      "transfer_to_agent": {
+        "enabled": false,
+        "used": false
+      },
+      "transfer_to_number": {
+        "enabled": false,
+        "used": false
+      },
+      "multivoice": {
+        "enabled": false,
+        "used": false
+      },
+      "dtmf_tones": {
+        "enabled": false,
+        "used": false
+      },
+      "external_mcp_servers": {
+        "enabled": false,
+        "used": false
+      },
+      "pii_zrm_workspace": false,
+      "pii_zrm_agent": false,
+      "tool_dynamic_variable_updates": {
+        "enabled": false,
+        "used": false
+      },
+      "is_livekit": false,
+      "voicemail_detection": {
+        "enabled": false,
+        "used": false
+      },
+      "workflow": {
+        "enabled": false,
+        "tool_node": {
+          "enabled": false,
+          "used": false
+        },
+        "standalone_agent_node": {
+          "enabled": false,
+          "used": false
+        },
+        "phone_number_node": {
+          "enabled": false,
+          "used": false
+        },
+        "end_node": {
+          "enabled": false,
+          "used": false
+        }
+      },
+      "agent_testing": {
+        "enabled": false,
+        "tests_ran_after_last_modification": false,
+        "tests_ran_in_last_7_days": false
+      },
+      "versioning": {
+        "enabled": true,
+        "used": false
+      }
+    },
+    "eleven_assistant": {
+      "is_eleven_assistant": false
+    },
+    "initiator_id": null,
+    "conversation_initiation_source": "twilio",
+    "conversation_initiation_source_version": null,
+    "timezone": null,
+    "async_metadata": null,
+    "whatsapp": null,
+    "agent_created_from": "ui",
+    "agent_last_updated_from": "ui"
+  },
+  "analysis": {
+    "evaluation_criteria_results": {},
+    "data_collection_results": {},
+    "evaluation_criteria_results_list": [],
+    "data_collection_results_list": [],
+    "call_successful": "success",
+    "transcript_summary": "The agent initiated a conversation to collect outstanding payments. The user responded with a threat. The agent acknowledged the user's frustration but stated that threats are unacceptable and requested the user's name and date of birth to access account details. The user responded affirmatively.\n",
+    "call_summary_title": "Threats during payment collection"
+  },
+  "conversation_initiation_client_data": {
+    "conversation_config_override": {
+      "turn": null,
+      "tts": null,
+      "conversation": null,
+      "agent": null
+    },
+    "custom_llm_extra_body": {},
+    "user_id": null,
+    "source_info": {
+      "source": null,
+      "version": null
+    },
+    "dynamic_variables": {
+      "system__agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+      "system__agent_turns": 2,
+      "system__current_agent_turns": 2,
+      "system__current_subagent_turns": 2,
+      "system__current_agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+      "system__conversation_id": "conv_9201kgx2t8p7etmatjetkcdvpe2a",
+      "system__call_duration_secs": 38,
+      "system__time_utc": "2026-02-07T22:16:54.204586+00:00",
+      "system__time": "Saturday, 22:16 07 February 2026",
+      "system__timezone": null,
+      "system__caller_id": "+12295141318",
+      "system__called_number": "+15483906276",
+      "system__call_sid": "CA91ccdf6f37a5a98502b8681799e9f658"
+    }
+  },
+  "has_audio": true,
+  "has_user_audio": true,
+  "has_response_audio": true
+}

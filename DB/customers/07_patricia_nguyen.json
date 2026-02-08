@@ -1,0 +1,154 @@
+{
+    "customer": {
+        "first_name": "Patricia",
+        "last_name": "Nguyen",
+        "middle_name": "Linh",
+        "date_of_birth": "1988-04-12",
+        "ssn": "890-12-3456",
+        "email": "patricia.nguyen.cpa@gmail.com",
+        "phone_primary": "+17145556789",
+        "phone_secondary": "+17145556790",
+        "address_line1": "1892 Bolsa Avenue",
+        "address_line2": null,
+        "city": "Westminster",
+        "state": "CA",
+        "zip_code": "92683",
+        "country": "USA",
+        "employer_name": "Deloitte LLP",
+        "employment_status": "employed",
+        "annual_income": 135000.0,
+        "account_status": "active",
+        "credit_score": 802,
+        "notes": "CPA, senior manager at Deloitte. Meticulous with finances. Payment showing as 3 days late was actually sent on time but bank had processing delay. Has documentation from bank. Perfect payment history for 6+ years."
+    },
+    "debts": [
+        {
+            "debt_type": "mortgage",
+            "original_amount": 450000.0,
+            "current_balance": 385000.0,
+            "interest_rate": 3.25,
+            "minimum_payment": 1850.0,
+            "issue_date": "2020-03-15",
+            "due_date": "2025-02-01",
+            "last_payment_date": "2025-02-04",
+            "status": "active",
+            "days_past_due": 3,
+            "account_number": "MTG-5566-7788",
+            "reference_number": "REF-PN-2020-001",
+            "notes": "Payment sent Jan 30, processed Feb 4 due to bank system upgrade. Customer has confirmation."
+        },
+        {
+            "debt_type": "credit_card",
+            "original_amount": 20000.0,
+            "current_balance": 1250.0,
+            "interest_rate": 15.99,
+            "minimum_payment": 35.0,
+            "issue_date": "2018-06-01",
+            "due_date": "2025-02-05",
+            "last_payment_date": "2025-01-28",
+            "status": "active",
+            "days_past_due": 0,
+            "account_number": "CC-9900-1122",
+            "reference_number": "REF-PN-2018-001",
+            "notes": "Paid in full monthly. Current balance is recent purchases only."
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "mortgage",
+            "amount": 2000.0,
+            "payment_date": "2025-02-04",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-PN-2025-02-001",
+            "status": "completed",
+            "notes": "Payment initiated Jan 30, delayed due to bank processing. Customer has documentation."
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 2800.0,
+            "payment_date": "2025-01-28",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-PN-2025-01-001",
+            "status": "completed",
+            "notes": "Paid full statement balance"
+        },
+        {
+            "debt_type": "mortgage",
+            "amount": 2000.0,
+            "payment_date": "2024-12-28",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-PN-2024-12-001",
+            "status": "completed",
+            "notes": "Regular payment plus extra principal"
+        },
+        {
+            "debt_type": "mortgage",
+            "amount": 2000.0,
+            "payment_date": "2024-11-28",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-PN-2024-11-001",
+            "status": "completed",
+            "notes": "Regular payment plus extra principal"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 3200.0,
+            "payment_date": "2024-12-28",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-PN-2024-12-002",
+            "status": "completed",
+            "notes": "Holiday purchases paid in full"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-4455-6677",
+            "routing_number": "322271627",
+            "bank_name": "Bank of America",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "Primary account - had system delay in January"
+        },
+        {
+            "account_type": "savings",
+            "account_number": "SAV-4455-6678",
+            "routing_number": "322271627",
+            "bank_name": "Bank of America",
+            "is_active": true,
+            "is_primary": false,
+            "notes": "High-yield savings"
+        },
+        {
+            "account_type": "checking",
+            "account_number": "CHK-8899-0011",
+            "routing_number": "121042882",
+            "bank_name": "Wells Fargo",
+            "is_active": true,
+            "is_primary": false,
+            "notes": "Backup account"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "call",
+            "direction": "inbound",
+            "duration_seconds": 480,
+            "contact_phone": "+17145556789",
+            "outcome": "dispute_filed",
+            "notes": "Customer called immediately upon receiving late notice. Very upset as she has perfect payment history. Explained bank had system upgrade that delayed ACH transfers. Has email confirmation from BofA acknowledging the delay. Requesting late fee waiver and correction to credit reporting.",
+            "timestamp": "2025-02-05T08:30:00",
+            "agent_id": "agent_001"
+        },
+        {
+            "communication_type": "email",
+            "direction": "inbound",
+            "duration_seconds": null,
+            "contact_email": "patricia.nguyen.cpa@gmail.com",
+            "outcome": "documentation_received",
+            "notes": "Customer forwarded Bank of America confirmation email about ACH processing delays from Jan 28-Feb 3 due to system maintenance.",
+            "timestamp": "2025-02-05T09:00:00",
+            "agent_id": "agent_001"
+        }
+    ]
+}
