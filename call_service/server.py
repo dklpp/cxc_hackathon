@@ -3,6 +3,7 @@ import time
 import requests
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
+from config import build_prompt, parse_customer_data
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
@@ -11,6 +12,7 @@ app = Flask(__name__)
 API_KEY = os.getenv("ELEVEN_LABS_API_KEY")
 AGENT_ID = os.getenv("ELEVEN_LABS_AGENT_ID")
 PHONE_NUMBER_ID = os.getenv("ELEVEN_LABS_AGENT_PHONE_NUMBER_ID")
+PHONE_NUMBER = os.getenv("ALINA_PHONE_NUMBER")
 
 ELEVENLABS_URL = "https://api.elevenlabs.io/v1/convai/twilio/outbound-call"
 ELEVENLABS_CONV_URL = "https://api.elevenlabs.io/v1/convai/conversations"
@@ -23,20 +25,23 @@ def index():
 @app.route("/make_call", methods=["POST"])
 def make_call():
     body = request.get_json()
-    if not body or not all(k in body for k in ("username", "userdata", "phone")):
-        return jsonify({"error": "username, userdata, and phone are required"}), 400
+    if not body or "customer" not in body:
+        return jsonify({"error": "customer data is required"}), 400
 
-    username = body["username"]
-    userdata = body["userdata"]
-    phone = body["phone"]
+    userdata = parse_customer_data(body)
+    first_name = userdata["CUSTOMER_FIRST_NAME"]
+    phone = body["customer"].get("phone_primary", "")
 
-    first_message = f"Hi {username} — I'm calling about your outstanding balance."
-    prompt = f"{username} owes {userdata}. Ask them politely to arrange payment."
+    if not phone:
+        return jsonify({"error": "customer phone_primary is required"}), 400
+
+    first_message = f"Hello {first_name}, this is James calling from Tangerine Bank. Do you have a moment to talk?"
+    prompt = build_prompt(userdata)
 
     payload = {
         "agent_id": AGENT_ID,
         "agent_phone_number_id": PHONE_NUMBER_ID,
-        "to_number": phone,
+        "to_number": PHONE_NUMBER,
         "conversation_initiation_client_data": {
             "conversation_config_override": {
                 "agent": {
