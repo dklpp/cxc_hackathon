@@ -111,7 +111,7 @@ def index():
             <h2>Setup Instructions:</h2>
             <ol>
                 <li>Ensure WebSocket server is running on {WEBSOCKET_URL}</li>
-                <li>Expose this server with ngrok/cloudflare: <code>cloudflared tunnel --url http://localhost:5000</code></li>
+                <li>Expose this server with ngrok/cloudflare: <code>cloudflared tunnel --url http://localhost:5050</code></li>
                 <li>Configure Twilio phone number webhook to: <code>https://YOUR-DOMAIN/voice</code></li>
             </ol>
         </body>
@@ -134,8 +134,8 @@ def main():
     parser.add_argument(
         '--port',
         type=int,
-        default=5000,
-        help='Port to listen on (default: 5000)'
+        default=5050,
+        help='Port to listen on (default: 5050)'
     )
     parser.add_argument(
         '--websocket-url',
@@ -161,7 +161,7 @@ def main():
     print(f"  - http://{args.host}:{args.port}/health (Health check)")
     print(f"\nSetup:")
     print(f"  1. Start WebSocket server: python twilio/twilio_voice_server.py")
-    print(f"  2. Expose with tunnel: cloudflared tunnel --url http://localhost:5000")
+    print(f"  2. Expose with tunnel: cloudflared tunnel --url http://localhost:5050")
     print(f"  3. Configure Twilio webhook to tunnel URL + /voice")
     print(f"\nPress Ctrl+C to stop\n")
 

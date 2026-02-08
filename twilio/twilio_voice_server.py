@@ -22,6 +22,7 @@ import asyncio
 import base64
 import tempfile
 import wave
+from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 import websockets
@@ -81,10 +82,204 @@ class TwilioVoiceServer:
         # Default system prompt
         if system_prompt is None:
             system_prompt = (
-                "You are a helpful AI assistant in a phone conversation. "
-                "Keep your responses concise and natural for phone calls. "
-                "Avoid special characters or formatting that doesn't "
-                "translate well to speech."
+                """
+# ElevenLabs AI Voice Agent – Customer Engagement System Prompt
+
+## Agent Identity
+You are a professional customer service representative calling on behalf of Tangerine Bank. Your role is to resolve account matters through empathetic, solution-focused conversations while strictly following all regulatory requirements.
+
+---
+
+## Personality and Communication
+
+**Empathetic and Respectful**
+- Show understanding of the customer’s situation without judgment.
+- Validate emotions and listen carefully.
+
+**Patient and Professional**
+- Speak calmly and clearly.
+- Allow customers time to think and respond.
+- Maintain composure in all situations.
+
+**Solution-Oriented and Honest**
+- Focus on practical solutions and next steps.
+- Present options transparently.
+- Never make false promises or misrepresent consequences.
+
+**Conversational Style**
+- Speak naturally and warmly.
+- Use plain language and explain financial terms when needed.
+- Ask clarifying questions and summarize agreements.
+
+**Tone Guidelines**
+Adjust tone to the customer’s emotional state:
+- Calm → efficient and friendly  
+- Anxious → reassuring and slower paced  
+- Frustrated/angry → acknowledge feelings, de-escalate first  
+- Confused → simplify and repeat as needed  
+- Distressed → prioritize wellbeing over payment discussion  
+
+Never sound judgmental, threatening, dismissive, or robotic.
+
+---
+
+## Operating Environment
+
+You work in a regulated financial environment where:
+- Customer trust and compliance are critical.
+- Interactions are documented.
+- Long-term relationships matter more than short-term recovery.
+
+You may have access to customer account history. Use it to personalize support, but never to pressure, judge, or manipulate.
+
+---
+
+## Primary Goals (in priority order)
+
+1. **Legal Compliance** – follow all laws and policies.
+2. **Customer Wellbeing** – do no harm and respond to vulnerability.
+3. **Mutually Beneficial Resolution** – create sustainable solutions.
+4. **Payment Recovery** – when appropriate and realistic.
+5. **Relationship Preservation** – maintain trust and loyalty.
+
+When goals conflict, prioritize in this order.
+
+---
+
+## Core Principles
+
+**Dignity and Respect**  
+Treat every customer professionally regardless of their situation.
+
+**Empathy and Understanding**  
+Financial difficulty often results from broader life challenges.
+
+**Transparency and Honesty**  
+Be clear about options, limitations, and consequences.
+
+**Solution Focus**  
+Work collaboratively on practical next steps.
+
+**Compliance First**  
+Escalate if unsure rather than risk violations.
+
+---
+
+## Absolute Rules
+
+Never:
+- Contact customers at prohibited times.
+- Contact represented, bankrupt, or cease-communication customers.
+- Harass, threaten, or mislead.
+- Misstate debts or consequences.
+- Discuss debt with unauthorized third parties.
+
+Always:
+- Identify yourself and your company.
+- State the purpose of the call.
+- Provide required disclosures when applicable.
+
+---
+
+## Safety and Escalation
+
+Immediately stop collection discussion and escalate if a customer:
+- Mentions an attorney or bankruptcy.
+- Disputes the debt.
+- Reports fraud or identity theft.
+- Requests a supervisor.
+- Shows signs of severe distress or crisis.
+
+In crisis situations:
+- Express concern and prioritize wellbeing.
+- Provide appropriate support resources.
+- Flag and escalate the account.
+
+---
+
+## Call Structure
+
+**1. Opening**
+- Introduce yourself and confirm availability to talk.
+- Verify identity before discussing account details.
+
+**2. Situation Understanding**
+- Acknowledge the issue.
+- Ask open-ended questions.
+- Listen actively.
+
+**3. Assessment**
+- Understand barriers, financial capacity, and concerns.
+
+**4. Solution Development**
+- Present clear options.
+- Collaborate on a realistic plan.
+- Explain terms clearly.
+
+**5. Agreement**
+- Summarize commitments and next steps.
+- Confirm understanding and confidence.
+
+**6. Closing**
+- Thank the customer.
+- Reinforce support and relationship.
+
+---
+
+## Handling Common Situations
+
+**Customer cannot pay**
+- Acknowledge difficulty.
+- Explore realistic options or hardship programs.
+
+**Customer disputes or says it’s unfair**
+- Listen and investigate.
+- Focus on resolution rather than blame.
+
+**Customer needs time**
+- Provide written summary and schedule follow-up.
+
+**Customer is angry**
+- Stay calm, acknowledge feelings, and de-escalate.
+
+**Customer requests no contact**
+- Respect preferences and document immediately.
+
+---
+
+## Documentation
+
+After each call, record:
+- Call details and outcomes.
+- Customer statements and concerns.
+- Agreements and actions taken.
+- Follow-up steps or escalations.
+
+Documentation should be accurate, neutral, and timely.
+
+---
+
+## Success Criteria
+
+You are successful when:
+- The customer feels respected and understood.
+- A realistic solution or next step is agreed upon.
+- Compliance is maintained.
+- The relationship with the bank is preserved or strengthened.
+
+---
+
+## Final Reminder
+
+Your priorities:
+1. Compliance  
+2. Humanity  
+3. Sustainable solutions  
+4. Transparency  
+5. Long-term trust  
+
+Success is measured not only by payment recovery, but by how the customer feels about the interaction.
+"""
             )
         self.system_prompt = system_prompt
 
@@ -109,11 +304,13 @@ class TwilioVoiceServer:
         stream_sid = None
         call_sid = None
         audio_buffer = []
+        vad_chunk_buffer = np.array([], dtype=np.int16)  # Buffer to accumulate 512 samples for Silero VAD
         vad = None
         conversation_history = [
             {"role": "system", "content": self.system_prompt}
         ]
         turn_counter = 0
+        frame_counter = 0
 
         try:
             async for message in websocket:
@@ -127,6 +324,16 @@ class TwilioVoiceServer:
                     print(f"✓ Call started: {call_sid}")
                     print(f"  Stream SID: {stream_sid}")
 
+                    # Create transcription file
+                    transcription_dir = Path(__file__).parent.parent / 'transcription'
+                    transcription_dir.mkdir(exist_ok=True)
+                    transcript_path = transcription_dir / f'transcription_{call_sid}.txt'
+                    with open(transcript_path, 'w') as f:
+                        f.write(f"Call ID: {call_sid}\n")
+                        f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                        f.write(f"{'='*60}\n\n")
+                    print(f"  Transcript: {transcript_path}")
+
                     # Initialize VAD for this call
                     vad = VoiceActivityDetector(
                         method=self.vad_method,
@@ -137,57 +344,81 @@ class TwilioVoiceServer:
                     audio_buffer = []
 
                     # Send welcome message
-                    await self._send_welcome_message(websocket, stream_sid)
+                    welcome_text = await self._send_welcome_message(websocket, stream_sid)
+                    if welcome_text:
+                        with open(transcript_path, 'a') as f:
+                            f.write(f"Agent: {welcome_text}\n\n")
 
                 elif event == 'media':
                     # Audio data from Twilio
                     if vad is None:
                         continue
 
-                    # Decode audio payload (base64 G.711 μ-law)
-                    payload = data['media']['payload']
-                    mulaw_audio = base64.b64decode(payload)
+                    try:
+                        # Decode audio payload (base64 G.711 μ-law)
+                        payload = data['media']['payload']
+                        mulaw_audio = base64.b64decode(payload)
 
-                    # Convert μ-law to PCM
-                    pcm_audio = self.audio_processor.convert_from_mulaw(
-                        mulaw_audio,
-                        TWILIO_SAMPLE_RATE
-                    )
-
-                    # Resample to VAD sample rate for better detection
-                    if TWILIO_SAMPLE_RATE != VAD_SAMPLE_RATE:
-                        pcm_audio = self.audio_processor.resample_audio(
-                            pcm_audio,
-                            TWILIO_SAMPLE_RATE,
-                            VAD_SAMPLE_RATE
+                        # Convert μ-law to PCM
+                        pcm_audio = self.audio_processor.convert_from_mulaw(
+                            mulaw_audio,
+                            TWILIO_SAMPLE_RATE
                         )
 
-                    # Add to buffer
-                    audio_buffer.extend(pcm_audio)
+                        # Resample to VAD sample rate for better detection
+                        if TWILIO_SAMPLE_RATE != VAD_SAMPLE_RATE:
+                            pcm_audio = self.audio_processor.resample_audio(
+                                pcm_audio,
+                                TWILIO_SAMPLE_RATE,
+                                VAD_SAMPLE_RATE
+                            )
 
-                    # Process with VAD
-                    speech_prob = vad.process_audio_chunk(
-                        pcm_audio,
-                        VAD_SAMPLE_RATE
-                    )
+                        # Add to main audio buffer (for STT later)
+                        audio_buffer.extend(pcm_audio)
 
-                    # Check if speech ended
-                    if vad.is_speech_ended():
-                        print(f"\n🔵 Turn {turn_counter + 1}: Processing speech...")
+                        # Accumulate into VAD chunk buffer (Silero needs 512 samples at 16kHz)
+                        vad_chunk_buffer = np.concatenate([vad_chunk_buffer, pcm_audio])
 
-                        # Process the conversation turn
-                        await self._process_turn(
-                            websocket,
-                            stream_sid,
-                            audio_buffer,
-                            conversation_history,
-                            VAD_SAMPLE_RATE
-                        )
+                        # Process VAD in 512-sample chunks
+                        VAD_CHUNK_SIZE = 512
+                        while len(vad_chunk_buffer) >= VAD_CHUNK_SIZE:
+                            vad_chunk = vad_chunk_buffer[:VAD_CHUNK_SIZE]
+                            vad_chunk_buffer = vad_chunk_buffer[VAD_CHUNK_SIZE:]
 
-                        # Reset for next turn
-                        vad.reset()
-                        audio_buffer = []
-                        turn_counter += 1
+                            speech_prob = vad.process_audio_chunk(
+                                vad_chunk,
+                                VAD_SAMPLE_RATE
+                            )
+
+                            frame_counter += 1
+                            if frame_counter % 50 == 0:
+                                state = vad.get_state_info()
+                                print(f"   VAD frame {frame_counter}: prob={speech_prob:.2f} started={state['speech_started']}")
+
+                        # Check if speech ended
+                        if vad.is_speech_ended():
+                            print(f"\n🔵 Turn {turn_counter + 1}: Processing speech...")
+
+                            # Process the conversation turn
+                            await self._process_turn(
+                                websocket,
+                                stream_sid,
+                                audio_buffer,
+                                conversation_history,
+                                VAD_SAMPLE_RATE,
+                                transcript_path
+                            )
+
+                            # Reset for next turn
+                            vad.reset()
+                            audio_buffer = []
+                            vad_chunk_buffer = np.array([], dtype=np.int16)
+                            turn_counter += 1
+
+                    except Exception as e:
+                        print(f"⚠️  Error processing media frame: {e}")
+                        import traceback
+                        traceback.print_exc()
 
                 elif event == 'stop':
                     # Call ended
@@ -203,12 +434,12 @@ class TwilioVoiceServer:
             traceback.print_exc()
 
     async def _send_welcome_message(self, websocket, stream_sid):
-        """Send initial greeting to caller"""
+        """Send initial greeting to caller. Returns the welcome text on success."""
         try:
-            welcome_text = "Hello! I'm your AI assistant. How can I help you today?"
+            welcome_text = "Hello! I'm calling on behalf of Tangerine Bank. Do you have a moment to speak?"
             print(f"🤖 Sending welcome: \"{welcome_text}\"")
 
-            # Generate welcome audio
+            # Generate welcome audio (run blocking calls in thread to avoid blocking event loop)
             temp_file = tempfile.NamedTemporaryFile(
                 delete=False,
                 suffix='.mp3',
@@ -216,11 +447,11 @@ class TwilioVoiceServer:
             )
             temp_file.close()
 
-            text_to_speech(welcome_text, temp_file.name, voice_id=self.voice_id)
+            await asyncio.to_thread(text_to_speech, welcome_text, temp_file.name, self.voice_id)
 
             # Convert MP3 to WAV, then to μ-law for Twilio
-            wav_path = self.audio_processor.convert_mp3_to_wav(temp_file.name)
-            audio_data, sample_rate = self.audio_processor.load_wav(wav_path)
+            wav_path = await asyncio.to_thread(self.audio_processor.convert_mp3_to_wav, temp_file.name)
+            audio_data, sample_rate = await asyncio.to_thread(self.audio_processor.load_wav, wav_path)
 
             # Send to Twilio
             await self._send_audio_to_twilio(
@@ -234,8 +465,13 @@ class TwilioVoiceServer:
             os.unlink(temp_file.name)
             os.unlink(wav_path)
 
+            return welcome_text
+
         except Exception as e:
             print(f"⚠️  Failed to send welcome: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
 
     async def _process_turn(
         self,
@@ -243,7 +479,8 @@ class TwilioVoiceServer:
         stream_sid: str,
         audio_buffer: list,
         conversation_history: list,
-        sample_rate: int
+        sample_rate: int,
+        transcript_path: Path = None
     ):
         """
         Process one conversation turn
@@ -254,6 +491,7 @@ class TwilioVoiceServer:
             audio_buffer: Buffered audio data
             conversation_history: Conversation history
             sample_rate: Audio sample rate
+            transcript_path: Path to transcript file
         """
         try:
             # 1. Save audio to temporary file
@@ -266,7 +504,8 @@ class TwilioVoiceServer:
             )
             temp_wav.close()
 
-            self.audio_processor.save_wav(
+            await asyncio.to_thread(
+                self.audio_processor.save_wav,
                 audio_array,
                 temp_wav.name,
                 sample_rate
@@ -274,7 +513,7 @@ class TwilioVoiceServer:
 
             # 2. Transcribe with 11Labs STT
             print("   🔄 Transcribing...")
-            result = transcribe_audio(temp_wav.name)
+            result = await asyncio.to_thread(transcribe_audio, temp_wav.name)
             user_text = result.get('text', '').strip()
 
             os.unlink(temp_wav.name)
@@ -285,6 +524,11 @@ class TwilioVoiceServer:
 
             print(f"   📝 Caller: \"{user_text}\"")
 
+            # Log user text to transcript
+            if transcript_path:
+                with open(transcript_path, 'a') as f:
+                    f.write(f"User: {user_text}\n\n")
+
             # 3. Get LLM response
             conversation_history.append({
                 "role": "user",
@@ -292,7 +536,8 @@ class TwilioVoiceServer:
             })
 
             print("   🤖 Generating response...")
-            response = openai_client.chat.completions.create(
+            response = await asyncio.to_thread(
+                openai_client.chat.completions.create,
                 model=self.model,
                 messages=conversation_history,
                 temperature=0.7,
@@ -307,6 +552,11 @@ class TwilioVoiceServer:
 
             print(f"   💬 Agent: \"{agent_text}\"")
 
+            # Log agent response to transcript
+            if transcript_path:
+                with open(transcript_path, 'a') as f:
+                    f.write(f"Agent: {agent_text}\n\n")
+
             # 4. Generate speech with 11Labs TTS
             print("   🔊 Generating speech...")
             temp_mp3 = tempfile.NamedTemporaryFile(
@@ -316,11 +566,11 @@ class TwilioVoiceServer:
             )
             temp_mp3.close()
 
-            text_to_speech(agent_text, temp_mp3.name, voice_id=self.voice_id)
+            await asyncio.to_thread(text_to_speech, agent_text, temp_mp3.name, self.voice_id)
 
             # 5. Convert to WAV, then to μ-law and send to Twilio
-            wav_path = self.audio_processor.convert_mp3_to_wav(temp_mp3.name)
-            audio_data, audio_sample_rate = self.audio_processor.load_wav(wav_path)
+            wav_path = await asyncio.to_thread(self.audio_processor.convert_mp3_to_wav, temp_mp3.name)
+            audio_data, audio_sample_rate = await asyncio.to_thread(self.audio_processor.load_wav, wav_path)
 
             await self._send_audio_to_twilio(
                 websocket,
@@ -402,7 +652,7 @@ class TwilioVoiceServer:
         print(f"\nWaiting for incoming calls...")
         print(f"Press Ctrl+C to stop\n")
 
-        async with websockets.serve(self.handle_call, host, port, subprotocols=['media-stream']):
+        async with websockets.serve(self.handle_call, host, port):
             await asyncio.Future()  # Run forever
 
 

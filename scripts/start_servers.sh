@@ -49,7 +49,7 @@ start_server "websocket-server" "python twilio/twilio_voice_server.py" "5001"
 sleep 2
 
 # Start TwiML server (port 5000)
-start_server "twiml-server" "python twilio/twilio_server_simple.py" "5000"
+start_server "twiml-server" "python twilio/twilio_server_simple.py" "5050"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${GREEN}✓ All servers started!${NC}"
@@ -57,12 +57,12 @@ echo -e "${BLUE}========================================${NC}\n"
 
 echo "Next steps:"
 echo "1. Expose servers with cloudflare tunnel:"
-echo "   ${YELLOW}cloudflared tunnel --url http://localhost:5000${NC}"
+echo "   ${YELLOW}cloudflared tunnel --url http://localhost:5050${NC}"
 echo ""
 echo "2. Configure Twilio webhook to tunnel URL + /voice"
 echo ""
 echo "3. Make a test call or check server status:"
-echo "   ${YELLOW}curl http://localhost:5000/health${NC}"
+echo "   ${YELLOW}curl http://localhost:5050/health${NC}"
 echo ""
 echo "To stop servers:"
 echo "   ${YELLOW}./scripts/stop_servers.sh${NC}"
