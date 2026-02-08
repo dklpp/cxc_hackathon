@@ -1,0 +1,112 @@
+{
+    "customer": {
+        "first_name": "Maria",
+        "last_name": "Santos",
+        "middle_name": "Elena",
+        "date_of_birth": "1985-03-14",
+        "ssn": "245-67-8901",
+        "email": "maria.santos@techmail.com",
+        "phone_primary": "+14155551234",
+        "phone_secondary": "+14155551235",
+        "address_line1": "782 Valencia Street",
+        "address_line2": "Apt 4B",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip_code": "94110",
+        "country": "USA",
+        "employer_name": "Salesforce Inc.",
+        "employment_status": "employed",
+        "annual_income": 125000.0,
+        "account_status": "active",
+        "credit_score": 785,
+        "notes": "Excellent customer. 5+ year relationship. Was traveling internationally for work conference when payment was missed. Typically pays early."
+    },
+    "debts": [
+        {
+            "debt_type": "credit_card",
+            "original_amount": 8000.0,
+            "current_balance": 2340.0,
+            "interest_rate": 16.99,
+            "minimum_payment": 85.0,
+            "issue_date": "2022-06-01",
+            "due_date": "2025-01-25",
+            "last_payment_date": "2024-12-20",
+            "status": "active",
+            "days_past_due": 15,
+            "account_number": "CC-4532-7891",
+            "reference_number": "REF-MS-2022-001",
+            "notes": "Platinum rewards card. Customer has autopay but was traveling and card on file expired."
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "credit_card",
+            "amount": 500.0,
+            "payment_date": "2024-12-20",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-MS-2024-12-001",
+            "status": "completed",
+            "notes": "Regular monthly payment"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 500.0,
+            "payment_date": "2024-11-18",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-MS-2024-11-001",
+            "status": "completed",
+            "notes": "Regular monthly payment"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 600.0,
+            "payment_date": "2024-10-15",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-MS-2024-10-001",
+            "status": "completed",
+            "notes": "Extra payment - paid more than minimum"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-9182-7364",
+            "routing_number": "121000358",
+            "bank_name": "Chase Bank",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "Primary account for autopay"
+        },
+        {
+            "account_type": "savings",
+            "account_number": "SAV-9182-7365",
+            "routing_number": "121000358",
+            "bank_name": "Chase Bank",
+            "is_active": true,
+            "is_primary": false,
+            "notes": "Emergency fund savings"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "email",
+            "direction": "outbound",
+            "duration_seconds": null,
+            "contact_email": "maria.santos@techmail.com",
+            "outcome": "no_response",
+            "notes": "Sent payment reminder email. Customer likely still traveling.",
+            "timestamp": "2025-01-27T09:00:00",
+            "agent_id": "system_auto"
+        },
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 45,
+            "contact_phone": "+14155551234",
+            "outcome": "voicemail",
+            "notes": "Left voicemail requesting callback about missed payment.",
+            "timestamp": "2025-01-28T14:30:00",
+            "agent_id": "agent_005"
+        }
+    ]
+}

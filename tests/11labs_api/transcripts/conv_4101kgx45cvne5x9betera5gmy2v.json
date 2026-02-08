@@ -1,0 +1,250 @@
+{
+  "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+  "agent_name": "Tangerine Bank Collector",
+  "conversation_id": "conv_4101kgx45cvne5x9betera5gmy2v",
+  "status": "done",
+  "user_id": "+15483906276",
+  "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+  "version_id": "agtvrsn_7101kgx441q3egnvvwxb894hw595",
+  "transcript": [
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "Hey there, babe. I\u2019m calling to take care of that little balance you\u2019ve been putting off. Don\u2019t worry \u2014 I\u2019ll make this quick, smooth, and very easy for you.",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 0,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.14898478100076318
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_flash_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": null
+    },
+    {
+      "role": "user",
+      "agent_metadata": null,
+      "message": "Hi. Hey. Hey, Minifunche.",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 4,
+      "conversation_turn_metrics": null,
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": null
+    }
+  ],
+  "metadata": {
+    "start_time_unix_secs": 1770503985,
+    "accepted_time_unix_secs": 1770503985,
+    "call_duration_secs": 14,
+    "cost": 109,
+    "deletion_settings": {
+      "deletion_time_unix_secs": null,
+      "deleted_logs_at_time_unix_secs": null,
+      "deleted_audio_at_time_unix_secs": null,
+      "deleted_transcript_at_time_unix_secs": null,
+      "delete_transcript_and_pii": false,
+      "delete_audio": false
+    },
+    "feedback": {
+      "type": null,
+      "overall_score": null,
+      "likes": 0,
+      "dislikes": 0,
+      "rating": null,
+      "comment": null
+    },
+    "authorization_method": "signed_url",
+    "charging": {
+      "dev_discount": false,
+      "is_burst": false,
+      "tier": "creator",
+      "llm_usage": {
+        "irreversible_generation": {
+          "model_usage": {}
+        },
+        "initiated_generation": {
+          "model_usage": {
+            "gemini-2.5-flash": {
+              "input": {
+                "tokens": 12527,
+                "price": 0.00187905
+              },
+              "input_cache_read": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "input_cache_write": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "output_total": {
+                "tokens": 19,
+                "price": 1.1400000000000001e-05
+              }
+            }
+          }
+        }
+      },
+      "llm_price": 0.00189045,
+      "llm_charge": 9,
+      "call_charge": 100,
+      "free_minutes_consumed": 0.0,
+      "free_llm_dollars_consumed": 0.0
+    },
+    "phone_call": {
+      "direction": "outbound",
+      "phone_number_id": "phnum_0901kgx2ske3e73rch9b0tvcnqvk",
+      "agent_number": "+12295141318",
+      "external_number": "+15483906276",
+      "type": "twilio",
+      "stream_sid": "MZa089ae8a7f3b9889903cf2b879f40b7d",
+      "call_sid": "CA94f6f3eb0a1fabd9bc60d52512957fd0"
+    },
+    "batch_call": null,
+    "termination_reason": "Call ended by remote party",
+    "error": null,
+    "warnings": [],
+    "main_language": "en",
+    "rag_usage": null,
+    "text_only": false,
+    "features_usage": {
+      "language_detection": {
+        "enabled": false,
+        "used": false
+      },
+      "transfer_to_agent": {
+        "enabled": false,
+        "used": false
+      },
+      "transfer_to_number": {
+        "enabled": false,
+        "used": false
+      },
+      "multivoice": {
+        "enabled": false,
+        "used": false
+      },
+      "dtmf_tones": {
+        "enabled": false,
+        "used": false
+      },
+      "external_mcp_servers": {
+        "enabled": false,
+        "used": false
+      },
+      "pii_zrm_workspace": false,
+      "pii_zrm_agent": false,
+      "tool_dynamic_variable_updates": {
+        "enabled": false,
+        "used": false
+      },
+      "is_livekit": false,
+      "voicemail_detection": {
+        "enabled": false,
+        "used": false
+      },
+      "workflow": {
+        "enabled": false,
+        "tool_node": {
+          "enabled": false,
+          "used": false
+        },
+        "standalone_agent_node": {
+          "enabled": false,
+          "used": false
+        },
+        "phone_number_node": {
+          "enabled": false,
+          "used": false
+        },
+        "end_node": {
+          "enabled": false,
+          "used": false
+        }
+      },
+      "agent_testing": {
+        "enabled": false,
+        "tests_ran_after_last_modification": false,
+        "tests_ran_in_last_7_days": false
+      },
+      "versioning": {
+        "enabled": true,
+        "used": false
+      }
+    },
+    "eleven_assistant": {
+      "is_eleven_assistant": false
+    },
+    "initiator_id": null,
+    "conversation_initiation_source": "twilio",
+    "conversation_initiation_source_version": null,
+    "timezone": null,
+    "async_metadata": null,
+    "whatsapp": null,
+    "agent_created_from": "ui",
+    "agent_last_updated_from": "ui"
+  },
+  "analysis": {
+    "evaluation_criteria_results": {},
+    "data_collection_results": {},
+    "evaluation_criteria_results_list": [],
+    "data_collection_results_list": [],
+    "call_successful": "success",
+    "transcript_summary": "The AI agent, named Minifunche, initiated a call to address an outstanding balance, aiming for a quick and easy resolution. The user acknowledged the agent's greeting.\n",
+    "call_summary_title": "Balance payment reminder"
+  },
+  "conversation_initiation_client_data": {
+    "conversation_config_override": {
+      "turn": null,
+      "tts": null,
+      "conversation": null,
+      "agent": null
+    },
+    "custom_llm_extra_body": {},
+    "user_id": null,
+    "source_info": {
+      "source": null,
+      "version": null
+    },
+    "dynamic_variables": {
+      "system__agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+      "system__agent_turns": 1,
+      "system__current_agent_turns": 1,
+      "system__current_subagent_turns": 1,
+      "system__current_agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+      "system__conversation_id": "conv_4101kgx45cvne5x9betera5gmy2v",
+      "system__call_duration_secs": 14,
+      "system__time_utc": "2026-02-07T22:39:59.968892+00:00",
+      "system__time": "Saturday, 22:39 07 February 2026",
+      "system__timezone": null,
+      "system__caller_id": "+12295141318",
+      "system__called_number": "+15483906276",
+      "system__call_sid": "CA94f6f3eb0a1fabd9bc60d52512957fd0"
+    }
+  },
+  "has_audio": true,
+  "has_user_audio": true,
+  "has_response_audio": true
+}
