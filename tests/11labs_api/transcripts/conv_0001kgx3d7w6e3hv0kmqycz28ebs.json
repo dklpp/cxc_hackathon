@@ -1,0 +1,647 @@
+{
+  "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+  "agent_name": "Tangerine Bank Collector",
+  "conversation_id": "conv_0001kgx3d7w6e3hv0kmqycz28ebs",
+  "status": "done",
+  "user_id": "+15483906276",
+  "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+  "version_id": "agtvrsn_5401kgx3avjse5j98ewhkdfe1zn2",
+  "transcript": [
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "Hey there, babe. I\u2019m calling to take care of that little balance you\u2019ve been putting off. Don\u2019t worry \u2014 I\u2019ll make this quick, smooth, and very easy for you.",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 0,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.15214926000044215
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_flash_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": null
+    },
+    {
+      "role": "user",
+      "agent_metadata": null,
+      "message": "Space Hodgepodge, right? Yeah.",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 20,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_asr_trailing_service_latency": {
+            "elapsed_time": 0.10242858200217597
+          }
+        },
+        "convai_asr_provider": "Original ASR",
+        "convai_tts_model": null
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": "audio"
+    },
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "That's...",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 24,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_llm_service_ttf_sentence": {
+            "elapsed_time": 0.6180862080000225
+          },
+          "convai_llm_service_ttfb": {
+            "elapsed_time": 0.6177282380012912
+          },
+          "convai_llm_service_tt_last_sentence": {
+            "elapsed_time": 0.879922539999825
+          },
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.11028541900304845
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_flash_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": true,
+      "original_message": "That's right. Thank you for confirming, Space Hodgepodge. My name is Natasha, and I'm calling from the bank regarding your outstanding balance. I'd like to discuss this with you briefly.",
+      "source_medium": null
+    },
+    {
+      "role": "user",
+      "agent_metadata": null,
+      "message": "Do you have any questions? Yes, yes.",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 24,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_asr_trailing_service_latency": {
+            "elapsed_time": 0.21394244499970227
+          }
+        },
+        "convai_asr_provider": "Original ASR",
+        "convai_tts_model": null
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": "audio"
+    },
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "That's...",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 32,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_llm_service_ttf_sentence": {
+            "elapsed_time": 0.8231715469955816
+          },
+          "convai_llm_service_ttfb": {
+            "elapsed_time": 0.8228297710011248
+          },
+          "convai_llm_service_tt_last_sentence": {
+            "elapsed_time": 1.0547558089965605
+          },
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.1317231580032967
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_flash_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": true,
+      "original_message": "That's right, Space Hodgepodge. I do have a few questions, but first, I need to confirm I'm speaking with the correct person regarding an outstanding balance on an account with us. Could you please confirm your full name and date of birth for me?",
+      "source_medium": null
+    },
+    {
+      "role": "user",
+      "agent_metadata": null,
+      "message": "What's up?",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 32,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_asr_trailing_service_latency": {
+            "elapsed_time": 0.10034696399816312
+          }
+        },
+        "convai_asr_provider": "Original ASR",
+        "convai_tts_model": null
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": "audio"
+    },
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "My apologies, it seems we might have a slight misunderstanding. I'm calling regarding an important matter concerning an account with our bank. To ensure I'm speaking with the correct person and to protect your privacy, could you please confirm your full name for me?",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 37,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_llm_service_ttf_sentence": {
+            "elapsed_time": 1.7272193649987457
+          },
+          "convai_llm_service_ttfb": {
+            "elapsed_time": 1.7268475429955288
+          },
+          "convai_llm_service_tt_last_sentence": {
+            "elapsed_time": 1.9583074799957103
+          },
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.23022275500261458
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_turbo_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": {
+        "model_usage": {
+          "gemini-2.5-flash": {
+            "input": {
+              "tokens": 1136,
+              "price": 0.0001704
+            },
+            "input_cache_read": {
+              "tokens": 0,
+              "price": 0.0
+            },
+            "input_cache_write": {
+              "tokens": 0,
+              "price": 0.0
+            },
+            "output_total": {
+              "tokens": 54,
+              "price": 3.24e-05
+            }
+          }
+        }
+      },
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": null
+    },
+    {
+      "role": "user",
+      "agent_metadata": null,
+      "message": "My full name is Alina.",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 57,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_asr_trailing_service_latency": {
+            "elapsed_time": 0.10549089900450781
+          }
+        },
+        "convai_asr_provider": "Original ASR",
+        "convai_tts_model": null
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": "audio"
+    },
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "Thank you, Alina. To fully verify your identity and ensure we're discussing the correct account, could you please provide your full name, including your last name? This helps me...",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 70,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_llm_service_ttf_sentence": {
+            "elapsed_time": 0.8136994849992334
+          },
+          "convai_llm_service_ttfb": {
+            "elapsed_time": 0.8133195059999707
+          },
+          "convai_llm_service_tt_last_sentence": {
+            "elapsed_time": 0.9729549740004586
+          },
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.14036919299542205
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_turbo_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": {
+        "model_usage": {
+          "gemini-2.5-flash": {
+            "input": {
+              "tokens": 1196,
+              "price": 0.0001794
+            },
+            "input_cache_read": {
+              "tokens": 0,
+              "price": 0.0
+            },
+            "input_cache_write": {
+              "tokens": 0,
+              "price": 0.0
+            },
+            "output_total": {
+              "tokens": 50,
+              "price": 3e-05
+            }
+          }
+        }
+      },
+      "interrupted": true,
+      "original_message": "Thank you, Alina. To fully verify your identity and ensure we're discussing the correct account, could you please provide your full name, including your last name? This helps me ensure we maintain the highest level of security and privacy for your information.",
+      "source_medium": null
+    },
+    {
+      "role": "user",
+      "agent_metadata": null,
+      "message": "My full name is Alina Litovchenko. What's your name? I'm 20%.",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 84,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_asr_trailing_service_latency": {
+            "elapsed_time": 0.18733179199625738
+          }
+        },
+        "convai_asr_provider": "Original ASR",
+        "convai_tts_model": null
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": "audio"
+    },
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "Thank you, Alina Litovchenko. It's a pleasure to speak with you. My name is Natasha, and I'm calling from the bank regarding your account. I understand you mentioned \"twenty percent,\" but I'm not quite sure what that refers...",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 97,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_llm_service_ttf_sentence": {
+            "elapsed_time": 1.1955435179988854
+          },
+          "convai_llm_service_ttfb": {
+            "elapsed_time": 1.1951429830005509
+          },
+          "convai_llm_service_tt_last_sentence": {
+            "elapsed_time": 1.279581914001028
+          },
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.35144955000578193
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_turbo_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": {
+        "model_usage": {
+          "gemini-2.5-flash": {
+            "input": {
+              "tokens": 1255,
+              "price": 0.00018825
+            },
+            "input_cache_read": {
+              "tokens": 0,
+              "price": 0.0
+            },
+            "input_cache_write": {
+              "tokens": 0,
+              "price": 0.0
+            },
+            "output_total": {
+              "tokens": 59,
+              "price": 3.54e-05
+            }
+          }
+        }
+      },
+      "interrupted": true,
+      "original_message": "Thank you, Alina Litovchenko. It's a pleasure to speak with you. My name is Natasha, and I'm calling from the bank regarding your account. I understand you mentioned \"twenty percent,\" but I'm not quite sure what that refers to. Could you clarify?",
+      "source_medium": null
+    },
+    {
+      "role": "user",
+      "agent_metadata": null,
+      "message": "My name is Alina Lidovska, and I'm calling from the bank regarding your account. I understand you mentioned 20%, but I'm not quite sure what that refers to. Could you clarify? My name is Alina Lidovska, and I'm calling from the bank regarding your account. I understand you mentioned 20%, but I'm not quite sure what that refers to. Could you clarify? My name is Alina Lidovska, and I'm calling from the bank regarding your account.",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 113,
+      "conversation_turn_metrics": null,
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": null
+    }
+  ],
+  "metadata": {
+    "start_time_unix_secs": 1770503198,
+    "accepted_time_unix_secs": 1770503199,
+    "call_duration_secs": 129,
+    "cost": 868,
+    "deletion_settings": {
+      "deletion_time_unix_secs": null,
+      "deleted_logs_at_time_unix_secs": null,
+      "deleted_audio_at_time_unix_secs": null,
+      "deleted_transcript_at_time_unix_secs": null,
+      "delete_transcript_and_pii": false,
+      "delete_audio": false
+    },
+    "feedback": {
+      "type": null,
+      "overall_score": null,
+      "likes": 0,
+      "dislikes": 0,
+      "rating": null,
+      "comment": null
+    },
+    "authorization_method": "signed_url",
+    "charging": {
+      "dev_discount": false,
+      "is_burst": false,
+      "tier": "creator",
+      "llm_usage": {
+        "irreversible_generation": {
+          "model_usage": {
+            "gemini-2.5-flash": {
+              "input": {
+                "tokens": 3587,
+                "price": 0.00053805
+              },
+              "input_cache_read": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "input_cache_write": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "output_total": {
+                "tokens": 163,
+                "price": 9.779999999999999e-05
+              }
+            }
+          }
+        },
+        "initiated_generation": {
+          "model_usage": {
+            "gemini-2.5-flash": {
+              "input": {
+                "tokens": 17536,
+                "price": 0.0026304
+              },
+              "input_cache_read": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "input_cache_write": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "output_total": {
+                "tokens": 414,
+                "price": 0.0002484
+              }
+            }
+          }
+        }
+      },
+      "llm_price": 0.0028788000000000004,
+      "llm_charge": 13,
+      "call_charge": 855,
+      "free_minutes_consumed": 0.0,
+      "free_llm_dollars_consumed": 0.0
+    },
+    "phone_call": {
+      "direction": "outbound",
+      "phone_number_id": "phnum_0901kgx2ske3e73rch9b0tvcnqvk",
+      "agent_number": "+12295141318",
+      "external_number": "+15483906276",
+      "type": "twilio",
+      "stream_sid": "MZ9b9a8b89011251209e4795e4b3c64c2a",
+      "call_sid": "CA2b4e97f4adf58b6b8f915214cd16bd32"
+    },
+    "batch_call": null,
+    "termination_reason": "Call ended by remote party",
+    "error": null,
+    "warnings": [],
+    "main_language": "en",
+    "rag_usage": null,
+    "text_only": false,
+    "features_usage": {
+      "language_detection": {
+        "enabled": false,
+        "used": false
+      },
+      "transfer_to_agent": {
+        "enabled": false,
+        "used": false
+      },
+      "transfer_to_number": {
+        "enabled": false,
+        "used": false
+      },
+      "multivoice": {
+        "enabled": false,
+        "used": false
+      },
+      "dtmf_tones": {
+        "enabled": false,
+        "used": false
+      },
+      "external_mcp_servers": {
+        "enabled": false,
+        "used": false
+      },
+      "pii_zrm_workspace": false,
+      "pii_zrm_agent": false,
+      "tool_dynamic_variable_updates": {
+        "enabled": false,
+        "used": false
+      },
+      "is_livekit": false,
+      "voicemail_detection": {
+        "enabled": false,
+        "used": false
+      },
+      "workflow": {
+        "enabled": false,
+        "tool_node": {
+          "enabled": false,
+          "used": false
+        },
+        "standalone_agent_node": {
+          "enabled": false,
+          "used": false
+        },
+        "phone_number_node": {
+          "enabled": false,
+          "used": false
+        },
+        "end_node": {
+          "enabled": false,
+          "used": false
+        }
+      },
+      "agent_testing": {
+        "enabled": false,
+        "tests_ran_after_last_modification": false,
+        "tests_ran_in_last_7_days": false
+      },
+      "versioning": {
+        "enabled": true,
+        "used": false
+      }
+    },
+    "eleven_assistant": {
+      "is_eleven_assistant": false
+    },
+    "initiator_id": null,
+    "conversation_initiation_source": "twilio",
+    "conversation_initiation_source_version": null,
+    "timezone": null,
+    "async_metadata": null,
+    "whatsapp": null,
+    "agent_created_from": "ui",
+    "agent_last_updated_from": "ui"
+  },
+  "analysis": {
+    "evaluation_criteria_results": {},
+    "data_collection_results": {},
+    "evaluation_criteria_results_list": [],
+    "data_collection_results_list": [],
+    "call_successful": "success",
+    "transcript_summary": "The AI agent, \"Natasha,\" initiated a call to address an outstanding balance. The user, initially identifying as \"Space Hodgepodge,\" then provided the name \"Alina,\" later correcting it to \"Alina Litovchenko\" and then \"Alina Lidovska\". The user also mentioned \"20%,\" the meaning of which was unclear. The agent was attempting to verify the user's identity to discuss the account.\n",
+    "call_summary_title": "Identity verification attempt failed"
+  },
+  "conversation_initiation_client_data": {
+    "conversation_config_override": {
+      "turn": null,
+      "tts": null,
+      "conversation": null,
+      "agent": null
+    },
+    "custom_llm_extra_body": {},
+    "user_id": null,
+    "source_info": {
+      "source": null,
+      "version": null
+    },
+    "dynamic_variables": {
+      "system__agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+      "system__agent_turns": 6,
+      "system__current_agent_turns": 6,
+      "system__current_subagent_turns": 6,
+      "system__current_agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+      "system__conversation_id": "conv_0001kgx3d7w6e3hv0kmqycz28ebs",
+      "system__call_duration_secs": 128,
+      "system__time_utc": "2026-02-07T22:28:47.181172+00:00",
+      "system__time": "Saturday, 22:28 07 February 2026",
+      "system__timezone": null,
+      "system__caller_id": "+12295141318",
+      "system__called_number": "+15483906276",
+      "system__call_sid": "CA2b4e97f4adf58b6b8f915214cd16bd32"
+    }
+  },
+  "has_audio": true,
+  "has_user_audio": true,
+  "has_response_audio": true
+}

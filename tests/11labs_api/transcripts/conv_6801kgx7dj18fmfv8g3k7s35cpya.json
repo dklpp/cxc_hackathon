@@ -1,0 +1,162 @@
+{
+  "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+  "agent_name": null,
+  "conversation_id": "conv_6801kgx7dj18fmfv8g3k7s35cpya",
+  "status": "initiated",
+  "user_id": "+15483906276",
+  "branch_id": null,
+  "version_id": null,
+  "transcript": [],
+  "metadata": {
+    "start_time_unix_secs": 1770507389,
+    "accepted_time_unix_secs": null,
+    "call_duration_secs": 0,
+    "cost": 0,
+    "deletion_settings": {
+      "deletion_time_unix_secs": null,
+      "deleted_logs_at_time_unix_secs": null,
+      "deleted_audio_at_time_unix_secs": null,
+      "deleted_transcript_at_time_unix_secs": null,
+      "delete_transcript_and_pii": false,
+      "delete_audio": false
+    },
+    "feedback": {
+      "type": null,
+      "overall_score": null,
+      "likes": 0,
+      "dislikes": 0,
+      "rating": null,
+      "comment": null
+    },
+    "authorization_method": "public",
+    "charging": {
+      "dev_discount": false,
+      "is_burst": false,
+      "tier": null,
+      "llm_usage": {
+        "irreversible_generation": {
+          "model_usage": {}
+        },
+        "initiated_generation": {
+          "model_usage": {}
+        }
+      },
+      "llm_price": null,
+      "llm_charge": null,
+      "call_charge": null,
+      "free_minutes_consumed": 0.0,
+      "free_llm_dollars_consumed": 0.0
+    },
+    "phone_call": {
+      "direction": "outbound",
+      "phone_number_id": "phnum_0901kgx2ske3e73rch9b0tvcnqvk",
+      "agent_number": "+12295141318",
+      "external_number": "+15483906276",
+      "type": "twilio",
+      "stream_sid": "",
+      "call_sid": "CAbcfbb5cff044a47fd6eecf2f5fa144c5"
+    },
+    "batch_call": null,
+    "termination_reason": "",
+    "error": null,
+    "warnings": [],
+    "main_language": null,
+    "rag_usage": null,
+    "text_only": false,
+    "features_usage": {
+      "language_detection": {
+        "enabled": false,
+        "used": false
+      },
+      "transfer_to_agent": {
+        "enabled": false,
+        "used": false
+      },
+      "transfer_to_number": {
+        "enabled": false,
+        "used": false
+      },
+      "multivoice": {
+        "enabled": false,
+        "used": false
+      },
+      "dtmf_tones": {
+        "enabled": false,
+        "used": false
+      },
+      "external_mcp_servers": {
+        "enabled": false,
+        "used": false
+      },
+      "pii_zrm_workspace": false,
+      "pii_zrm_agent": false,
+      "tool_dynamic_variable_updates": {
+        "enabled": false,
+        "used": false
+      },
+      "is_livekit": false,
+      "voicemail_detection": {
+        "enabled": false,
+        "used": false
+      },
+      "workflow": {
+        "enabled": false,
+        "tool_node": {
+          "enabled": false,
+          "used": false
+        },
+        "standalone_agent_node": {
+          "enabled": false,
+          "used": false
+        },
+        "phone_number_node": {
+          "enabled": false,
+          "used": false
+        },
+        "end_node": {
+          "enabled": false,
+          "used": false
+        }
+      },
+      "agent_testing": {
+        "enabled": false,
+        "tests_ran_after_last_modification": false,
+        "tests_ran_in_last_7_days": false
+      },
+      "versioning": {
+        "enabled": false,
+        "used": false
+      }
+    },
+    "eleven_assistant": {
+      "is_eleven_assistant": false
+    },
+    "initiator_id": null,
+    "conversation_initiation_source": "twilio",
+    "conversation_initiation_source_version": null,
+    "timezone": null,
+    "async_metadata": null,
+    "whatsapp": null,
+    "agent_created_from": "ui",
+    "agent_last_updated_from": "ui"
+  },
+  "analysis": null,
+  "conversation_initiation_client_data": {
+    "conversation_config_override": {
+      "turn": null,
+      "tts": null,
+      "conversation": null,
+      "agent": null
+    },
+    "custom_llm_extra_body": {},
+    "user_id": null,
+    "source_info": {
+      "source": null,
+      "version": null
+    },
+    "dynamic_variables": {}
+  },
+  "has_audio": false,
+  "has_user_audio": false,
+  "has_response_audio": false
+}

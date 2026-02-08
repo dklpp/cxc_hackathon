@@ -1,0 +1,399 @@
+{
+  "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+  "agent_name": "Tangerine Bank Collector",
+  "conversation_id": "conv_7201kgx7dp7xe108xqwx9z50qr05",
+  "status": "done",
+  "user_id": "+15483906276",
+  "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+  "version_id": "agtvrsn_7101kgx441q3egnvvwxb894hw595",
+  "transcript": [
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "Hey there, babe. I\u2019m calling to take care of that little balance you\u2019ve been putting off. Don\u2019t worry \u2014 I\u2019ll make this quick, smooth, and very easy for you.",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 0,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.14878487500391202
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_flash_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": null
+    },
+    {
+      "role": "user",
+      "agent_metadata": null,
+      "message": "Why is it so fast?",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 7,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_asr_trailing_service_latency": {
+            "elapsed_time": 0.10008396100602113
+          }
+        },
+        "convai_asr_provider": "Original ASR",
+        "convai_tts_model": null
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": "audio"
+    },
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "I apologize...",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 14,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_llm_service_ttf_sentence": {
+            "elapsed_time": 3.93997883299744
+          },
+          "convai_llm_service_ttfb": {
+            "elapsed_time": 3.939593914001307
+          },
+          "convai_llm_service_tt_last_sentence": {
+            "elapsed_time": 4.080913060999592
+          },
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.13626718999876175
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_flash_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": true,
+      "original_message": "I apologize if my previous response came across as too abrupt or informal. That was not my intention, and I want to ensure I am communicating with you in a professional and helpful manner.\n\nAs a representative from Tangerine Bank, my goal is to assist you with your account matters with empathy and clarity. Please let me know how I can help you today, and I will do my best to provide you with the information and support you need.",
+      "source_medium": null
+    },
+    {
+      "role": "user",
+      "agent_metadata": null,
+      "message": "There is a question about inspiration for the project and how we build it. We can say that the inspiration for the project was the fact that we came to the guys from the Tangerine company and asked them what their main struggle was, and if there is something they wanted us to do. I see, yes. And I can just tell you that I wrote this down. Yes, yes, it's true. Okay, I'll just...",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 15,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_asr_trailing_service_latency": {
+            "elapsed_time": 0.6701524780000909
+          }
+        },
+        "convai_asr_provider": "Original ASR",
+        "convai_tts_model": null
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": null,
+      "interrupted": false,
+      "original_message": null,
+      "source_medium": "audio"
+    },
+    {
+      "role": "agent",
+      "agent_metadata": {
+        "agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+        "branch_id": "agtbrch_4901kgwrw3gbebbv5rnbhvnga612",
+        "workflow_node_id": null
+      },
+      "message": "Thank you for sharing that insight regarding the project's inspiration. It's always valuable to understand the challenges our customers face, and we appreciate efforts to address...",
+      "multivoice_message": null,
+      "tool_calls": [],
+      "tool_results": [],
+      "feedback": null,
+      "llm_override": null,
+      "time_in_call_secs": 51,
+      "conversation_turn_metrics": {
+        "metrics": {
+          "convai_llm_service_ttf_sentence": {
+            "elapsed_time": 6.226290058002633
+          },
+          "convai_llm_service_ttfb": {
+            "elapsed_time": 6.22587445499812
+          },
+          "convai_llm_service_tt_last_sentence": {
+            "elapsed_time": 6.333632339003088
+          },
+          "convai_tts_service_ttfb": {
+            "elapsed_time": 0.13193254599900683
+          }
+        },
+        "convai_asr_provider": null,
+        "convai_tts_model": "eleven_flash_v2"
+      },
+      "rag_retrieval_info": null,
+      "llm_usage": {
+        "model_usage": {
+          "gemini-2.5-flash": {
+            "input": {
+              "tokens": 92,
+              "price": 1.3799999999999998e-05
+            },
+            "input_cache_read": {
+              "tokens": 8149,
+              "price": 0.0
+            },
+            "input_cache_write": {
+              "tokens": 0,
+              "price": 0.0
+            },
+            "output_total": {
+              "tokens": 73,
+              "price": 4.3799999999999994e-05
+            }
+          }
+        }
+      },
+      "interrupted": true,
+      "original_message": "Thank you for sharing that insight regarding the project's inspiration. It's always valuable to understand the challenges our customers face, and we appreciate efforts to address those needs. As a representative for Tangerine Bank, I'm here to assist with any questions you might have about your account or our services. Is there anything specific I can help you with today?",
+      "source_medium": null
+    }
+  ],
+  "metadata": {
+    "start_time_unix_secs": 1770507399,
+    "accepted_time_unix_secs": 1770507399,
+    "call_duration_secs": 58,
+    "cost": 399,
+    "deletion_settings": {
+      "deletion_time_unix_secs": null,
+      "deleted_logs_at_time_unix_secs": null,
+      "deleted_audio_at_time_unix_secs": null,
+      "deleted_transcript_at_time_unix_secs": null,
+      "delete_transcript_and_pii": false,
+      "delete_audio": false
+    },
+    "feedback": {
+      "type": null,
+      "overall_score": null,
+      "likes": 0,
+      "dislikes": 0,
+      "rating": null,
+      "comment": null
+    },
+    "authorization_method": "signed_url",
+    "charging": {
+      "dev_discount": false,
+      "is_burst": false,
+      "tier": "creator",
+      "llm_usage": {
+        "irreversible_generation": {
+          "model_usage": {
+            "gemini-2.5-flash": {
+              "input": {
+                "tokens": 92,
+                "price": 1.3799999999999998e-05
+              },
+              "input_cache_read": {
+                "tokens": 8149,
+                "price": 0.0
+              },
+              "input_cache_write": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "output_total": {
+                "tokens": 73,
+                "price": 4.3799999999999994e-05
+              }
+            }
+          }
+        },
+        "initiated_generation": {
+          "model_usage": {
+            "gemini-2.5-flash": {
+              "input": {
+                "tokens": 15756,
+                "price": 0.0023634
+              },
+              "input_cache_read": {
+                "tokens": 29548,
+                "price": 0.0
+              },
+              "input_cache_write": {
+                "tokens": 0,
+                "price": 0.0
+              },
+              "output_total": {
+                "tokens": 251,
+                "price": 0.00015059999999999997
+              }
+            }
+          }
+        }
+      },
+      "llm_price": 0.0025139999999999997,
+      "llm_charge": 12,
+      "call_charge": 387,
+      "free_minutes_consumed": 0.0,
+      "free_llm_dollars_consumed": 0.0
+    },
+    "phone_call": {
+      "direction": "outbound",
+      "phone_number_id": "phnum_0901kgx2ske3e73rch9b0tvcnqvk",
+      "agent_number": "+12295141318",
+      "external_number": "+15483906276",
+      "type": "twilio",
+      "stream_sid": "MZ49cd74e63e1a8d8c008e6dd6b3a35ecc",
+      "call_sid": "CA867da284a03c5323158bbd2a8515b416"
+    },
+    "batch_call": null,
+    "termination_reason": "Call ended by remote party",
+    "error": null,
+    "warnings": [],
+    "main_language": "en",
+    "rag_usage": null,
+    "text_only": false,
+    "features_usage": {
+      "language_detection": {
+        "enabled": false,
+        "used": false
+      },
+      "transfer_to_agent": {
+        "enabled": false,
+        "used": false
+      },
+      "transfer_to_number": {
+        "enabled": false,
+        "used": false
+      },
+      "multivoice": {
+        "enabled": false,
+        "used": false
+      },
+      "dtmf_tones": {
+        "enabled": false,
+        "used": false
+      },
+      "external_mcp_servers": {
+        "enabled": false,
+        "used": false
+      },
+      "pii_zrm_workspace": false,
+      "pii_zrm_agent": false,
+      "tool_dynamic_variable_updates": {
+        "enabled": false,
+        "used": false
+      },
+      "is_livekit": false,
+      "voicemail_detection": {
+        "enabled": false,
+        "used": false
+      },
+      "workflow": {
+        "enabled": false,
+        "tool_node": {
+          "enabled": false,
+          "used": false
+        },
+        "standalone_agent_node": {
+          "enabled": false,
+          "used": false
+        },
+        "phone_number_node": {
+          "enabled": false,
+          "used": false
+        },
+        "end_node": {
+          "enabled": false,
+          "used": false
+        }
+      },
+      "agent_testing": {
+        "enabled": false,
+        "tests_ran_after_last_modification": false,
+        "tests_ran_in_last_7_days": false
+      },
+      "versioning": {
+        "enabled": true,
+        "used": false
+      }
+    },
+    "eleven_assistant": {
+      "is_eleven_assistant": false
+    },
+    "initiator_id": null,
+    "conversation_initiation_source": "twilio",
+    "conversation_initiation_source_version": null,
+    "timezone": null,
+    "async_metadata": null,
+    "whatsapp": null,
+    "agent_created_from": "ui",
+    "agent_last_updated_from": "ui"
+  },
+  "analysis": {
+    "evaluation_criteria_results": {},
+    "data_collection_results": {},
+    "evaluation_criteria_results_list": [],
+    "data_collection_results_list": [],
+    "call_successful": "success",
+    "transcript_summary": "The agent initiated a call to address a user's balance. The user then shifted the conversation to discuss the inspiration behind a project, explaining it stemmed from addressing the struggles of Tangerine company. The agent acknowledged and thanked the user for sharing this information.\n",
+    "call_summary_title": "Project Inspiration Discussion"
+  },
+  "conversation_initiation_client_data": {
+    "conversation_config_override": {
+      "turn": null,
+      "tts": null,
+      "conversation": null,
+      "agent": null
+    },
+    "custom_llm_extra_body": {},
+    "user_id": null,
+    "source_info": {
+      "source": null,
+      "version": null
+    },
+    "dynamic_variables": {
+      "system__agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+      "system__agent_turns": 3,
+      "system__current_agent_turns": 3,
+      "system__current_subagent_turns": 3,
+      "system__current_agent_id": "agent_3401kgwrw2q9ffb96356hrhxh7h4",
+      "system__conversation_id": "conv_7201kgx7dp7xe108xqwx9z50qr05",
+      "system__call_duration_secs": 57,
+      "system__time_utc": "2026-02-07T23:37:37.488571+00:00",
+      "system__time": "Saturday, 23:37 07 February 2026",
+      "system__timezone": null,
+      "system__caller_id": "+12295141318",
+      "system__called_number": "+15483906276",
+      "system__call_sid": "CA867da284a03c5323158bbd2a8515b416"
+    }
+  },
+  "has_audio": true,
+  "has_user_audio": true,
+  "has_response_audio": true
+}
