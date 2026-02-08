@@ -1,0 +1,82 @@
+{
+  "conversation_id": "conv_medium_001",
+  "status": "done",
+  "transcript": [
+    {
+      "message": "Hello James, this is Sarah calling from Tangerine Bank. Do you have a moment to talk?",
+      "role": "agent"
+    },
+    {
+      "message": "Oh, hi Sarah. Yeah, I have a few minutes. Is this about my credit card?",
+      "role": "user"
+    },
+    {
+      "message": "Yes, I'm calling to check in about your account. I noticed there's a payment that's a bit past due, and I wanted to reach out to see how we can help.",
+      "role": "agent"
+    },
+    {
+      "message": "Yeah, I know. Look, I got laid off from my job about two months ago. I was working at the auto plant, but they had layoffs. I've been looking for work but it's been tough.",
+      "role": "user"
+    },
+    {
+      "message": "I'm really sorry to hear that, James. Losing a job is incredibly stressful, and I appreciate you sharing that with me. How are you holding up?",
+      "role": "agent"
+    },
+    {
+      "message": "It's been hard, honestly. I have some savings but they're running low. I've had a few interviews though, so I'm hopeful something will come through soon.",
+      "role": "user"
+    },
+    {
+      "message": "That sounds really challenging, and I'm glad you're staying positive about the job search. Let's see what we can do to help make this more manageable for you.",
+      "role": "agent"
+    },
+    {
+      "message": "I want to pay, I really do. I just can't afford the full amount right now. Maybe I could do something smaller?",
+      "role": "user"
+    },
+    {
+      "message": "Absolutely, we can work with that. Given your situation, I can offer you a reduced payment plan. Would something like $50 a month work for you until you're back on your feet?",
+      "role": "agent"
+    },
+    {
+      "message": "Fifty dollars? Yeah, I think I can manage that. When would that start?",
+      "role": "user"
+    },
+    {
+      "message": "We can start it on the first of next month. That gives you a couple of weeks to prepare. I'll also make a note about your job situation so if you need to adjust later, we have that context.",
+      "role": "agent"
+    },
+    {
+      "message": "That would be great. Thank you for being understanding about this. I was worried you'd be demanding the full amount.",
+      "role": "user"
+    },
+    {
+      "message": "Not at all, James. We're here to help you through this. Once you find a new job, we can revisit the payment amount if you'd like to pay it off faster.",
+      "role": "agent"
+    },
+    {
+      "message": "Sounds good. I actually have a second interview at a logistics company next week. If I get that job, I'll definitely increase my payments.",
+      "role": "user"
+    },
+    {
+      "message": "That's wonderful news! Good luck with the interview. So just to confirm - we're setting up a $50 monthly payment plan starting on February 15th. Is that correct?",
+      "role": "agent"
+    },
+    {
+      "message": "Yes, that works for me. Can I pay by bank transfer?",
+      "role": "user"
+    },
+    {
+      "message": "Absolutely. I'll set that up for you. You'll receive an email confirmation with all the details. Is there anything else I can help you with today?",
+      "role": "agent"
+    },
+    {
+      "message": "No, that's all. Thanks again, Sarah. I really appreciate your help.",
+      "role": "user"
+    },
+    {
+      "message": "You're very welcome, James. Best of luck with your interview, and don't hesitate to reach out if your situation changes. Take care!",
+      "role": "agent"
+    }
+  ]
+}

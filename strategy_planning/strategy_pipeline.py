@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from DB.db_manager import (
     DatabaseManager, DebtStatus, PaymentStatus, CommunicationType, Base
 )
-from prompt_template import (
+from strategy_planning.prompt_template import (
     build_voice_prompt,
     build_email_prompt,
     classify_profile_type,

@@ -17,6 +17,9 @@ build/
 *.sqlite
 *.sqlite3
 
+# Call files
+call_files/
+
 # Web dependencies
 web/node_modules/
 web/dist/
