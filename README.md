@@ -47,7 +47,6 @@ A four-stage automated pipeline that analyzes customer data, generates personali
 ### AI/ML Services
 - **Google Gemini** (via OpenRouter) - Strategy generation & transcript analysis
 - **ElevenLabs** - AI voice synthesis for outbound calls
-- **Deepgram** - Speech-to-text transcription
 
 ### Communication
 - **Twilio** - Outbound phone calls & SMS
