@@ -36,7 +36,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from vad.voice_activity_detector import VoiceActivityDetector
 from audio.audio_processor import AudioProcessor
 from stt.speech_to_text import transcribe_audio
-from tts.text_to_speech import text_to_speech
+from tts.text_to_speech import text_to_speech_pcm
 from openai import OpenAI
 
 # Load environment variables
@@ -71,12 +71,12 @@ class TwilioVoiceServer:
 
     def __init__(
         self,
-        model: str = "gpt-4o",
+        model: str = "gpt-4o-mini",
         system_prompt: str = None,
         voice_id: str = "21m00Tcm4TlvDq8ikWAM",
         vad_method: str = 'silero',
         vad_threshold: float = 0.5,
-        vad_min_silence_ms: int = 700,
+        vad_min_silence_ms: int = 400,
         enable_transcription: bool = True,
         enable_recording: bool = True,
         tts_model: str = "eleven_turbo_v2"
@@ -280,38 +280,22 @@ class TwilioVoiceServer:
             welcome_text = "Hello! I'm calling on behalf of Tangerine Bank about your outstanding balance. Do you have a moment to speak?"
             print(f"🤖 Sending welcome: \"{welcome_text}\"")
 
-            # Generate welcome audio (run blocking calls in thread to avoid blocking event loop)
-            temp_file = tempfile.NamedTemporaryFile(
-                delete=False,
-                suffix='.mp3',
-                prefix='welcome_'
+            # Generate welcome audio as raw PCM (skip MP3/ffmpeg conversion)
+            pcm_bytes = await asyncio.to_thread(
+                text_to_speech_pcm, welcome_text, self.voice_id, self.tts_model, VAD_SAMPLE_RATE
             )
-            temp_file.close()
+            audio_data = np.frombuffer(pcm_bytes, dtype=np.int16)
 
-            await asyncio.to_thread(text_to_speech, welcome_text, temp_file.name, self.voice_id, self.tts_model)
-
-            # Convert MP3 to WAV, then to μ-law for Twilio
-            wav_path = await asyncio.to_thread(self.audio_processor.convert_mp3_to_wav, temp_file.name)
-            audio_data, sample_rate = await asyncio.to_thread(self.audio_processor.load_wav, wav_path)
-
-            # Resample to 16kHz for recording
-            if sample_rate != VAD_SAMPLE_RATE:
-                recording_audio = self.audio_processor.resample_audio(audio_data, sample_rate, VAD_SAMPLE_RATE)
-            else:
-                recording_audio = audio_data
-            recording_audio = recording_audio.astype(np.int16)
+            # Audio is already at VAD_SAMPLE_RATE (16kHz)
+            recording_audio = audio_data.copy()
 
             # Send to Twilio
             await self._send_audio_to_twilio(
                 websocket,
                 stream_sid,
                 audio_data,
-                sample_rate
+                VAD_SAMPLE_RATE
             )
-
-            # Cleanup
-            os.unlink(temp_file.name)
-            os.unlink(wav_path)
 
             return welcome_text, recording_audio
 
@@ -411,39 +395,24 @@ class TwilioVoiceServer:
                 with open(transcript_path, 'a') as f:
                     f.write(f"Agent: {agent_text}\n\n")
 
-            # 4. Generate speech with 11Labs TTS
+            # 4. Generate speech with 11Labs TTS (raw PCM, no MP3/ffmpeg)
             print("   🔊 Generating speech...")
-            temp_mp3 = tempfile.NamedTemporaryFile(
-                delete=False,
-                suffix='.mp3',
-                prefix='agent_'
+            pcm_bytes = await asyncio.to_thread(
+                text_to_speech_pcm, agent_text, self.voice_id, self.tts_model, VAD_SAMPLE_RATE
             )
-            temp_mp3.close()
+            audio_data = np.frombuffer(pcm_bytes, dtype=np.int16)
 
-            await asyncio.to_thread(text_to_speech, agent_text, temp_mp3.name, self.voice_id, self.tts_model)
-
-            # 5. Convert to WAV, then to μ-law and send to Twilio
-            wav_path = await asyncio.to_thread(self.audio_processor.convert_mp3_to_wav, temp_mp3.name)
-            audio_data, audio_sample_rate = await asyncio.to_thread(self.audio_processor.load_wav, wav_path)
-
-            # Add agent audio to call recording (resample to 16kHz)
+            # Add agent audio to call recording (already at 16kHz)
             if call_recording is not None:
-                if audio_sample_rate != VAD_SAMPLE_RATE:
-                    rec_audio = self.audio_processor.resample_audio(audio_data, audio_sample_rate, VAD_SAMPLE_RATE)
-                else:
-                    rec_audio = audio_data
-                call_recording.append(rec_audio.astype(np.int16))
+                call_recording.append(audio_data.copy())
 
+            # 5. Send to Twilio
             await self._send_audio_to_twilio(
                 websocket,
                 stream_sid,
                 audio_data,
-                audio_sample_rate
+                VAD_SAMPLE_RATE
             )
-
-            # Cleanup
-            os.unlink(temp_mp3.name)
-            os.unlink(wav_path)
 
             print("   ✓ Turn complete")
 
@@ -570,8 +539,8 @@ def main():
     )
     parser.add_argument(
         '--model',
-        default='gpt-4o',
-        help='OpenAI model to use (default: gpt-4o)'
+        default='gpt-4o-mini',
+        help='OpenAI model to use (default: gpt-4o-mini)'
     )
     parser.add_argument(
         '--voice',
@@ -597,8 +566,8 @@ def main():
     parser.add_argument(
         '--vad-silence-ms',
         type=int,
-        default=700,
-        help='Silence duration in ms to end speech (default: 700)'
+        default=400,
+        help='Silence duration in ms to end speech (default: 400)'
     )
     parser.add_argument(
         '--tts-model',

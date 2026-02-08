@@ -1,0 +1,14 @@
+Call ID: CAdc5c0c98ebce9c684106b81c39c50f84
+Date: 2026-02-08 02:21:41
+============================================================
+
+Agent: Hello! I'm calling on behalf of Tangerine Bank. Do you have a moment to speak?
+
+User: We measure two resistors solution. Hello, yes?
+
+Agent: Hello, this is James calling from Tangerine Bank. I hope you're doing well today. I'm reaching out regarding your account, and I want to discuss a few details with you. Is it a good time to talk, or would you prefer to schedule this call for another time?
+
+User: Yes, so we can talk now?
+
+Agent: Great, thank you for taking the time to speak with me. I wanted to discuss your account because it appears there is an outstanding balance. Our goal is to work together to find a solution that fits your current financial situation. Do you have any questions or concerns you'd like to address before we explore some options?
+

@@ -1,0 +1,31 @@
+
+======================================================================
+🌐 TwiML Configuration Server
+======================================================================
+
+Server URL: http://0.0.0.0:5050
+WebSocket URL: wss://https://thinkpad-nearly-resolutions-norman.trycloudflare.com/media-stream
+
+Endpoints:
+  - http://0.0.0.0:5050/voice (TwiML)
+  - http://0.0.0.0:5050/health (Health check)
+
+Setup:
+  1. Start WebSocket server: python twilio/twilio_voice_server.py
+  2. Expose with tunnel: cloudflared tunnel --url http://localhost:5050
+  3. Configure Twilio webhook to tunnel URL + /voice
+
+Press Ctrl+C to stop
+
+ * Serving Flask app 'twilio_server_simple'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5050
+ * Running on http://10.36.56.155:5050
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [08/Feb/2026 01:26:03] "POST /voice HTTP/1.1" 200 -
+127.0.0.1 - - [08/Feb/2026 01:30:21] "POST /voice HTTP/1.1" 200 -
+127.0.0.1 - - [08/Feb/2026 01:31:13] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [08/Feb/2026 01:32:04] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [08/Feb/2026 01:32:05] "GET /health HTTP/1.1" 200 -

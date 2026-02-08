@@ -128,6 +128,64 @@ def text_to_speech(
         )
 
 
+def text_to_speech_pcm(
+    text: str,
+    voice_id: str = DEFAULT_VOICE_ID,
+    model: str = "eleven_multilingual_v2",
+    sample_rate: int = 16000,
+    voice_settings: Optional[Dict] = None
+) -> bytes:
+    """
+    Convert text to speech and return raw PCM audio bytes (no MP3/ffmpeg needed).
+
+    Args:
+        text: Text to convert to speech
+        voice_id: Voice ID to use
+        model: Model to use
+        sample_rate: Output sample rate (default: 16000)
+        voice_settings: Optional voice settings
+
+    Returns:
+        bytes: Raw PCM audio data (signed 16-bit little-endian)
+    """
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+
+    headers = {
+        "Accept": "audio/pcm",
+        "Content-Type": "application/json",
+        "xi-api-key": ELEVEN_LABS_API_KEY
+    }
+
+    if voice_settings is None:
+        voice_settings = {
+            "stability": 0.5,
+            "similarity_boost": 0.75,
+            "style": 0.0,
+            "use_speaker_boost": True
+        }
+
+    data = {
+        "text": text,
+        "model_id": model,
+        "voice_settings": voice_settings,
+        "output_format": f"pcm_{sample_rate}"
+    }
+
+    response = requests.post(
+        url,
+        json=data,
+        headers=headers,
+        params={"output_format": f"pcm_{sample_rate}"}
+    )
+
+    if response.status_code == 200:
+        return response.content
+    else:
+        raise Exception(
+            f"API request failed with status {response.status_code}: {response.text}"
+        )
+
+
 def text_to_speech_stream(
     text: str,
     voice_id: str = DEFAULT_VOICE_ID,
