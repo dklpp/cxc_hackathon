@@ -1,0 +1,84 @@
+{
+  "call_metadata": {
+    "call_id": "GEN-001",
+    "customer_id": null,
+    "customer_name": "James Wilson",
+    "call_duration_seconds": "180",
+    "agent_name": "Sarah"
+  },
+  "call_outcome": {
+    "primary_outcome": "payment_plan_agreed",
+    "secondary_outcomes": [],
+    "success_score": 0.6,
+    "follow_up_required": true
+  },
+  "customer_info_extracted": {
+    "current_situation": "Customer was laid off from his job at an auto plant two months ago and is currently looking for work. He is having trouble making his credit card payments due to his unemployment.",
+    "employment_status_update": "unemployed",
+    "financial_hardship_indicators": [
+      "Job loss",
+      "Running low on savings",
+      "Inability to pay full amount"
+    ],
+    "reason_for_non_payment": "Job loss and lack of income",
+    "life_events_mentioned": [
+      "job_loss"
+    ]
+  },
+  "payment_info": {
+    "payment_promised": true,
+    "payment_amount": null,
+    "payment_date": null,
+    "payment_method": "bank transfer",
+    "payment_plan_details": {
+      "monthly_amount": 50.0,
+      "start_date": "February 15th",
+      "duration_months": null
+    }
+  },
+  "customer_sentiment": {
+    "overall_sentiment": "cooperative",
+    "sentiment_progression": "improved",
+    "key_emotions_detected": [
+      "worried",
+      "hopeful",
+      "stressed"
+    ],
+    "rapport_level": "high"
+  },
+  "action_items": {
+    "immediate_actions": [
+      "Set up $50 monthly payment plan starting February 15th",
+      "Send email confirmation with payment plan details",
+      "Note job situation on account"
+    ],
+    "follow_up_date": null,
+    "follow_up_type": "call",
+    "notes_for_next_contact": "Customer has a second interview next week and may be able to increase payments if he gets the job."
+  },
+  "compliance_flags": {
+    "legal_representation_mentioned": false,
+    "dispute_requested": false,
+    "cease_contact_requested": false,
+    "mental_health_concerns": true,
+    "recording_consent_given": false
+  },
+  "key_quotes": [
+    {
+      "speaker": "customer",
+      "quote": "I want to pay, I really do. I just can't afford the full amount right now. Maybe I could do something smaller?",
+      "significance": "Shows willingness to pay but acknowledges financial difficulty."
+    },
+    {
+      "speaker": "agent",
+      "quote": "Not at all, James. We're here to help you through this. Once you find a new job, we can revisit the payment amount if you'd like to pay it off faster.",
+      "significance": "Demonstrates empathy and offers flexibility."
+    }
+  ],
+  "conversation_summary": "James Wilson is experiencing financial hardship due to a recent job loss. Agent Sarah offered a reduced payment plan of $50 per month, which James accepted. He is hopeful about a job interview next week and may be able to increase payments if he gets the job.",
+  "recommendations": {
+    "profile_type_update": 3,
+    "risk_level_update": "moderate",
+    "strategy_adjustment": "Monitor account for payment adherence. Follow up after interview to check on employment status and potential payment increase."
+  }
+}

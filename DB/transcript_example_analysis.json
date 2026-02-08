@@ -1,0 +1,100 @@
+{
+  "call_metadata": {
+    "call_id": "Generated-Call-ID-001",
+    "customer_id": null,
+    "customer_name": "Maria Santos",
+    "call_duration_seconds": "120",
+    "agent_name": "James"
+  },
+  "call_outcome": {
+    "primary_outcome": "hardship_reported",
+    "secondary_outcomes": [],
+    "success_score": 0.0,
+    "follow_up_required": true
+  },
+  "customer_info_extracted": {
+    "current_situation": "Customer is experiencing financial difficulties and is unable to pay the past due amount. She mentions having no money and offers unusual forms of payment.",
+    "employment_status_update": null,
+    "financial_hardship_indicators": [
+      "Inability to pay",
+      "Offers unusual forms of payment (bananas, Red Bulls, horses)",
+      "States 'I don't have any money'"
+    ],
+    "reason_for_non_payment": "Lack of funds",
+    "life_events_mentioned": [
+      "travel",
+      "stress"
+    ]
+  },
+  "payment_info": {
+    "payment_promised": false,
+    "payment_amount": null,
+    "payment_date": null,
+    "payment_method": null,
+    "payment_plan_details": {
+      "monthly_amount": null,
+      "start_date": null,
+      "duration_months": null
+    }
+  },
+  "customer_sentiment": {
+    "overall_sentiment": "distressed",
+    "sentiment_progression": "worsened",
+    "key_emotions_detected": [
+      "frustration",
+      "stress",
+      "confusion",
+      "anxiety"
+    ],
+    "rapport_level": "low"
+  },
+  "action_items": {
+    "immediate_actions": [
+      "Escalate to hardship department",
+      "Document customer's mental state"
+    ],
+    "follow_up_date": null,
+    "follow_up_type": "call",
+    "notes_for_next_contact": "Assess customer's mental state and financial situation. Offer resources for financial assistance and mental health support."
+  },
+  "compliance_flags": {
+    "legal_representation_mentioned": false,
+    "dispute_requested": false,
+    "cease_contact_requested": false,
+    "mental_health_concerns": true,
+    "recording_consent_given": false
+  },
+  "key_quotes": [
+    {
+      "speaker": "customer",
+      "quote": "Fuck You!",
+      "significance": "Indicates initial frustration and distress."
+    },
+    {
+      "speaker": "customer",
+      "quote": "I'm so sorry, but I don't have any money.",
+      "significance": "Highlights financial hardship."
+    },
+    {
+      "speaker": "customer",
+      "quote": "I can pay you with bananas.",
+      "significance": "Suggests possible mental distress and inability to understand the situation."
+    },
+    {
+      "speaker": "customer",
+      "quote": "Okay, I can pay you 30 cents every month.",
+      "significance": "Unrealistic payment offer indicating financial difficulty."
+    },
+    {
+      "speaker": "customer",
+      "quote": "Okay okay! I can give you five horses!",
+      "significance": "Further indication of mental distress and inability to provide a realistic solution."
+    }
+  ],
+  "conversation_summary": "The customer, Maria Santos, is experiencing financial hardship and expresses distress. She is unable to make a payment and offers unusual forms of payment, indicating potential mental health concerns. The agent attempts to de-escalate the situation and find a solution, but no payment arrangement is made.",
+  "recommendations": {
+    "profile_type_update": 5,
+    "risk_level_update": "severe",
+    "strategy_adjustment": "Handle with extreme care. Escalate to hardship department and mental health support resources. Defer collection activities until customer's situation is assessed."
+  }
+}
