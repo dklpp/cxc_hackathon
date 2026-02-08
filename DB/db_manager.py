@@ -82,6 +82,8 @@ class Customer(Base):
     
     # Communication Preferences
     preferred_communication_method = Column(Enum(CommunicationType), nullable=True)  # Preferred way to contact customer
+    preferred_contact_time = Column(String(100), nullable=True)  # Preferred time range (e.g., "9 AM - 5 PM", "Evenings only")
+    preferred_contact_days = Column(String(100), nullable=True)  # Preferred days (e.g., "Weekdays", "Monday-Friday", "Any day")
     
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -310,6 +312,7 @@ class DatabaseManager:
         """Create all database tables"""
         Base.metadata.create_all(bind=self.engine)
         self._migrate_scheduled_calls_if_needed()
+        self._migrate_customer_contact_preferences_if_needed()
         print("Database tables created successfully.")
     
     def _migrate_scheduled_calls_if_needed(self):
@@ -368,6 +371,56 @@ class DatabaseManager:
                         except Exception as e:
                             conn.rollback()
                             print(f"Warning: Migration failed (this is OK if table is already migrated): {e}")
+                        finally:
+                            conn.close()
+        except Exception as e:
+            # Don't fail if migration can't run
+            print(f"Warning: Could not check/run migration: {e}")
+    
+    def _migrate_customer_contact_preferences_if_needed(self):
+        """Migrate customers table to add preferred_contact_time and preferred_contact_days if needed"""
+        try:
+            import sqlite3
+            from sqlalchemy import inspect
+            
+            # Only migrate if using SQLite
+            if 'sqlite' in str(self.engine.url):
+                inspector = inspect(self.engine)
+                if 'customers' in inspector.get_table_names():
+                    columns = inspector.get_columns('customers')
+                    column_names = [col['name'] for col in columns]
+                    
+                    needs_migration = False
+                    if 'preferred_contact_time' not in column_names:
+                        needs_migration = True
+                    if 'preferred_contact_days' not in column_names:
+                        needs_migration = True
+                    
+                    if needs_migration:
+                        conn = self.engine.raw_connection()
+                        cursor = conn.cursor()
+                        
+                        try:
+                            # Add preferred_contact_time if missing
+                            if 'preferred_contact_time' not in column_names:
+                                cursor.execute("""
+                                    ALTER TABLE customers 
+                                    ADD COLUMN preferred_contact_time VARCHAR(100)
+                                """)
+                                print("✓ Added preferred_contact_time column to customers table")
+                            
+                            # Add preferred_contact_days if missing
+                            if 'preferred_contact_days' not in column_names:
+                                cursor.execute("""
+                                    ALTER TABLE customers 
+                                    ADD COLUMN preferred_contact_days VARCHAR(100)
+                                """)
+                                print("✓ Added preferred_contact_days column to customers table")
+                            
+                            conn.commit()
+                        except Exception as e:
+                            conn.rollback()
+                            print(f"Warning: Migration failed (this is OK if columns already exist): {e}")
                         finally:
                             conn.close()
         except Exception as e:

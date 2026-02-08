@@ -50,6 +50,8 @@ The database consists of 5 main tables designed to comprehensively track custome
     - `SMS`: Text message
     - `LETTER`: Physical mail
     - `IN_PERSON`: In-person meeting
+  - `preferred_contact_time` (String, Optional): Preferred time range for contact (e.g., "9 AM - 5 PM", "Evenings only", "Morning hours")
+  - `preferred_contact_days` (String, Optional): Preferred days for contact (e.g., "Weekdays", "Monday-Friday", "Any day", "Weekends only")
 
 - **Metadata**:
   - `created_at` (DateTime): Record creation timestamp

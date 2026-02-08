@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../api/client'
+import { useToastContext } from '../App'
+import ConfirmModal from '../components/ConfirmModal'
 import {
   ArrowLeft,
   Phone,
@@ -24,6 +26,7 @@ import ReactMarkdown from 'react-markdown'
 
 function CallHistory() {
   const { id } = useParams()
+  const toast = useToastContext()
   const [plannedCalls, setPlannedCalls] = useState([])
   const [automaticCalls, setAutomaticCalls] = useState([])
   const [completedCalls, setCompletedCalls] = useState([])
@@ -40,6 +43,10 @@ function CallHistory() {
   const [loadingDetails, setLoadingDetails] = useState(false)
   const [planningExpanded, setPlanningExpanded] = useState(false)
   const [transcriptExpanded, setTranscriptExpanded] = useState(false)
+  const [showCancelCallModal, setShowCancelCallModal] = useState(false)
+  const [callToCancel, setCallToCancel] = useState(null)
+  const [showDeleteFileModal, setShowDeleteFileModal] = useState(false)
+  const [fileToDelete, setFileToDelete] = useState(null)
 
   useEffect(() => {
     fetchCallHistory()
@@ -135,7 +142,9 @@ function CallHistory() {
 
   const handleUpload = async () => {
     if (!selectedFile || !selectedCall) {
-      alert('Please select a file and ensure a call is selected')
+      toast.info('Please select a file and ensure a call is selected', {
+        title: 'File Selection Required',
+      })
       return
     }
 
@@ -153,26 +162,31 @@ function CallHistory() {
           'Content-Type': 'multipart/form-data',
         },
       })
-      alert('File uploaded successfully!')
+      toast.success('File uploaded successfully!', {
+        title: 'Upload Complete',
+      })
       setShowUploadModal(false)
       setSelectedFile(null)
       setFileType('transcript')
       handleViewDetails(selectedCall) // Refresh details
       fetchCallHistory()
     } catch (err) {
-      alert('Failed to upload file')
+      toast.error('Failed to upload file', {
+        title: 'Upload Failed',
+      })
       console.error(err)
     } finally {
       setUploading(false)
     }
   }
 
-  const handleDeleteFile = async (fileType) => {
-    if (!selectedCall) return
-    
-    if (!window.confirm(`Are you sure you want to delete this ${fileType} file?`)) {
-      return
-    }
+  const handleDeleteFileClick = (fileType) => {
+    setFileToDelete(fileType)
+    setShowDeleteFileModal(true)
+  }
+
+  const handleDeleteFile = async () => {
+    if (!selectedCall || !fileToDelete) return
 
     try {
       // Determine call_id for the API
@@ -181,28 +195,34 @@ function CallHistory() {
         callId = callId.replace('scheduled_', '')
       } else if (selectedCall.scheduled_call_id) {
         callId = selectedCall.scheduled_call_id.toString()
-      } else if (fileType === 'transcript' && selectedCall.type === 'completed') {
+      } else if (fileToDelete === 'transcript' && selectedCall.type === 'completed') {
         callId = selectedCall.id.toString()
       }
 
       await api.delete(`/call-history/${callId}/file`, {
-        params: { file_type: fileType }
+        params: { file_type: fileToDelete }
       })
       
-      alert(`${fileType.charAt(0).toUpperCase() + fileType.slice(1)} file deleted successfully!`)
+      toast.success(`${fileToDelete.charAt(0).toUpperCase() + fileToDelete.slice(1)} file deleted successfully!`, {
+        title: 'File Deleted',
+      })
       
       // Clear the content from state
-      if (fileType === 'planning') {
+      if (fileToDelete === 'planning') {
         setPlanningContent(null)
-      } else if (fileType === 'transcript') {
+      } else if (fileToDelete === 'transcript') {
         setTranscriptContent(null)
       }
       
       // Refresh call history and details
+      setShowDeleteFileModal(false)
+      setFileToDelete(null)
       fetchCallHistory()
       handleViewDetails(selectedCall)
     } catch (err) {
-      alert(`Failed to delete ${fileType} file`)
+      toast.error(`Failed to delete ${fileToDelete} file`, {
+        title: 'Delete Failed',
+      })
       console.error(err)
     }
   }
@@ -229,48 +249,109 @@ function CallHistory() {
     return <AlertCircle className="h-4 w-4 text-yellow-500" />
   }
 
-  const CallCard = ({ call }) => (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1">
-          <div className="flex items-center space-x-2 mb-1">
-            <Phone className="h-4 w-4 text-gray-400" />
-            <span className="text-sm font-medium text-gray-900">
-              {call.scheduled_time 
-                ? format(new Date(call.scheduled_time), 'MMM d, h:mm a')
-                : format(new Date(call.timestamp), 'MMM d, h:mm a')}
-            </span>
-            {call.outcome && getOutcomeIcon(call.outcome)}
-          </div>
-          {call.planning_script?.suggested_time && (
-            <p className="text-xs text-gray-500 mb-1">
-              Suggested: {call.planning_script.suggested_time}
-              {call.planning_script.suggested_day && ` on ${call.planning_script.suggested_day}`}
-            </p>
-          )}
-          {call.notes && (
-            <p className="text-xs text-gray-600 line-clamp-2">{call.notes}</p>
-          )}
-          {call.status === 'planned' && !call.planning_script && (
-            <div className="mt-1 flex items-center space-x-1">
-              <Clock className="h-3 w-3 text-yellow-600 animate-spin" />
-              <span className="text-xs text-yellow-600">Generating planning script...</span>
+  const handleCancelCallClick = (callId) => {
+    setCallToCancel(callId)
+    setShowCancelCallModal(true)
+  }
+
+  const handleCancelCall = async () => {
+    if (!callToCancel) return
+
+    try {
+      // Extract the actual scheduled call ID
+      let scheduledCallId = callToCancel
+      if (callToCancel.startsWith('scheduled_')) {
+        scheduledCallId = callToCancel.replace('scheduled_', '')
+      }
+      
+      await api.delete(`/scheduled-calls/${scheduledCallId}`)
+      
+      toast.success('Call cancelled successfully', {
+        title: 'Call Cancelled',
+      })
+      
+      setShowCancelCallModal(false)
+      setCallToCancel(null)
+      fetchCallHistory()
+    } catch (err) {
+      toast.error('Failed to cancel call: ' + (err.response?.data?.detail || err.message), {
+        title: 'Cancel Failed',
+      })
+      console.error(err)
+    }
+  }
+
+  const CallCard = ({ call }) => {
+    // Determine the call ID for cancellation
+    const getCallId = () => {
+      if (call.id.startsWith('scheduled_')) {
+        return call.id
+      } else if (call.scheduled_call_id) {
+        return `scheduled_${call.scheduled_call_id}`
+      }
+      return call.id
+    }
+
+    const canCancel = call.status === 'pending' || call.status === 'planned'
+    const callId = getCallId()
+
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
+            <div className="flex items-center space-x-2 mb-1">
+              <Phone className="h-4 w-4 text-gray-400" />
+              <span className="text-sm font-medium text-gray-900">
+                {call.scheduled_time 
+                  ? format(new Date(call.scheduled_time), 'MMM d, h:mm a')
+                  : format(new Date(call.timestamp), 'MMM d, h:mm a')}
+              </span>
+              {call.outcome && getOutcomeIcon(call.outcome)}
             </div>
-          )}
+            {call.planning_script?.suggested_time && (
+              <p className="text-xs text-gray-500 mb-1">
+                Suggested: {call.planning_script.suggested_time}
+                {call.planning_script.suggested_day && ` on ${call.planning_script.suggested_day}`}
+              </p>
+            )}
+            {call.notes && (
+              <p className="text-xs text-gray-600 line-clamp-2">{call.notes}</p>
+            )}
+            {call.status === 'planned' && !call.planning_script && (
+              <div className="mt-1 flex items-center space-x-1">
+                <Clock className="h-3 w-3 text-yellow-600 animate-spin" />
+                <span className="text-xs text-yellow-600">Generating planning script...</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(call.status)}`}>
+              {call.status === 'pending' ? 'automatic' : call.status}
+            </span>
+            {canCancel && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleCancelCallClick(callId)
+                }}
+                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                title="Cancel call"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
-        <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(call.status)}`}>
-          {call.status === 'pending' ? 'automatic' : call.status}
-        </span>
+        <button
+          onClick={() => handleViewDetails(call)}
+          className="w-full mt-2 flex items-center justify-center space-x-1 text-sm text-primary-600 hover:text-primary-700 font-medium"
+        >
+          <span>View Details</span>
+          <ChevronRight className="h-4 w-4" />
+        </button>
       </div>
-      <button
-        onClick={() => handleViewDetails(call)}
-        className="w-full mt-2 flex items-center justify-center space-x-1 text-sm text-primary-600 hover:text-primary-700 font-medium"
-      >
-        <span>View Details</span>
-        <ChevronRight className="h-4 w-4" />
-      </button>
-    </div>
-  )
+    )
+  }
 
   return (
     <div>
@@ -434,7 +515,7 @@ function CallHistory() {
                         <h4 className="text-lg font-semibold text-gray-900">Planning File</h4>
                       </button>
                       <button
-                        onClick={() => handleDeleteFile('planning')}
+                        onClick={() => handleDeleteFileClick('planning')}
                         className="ml-2 p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
                         title="Delete planning file"
                       >
@@ -465,7 +546,7 @@ function CallHistory() {
                         <h4 className="text-lg font-semibold text-gray-900">Transcript</h4>
                       </button>
                       <button
-                        onClick={() => handleDeleteFile('transcript')}
+                        onClick={() => handleDeleteFileClick('transcript')}
                         className="ml-2 p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
                         title="Delete transcript file"
                       >
@@ -579,6 +660,38 @@ function CallHistory() {
           </div>
         </div>
       )}
+
+      {/* Cancel Call Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showCancelCallModal}
+        onClose={() => {
+          setShowCancelCallModal(false)
+          setCallToCancel(null)
+        }}
+        onConfirm={handleCancelCall}
+        title="Cancel Scheduled Call"
+        message="Are you sure you want to cancel this scheduled call? This action cannot be undone."
+        confirmText="Cancel Call"
+        cancelText="Keep Scheduled"
+        confirmButtonClass="bg-red-600 hover:bg-red-700"
+        isLoading={false}
+      />
+
+      {/* Delete File Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteFileModal}
+        onClose={() => {
+          setShowDeleteFileModal(false)
+          setFileToDelete(null)
+        }}
+        onConfirm={handleDeleteFile}
+        title={`Delete ${fileToDelete ? fileToDelete.charAt(0).toUpperCase() + fileToDelete.slice(1) : ''} File`}
+        message={fileToDelete ? `Are you sure you want to delete this ${fileToDelete} file? This action cannot be undone.` : ''}
+        confirmText="Delete File"
+        cancelText="Keep File"
+        confirmButtonClass="bg-red-600 hover:bg-red-700"
+        isLoading={false}
+      />
     </div>
   )
 }

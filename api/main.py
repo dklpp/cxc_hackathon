@@ -41,6 +41,8 @@ db_manager = DatabaseManager()
 db_manager.create_tables()
 # Run migration for scheduled_calls table if needed
 db_manager._migrate_scheduled_calls_if_needed()
+# Run migration for customer contact preferences if needed
+db_manager._migrate_customer_contact_preferences_if_needed()
 
 # Create directories for storing files
 FILES_DIR = Path(__file__).parent.parent / "call_files"
@@ -63,6 +65,8 @@ class CustomerResponse(BaseModel):
     credit_score: Optional[int]
     account_status: Optional[str]
     preferred_communication_method: Optional[str]
+    preferred_contact_time: Optional[str] = None
+    preferred_contact_days: Optional[str] = None
     total_debt: Optional[float] = None
     
     class Config:
@@ -160,6 +164,8 @@ async def list_customers(search: Optional[str] = None, limit: int = 100, offset:
                 "credit_score": customer.credit_score,
                 "account_status": customer.account_status,
                 "preferred_communication_method": customer.preferred_communication_method.value if customer.preferred_communication_method else None,
+                "preferred_contact_time": customer.preferred_contact_time,
+                "preferred_contact_days": customer.preferred_contact_days,
                 "total_debt": db_manager.get_total_debt(customer.id)
             }
             result.append(customer_dict)
@@ -208,6 +214,8 @@ async def get_customer_detail(customer_id: int):
                 "credit_score": customer.credit_score,
                 "account_status": customer.account_status,
                 "preferred_communication_method": customer.preferred_communication_method.value if customer.preferred_communication_method else None,
+                "preferred_contact_time": customer.preferred_contact_time,
+                "preferred_contact_days": customer.preferred_contact_days,
                 "notes": customer.notes,
                 "created_at": customer.created_at.isoformat() if customer.created_at else None,
                 "updated_at": customer.updated_at.isoformat() if customer.updated_at else None,
@@ -348,6 +356,188 @@ def parse_time_from_strategy(suggested_time: str, suggested_day: str) -> Optiona
     scheduled = now.replace(hour=hour, minute=0, second=0, microsecond=0) + timedelta(days=1)
     
     return scheduled
+
+def generate_time_slots(customer: Customer, num_slots: int = 3) -> List[dict]:
+    """Generate best time slots for contacting a customer based on their explicit preferences in the database"""
+    now = datetime.utcnow()
+    slots = []
+    
+    # Get preferred contact time and days from database (handle AttributeError if columns don't exist)
+    try:
+        preferred_time = customer.preferred_contact_time or ""
+    except AttributeError:
+        preferred_time = ""
+    
+    try:
+        preferred_days = customer.preferred_contact_days or ""
+    except AttributeError:
+        preferred_days = ""
+    
+    # Default to business hours (9 AM - 5 PM) and weekdays if no preferences are set
+    default_start_hour = 9
+    default_end_hour = 17
+    use_weekdays_only = True
+    
+    # Parse preferred_contact_time from database - this is the primary source
+    if preferred_time:
+        preferred_time_lower = preferred_time.lower().strip()
+        
+        # Try to extract time range first (e.g., "9 AM - 5 PM", "10am-2pm", "9:00 AM - 5:00 PM")
+        time_range_match = re.search(r'(\d{1,2})\s*(?:AM|PM|am|pm|:00)?\s*[-–]\s*(\d{1,2})\s*(?:AM|PM|am|pm|:00)?', preferred_time)
+        if time_range_match:
+            start_hour = int(time_range_match.group(1))
+            end_hour = int(time_range_match.group(2))
+            # Convert to 24-hour format if needed
+            # Check if PM appears anywhere in the string
+            has_pm = "pm" in preferred_time_lower or "PM" in preferred_time
+            has_am = "am" in preferred_time_lower or "AM" in preferred_time
+            
+            # Determine if hours are AM or PM
+            if has_pm and not has_am:
+                # Both are PM
+                if start_hour < 12:
+                    start_hour += 12
+                if end_hour < 12:
+                    end_hour += 12
+            elif has_am and not has_pm:
+                # Both are AM
+                if start_hour == 12:
+                    start_hour = 0
+                if end_hour == 12:
+                    end_hour = 0
+            elif has_pm and has_am:
+                # Mixed - need to check which is which
+                # Simple heuristic: if first number is <= 7, likely PM; if >= 8, likely AM
+                if start_hour <= 7:
+                    start_hour += 12
+                if end_hour <= 7 and end_hour < start_hour:
+                    end_hour += 12
+            
+            default_start_hour = max(8, min(start_hour, 20))  # Clamp between 8 AM and 8 PM
+            default_end_hour = max(9, min(end_hour, 20))  # Clamp between 9 AM and 8 PM
+            
+            # Ensure start < end
+            if default_start_hour >= default_end_hour:
+                default_end_hour = min(default_start_hour + 4, 20)
+        elif "morning" in preferred_time_lower:
+            default_start_hour = 9
+            default_end_hour = 12
+        elif "afternoon" in preferred_time_lower:
+            default_start_hour = 13
+            default_end_hour = 17
+        elif "evening" in preferred_time_lower:
+            default_start_hour = 17
+            default_end_hour = 20
+        elif "night" in preferred_time_lower:
+            default_start_hour = 18
+            default_end_hour = 21
+        else:
+            # Try to find single hour mentioned
+            hour_match = re.search(r'\b(\d{1,2})\s*(?:AM|PM|am|pm)\b', preferred_time)
+            if hour_match:
+                hour = int(hour_match.group(1))
+                if "pm" in preferred_time_lower or "PM" in preferred_time:
+                    if hour < 12:
+                        hour += 12
+                elif hour == 12:
+                    hour = 12  # Noon
+                default_start_hour = max(8, hour - 1)
+                default_end_hour = min(20, hour + 1)
+    
+    # Parse preferred_contact_days from database - this is the primary source
+    if preferred_days:
+        preferred_days_lower = preferred_days.lower().strip()
+        if "weekend" in preferred_days_lower or "saturday" in preferred_days_lower or "sunday" in preferred_days_lower:
+            use_weekdays_only = False
+        elif "any" in preferred_days_lower or "all" in preferred_days_lower or "every" in preferred_days_lower:
+            use_weekdays_only = False
+        elif "weekday" in preferred_days_lower or "monday" in preferred_days_lower or "tuesday" in preferred_days_lower or "wednesday" in preferred_days_lower or "thursday" in preferred_days_lower or "friday" in preferred_days_lower:
+            use_weekdays_only = True
+    
+    # Generate slots starting from tomorrow based on customer's preferences
+    days_ahead = 1
+    slots_generated = 0
+    
+    # Generate time slots within the customer's preferred time range
+    while slots_generated < num_slots and days_ahead <= 14:  # Look up to 2 weeks ahead
+        candidate_date = now + timedelta(days=days_ahead)
+        weekday = candidate_date.weekday()  # 0 = Monday, 6 = Sunday
+        
+        # Skip if weekdays only and it's a weekend (based on customer preference)
+        if use_weekdays_only and weekday >= 5:
+            days_ahead += 1
+            continue
+        
+        # Generate varied hours within the customer's preferred time range
+        hours_to_try = []
+        hour_range = default_end_hour - default_start_hour
+        
+        if hour_range > 0:
+            # Distribute slots across the preferred range
+            if slots_generated < num_slots:
+                hours_to_try.append(default_start_hour)
+            if slots_generated + 1 < num_slots:
+                # Add middle hour
+                mid_hour = default_start_hour + (hour_range // 2)
+                hours_to_try.append(mid_hour)
+            if slots_generated + 2 < num_slots:
+                # Add end hour (but not too late)
+                end_hour = min(default_end_hour - 1, 20)  # Don't go past 8 PM
+                if end_hour > default_start_hour:
+                    hours_to_try.append(end_hour)
+        else:
+            # If range is small, use the start hour and add small variations
+            hours_to_try.append(default_start_hour)
+            if slots_generated + 1 < num_slots and default_start_hour < 20:
+                hours_to_try.append(default_start_hour + 1)
+            if slots_generated + 2 < num_slots and default_start_hour < 19:
+                hours_to_try.append(default_start_hour + 2)
+        
+        # Remove duplicates and sort
+        hours_to_try = sorted(list(set(hours_to_try)))
+        
+        for hour in hours_to_try[:num_slots - slots_generated]:
+            # Ensure hour is valid (between 8 AM and 8 PM)
+            if hour < 8 or hour > 20:
+                continue
+                
+            # Create time slot (10-minute window)
+            slot_start = candidate_date.replace(hour=hour, minute=0, second=0, microsecond=0)
+            slot_end = slot_start + timedelta(minutes=10)
+            
+            # Format day name
+            day_name = candidate_date.strftime("%A")
+            
+            slots.append({
+                "start_time": slot_start.isoformat(),
+                "end_time": slot_end.isoformat(),
+                "display": slot_start.strftime("%A, %B %d at %I:%M %p"),
+                "day_name": day_name,
+            })
+            slots_generated += 1
+            
+            if slots_generated >= num_slots:
+                break
+        
+        days_ahead += 1
+    
+    # If we didn't generate enough slots, fill with defaults based on preferences
+    while len(slots) < num_slots:
+        fallback_date = now + timedelta(days=len(slots) + 1)
+        if use_weekdays_only and fallback_date.weekday() >= 5:
+            fallback_date += timedelta(days=1)
+        
+        slot_start = fallback_date.replace(hour=default_start_hour, minute=0, second=0, microsecond=0)
+        slot_end = slot_start + timedelta(minutes=10)
+        
+        slots.append({
+            "start_time": slot_start.isoformat(),
+            "end_time": slot_end.isoformat(),
+            "display": slot_start.strftime("%A, %B %d at %I:%M %p"),
+            "day_name": slot_start.strftime("%A"),
+        })
+    
+    return slots[:num_slots]  # Ensure we return exactly num_slots
 
 def save_planning_file(call_id: int, content: str) -> str:
     """Save planning script as MD file"""
@@ -506,6 +696,48 @@ def generate_scheduling_strategy_background(customer_id: int, scheduled_call_id:
         except:
             pass
 
+@app.get("/api/customers/{customer_id}/suggested-time-slots")
+async def get_suggested_time_slots(customer_id: int):
+    """Get 3 best time slots for scheduling a call with this customer"""
+    try:
+        summary = db_manager.get_customer_summary(customer_id)
+        if not summary:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        
+        customer = summary['customer']
+        
+        # Ensure migration has run - try to access the new fields
+        try:
+            # Access the fields to trigger any AttributeError if columns don't exist
+            _ = customer.preferred_contact_time
+            _ = customer.preferred_contact_days
+        except AttributeError:
+            # Columns don't exist yet, run migration
+            db_manager._migrate_customer_contact_preferences_if_needed()
+            # Refresh the customer object
+            session = db_manager.get_session()
+            try:
+                session.refresh(customer)
+            finally:
+                session.close()
+        
+        slots = generate_time_slots(customer, num_slots=3)
+        
+        return {
+            "slots": slots,
+            "customer_preferences": {
+                "preferred_contact_time": getattr(customer, 'preferred_contact_time', None),
+                "preferred_contact_days": getattr(customer, 'preferred_contact_days', None),
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in get_suggested_time_slots: {error_details}")
+        raise HTTPException(status_code=500, detail=f"Error generating time slots: {str(e)}")
+
 @app.post("/api/scheduled-calls", response_model=ScheduledCallResponse)
 async def create_scheduled_call(call: ScheduledCallRequest, background_tasks: BackgroundTasks):
     """Schedule a call for a customer, then run strategy planning (async)"""
@@ -539,35 +771,19 @@ async def create_scheduled_call(call: ScheduledCallRequest, background_tasks: Ba
         scheduled_call = db_manager.create_scheduled_call(
             customer_id=call.customer_id,
             scheduled_time=scheduled_time,
-            notes=call.notes or ("Generating strategy..." if call.use_auto_time else None),
+            notes=call.notes or "Generating strategy...",
             agent_id=call.agent_id,
             status="pending"
         )
         
-        # If we need to generate strategy (use_auto_time without existing script), do it in background
-        if call.use_auto_time and not call.planning_script_id:
-            background_tasks.add_task(
-                generate_scheduling_strategy_background,
-                call.customer_id,
-                scheduled_call.id,
-                call.use_auto_time
-            )
-            return {
-                "id": scheduled_call.id,
-                "customer_id": scheduled_call.customer_id,
-                "scheduled_time": scheduled_call.scheduled_time.isoformat() if scheduled_call.scheduled_time else None,
-                "status": scheduled_call.status,
-                "notes": scheduled_call.notes,
-                "agent_id": scheduled_call.agent_id,
-                "created_at": scheduled_call.created_at.isoformat(),
-                "script_id": None,
-                "suggested_time": None,
-                "suggested_day": None,
-                "planning_file_path": None,
-                "status_message": "Strategy generation started. Planning file will be available shortly.",
-            }
+        # Always generate strategy asynchronously after scheduling
+        background_tasks.add_task(
+            generate_scheduling_strategy_background,
+            call.customer_id,
+            scheduled_call.id,
+            call.use_auto_time
+        )
         
-        # If we have a planning script, we're done
         return {
             "id": scheduled_call.id,
             "customer_id": scheduled_call.customer_id,
@@ -580,6 +796,7 @@ async def create_scheduled_call(call: ScheduledCallRequest, background_tasks: Ba
             "suggested_time": planning_script.suggested_time if planning_script else None,
             "suggested_day": planning_script.suggested_day if planning_script else None,
             "planning_file_path": f"call_files/planning/call_{scheduled_call.id}_planning.md" if planning_script else None,
+            "status_message": "Call scheduled. Strategy generation started. Planning file will be available shortly.",
         }
     except HTTPException:
         raise
