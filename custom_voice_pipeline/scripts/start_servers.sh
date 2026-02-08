@@ -43,13 +43,13 @@ start_server() {
 mkdir -p logs
 
 # Start WebSocket server (port 5001)
-start_server "websocket-server" "python twilio/twilio_voice_server.py" "5001"
+start_server "websocket-server" "python custom_voice_pipeline/twilio_voice_server.py" "5001"
 
 # Wait a bit for WebSocket server to start
 sleep 2
 
 # Start TwiML server (port 5000)
-start_server "twiml-server" "python twilio/twilio_server_simple.py" "5050"
+start_server "twiml-server" "python custom_voice_pipeline/twilio_server_simple.py" "5050"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${GREEN}✓ All servers started!${NC}"
@@ -65,7 +65,7 @@ echo "3. Make a test call or check server status:"
 echo "   ${YELLOW}curl http://localhost:5050/health${NC}"
 echo ""
 echo "To stop servers:"
-echo "   ${YELLOW}./scripts/stop_servers.sh${NC}"
+echo "   ${YELLOW}./custom_voice_pipeline/scripts/stop_servers.sh${NC}"
 echo ""
 echo "View logs:"
 echo "   ${YELLOW}tail -f logs/websocket-server.log${NC}"

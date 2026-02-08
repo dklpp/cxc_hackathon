@@ -5,7 +5,7 @@ Simple TwiML Configuration Server
 Serves TwiML XML that routes incoming Twilio calls to the WebSocket server.
 
 Usage:
-    python twilio/twilio_server_simple.py
+    python custom_voice_pipeline/twilio_server_simple.py
 
 Environment Variables:
     WEBSOCKET_URL - Public URL for WebSocket server (e.g., from cloudflare tunnel)
@@ -160,7 +160,7 @@ def main():
     print(f"  - http://{args.host}:{args.port}/voice (TwiML)")
     print(f"  - http://{args.host}:{args.port}/health (Health check)")
     print(f"\nSetup:")
-    print(f"  1. Start WebSocket server: python twilio/twilio_voice_server.py")
+    print(f"  1. Start WebSocket server: python custom_voice_pipeline/twilio_voice_server.py")
     print(f"  2. Expose with tunnel: cloudflared tunnel --url http://localhost:5050")
     print(f"  3. Configure Twilio webhook to tunnel URL + /voice")
     print(f"\nPress Ctrl+C to stop\n")

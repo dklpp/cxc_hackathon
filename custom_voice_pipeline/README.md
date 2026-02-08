@@ -1,6 +1,8 @@
-# Outbound Voice Call Server
+# Custom Voice Pipeline
 
-AI-powered outbound voice calls using Twilio + ElevenLabs (STT/TTS) + OpenAI (LLM) + Silero (VAD).
+Fully self-orchestrated AI voice agent where **you control every component** of the pipeline: VAD, STT, LLM, and TTS. Unlike ElevenLabs' managed Conversational AI agent, this implementation gives you direct control over the voice activity detection, transcription, language model, and speech synthesis — allowing fine-tuned latency, custom prompts, and full call recording.
+
+**Stack:** Twilio (telephony) + Silero (VAD) + ElevenLabs (STT/TTS) + OpenAI (LLM)
 
 ## Prerequisites
 
@@ -42,7 +44,7 @@ Terminal 4: Cloudflared tunnel for TwiML + trigger outbound call
 
 ```bash
 source .venv/bin/activate
-python twilio/twilio_voice_server.py
+python custom_voice_pipeline/twilio_voice_server.py
 ```
 
 Optional flags:
@@ -59,9 +61,9 @@ Optional flags:
 | `--system-prompt` | built-in | Custom system prompt |
 | `--port` | `5001` | WebSocket port |
 
-Example with all options:
+Example with options:
 ```bash
-python twilio/twilio_voice_server.py \
+python custom_voice_pipeline/twilio_voice_server.py \
   --model gpt-4o \
   --tts-model eleven_turbo_v2 \
   --vad-silence-ms 500 \
@@ -83,7 +85,7 @@ Set `WEBSOCKET_URL` to the hostname from Terminal 2, then start:
 ```bash
 source .venv/bin/activate
 export WEBSOCKET_URL=abc-xyz.trycloudflare.com
-python twilio/twilio_server_simple.py
+python custom_voice_pipeline/twilio_server_simple.py
 ```
 
 The server auto-prepends `wss://` and appends `/media-stream` to the URL.
@@ -100,7 +102,7 @@ Once the tunnel URL appears, trigger the outbound call:
 
 ```bash
 source .venv/bin/activate
-python twilio/outbound_call.py call \
+python custom_voice_pipeline/outbound_call.py call \
   --to +1XXXXXXXXXX \
   --webhook https://YOUR-TWIML-TUNNEL.trycloudflare.com/voice
 ```
@@ -132,19 +134,18 @@ Disable with `--no-transcription` and `--no-recording`.
 
 ```bash
 # Check call status
-python twilio/outbound_call.py status <CALL_SID>
+python custom_voice_pipeline/outbound_call.py status <CALL_SID>
 
 # Hang up a call
-python twilio/outbound_call.py hangup <CALL_SID>
+python custom_voice_pipeline/outbound_call.py hangup <CALL_SID>
 
 # List active calls
-python twilio/outbound_call.py list
+python custom_voice_pipeline/outbound_call.py list
 ```
 
 ## Killing All Servers
 
 ```bash
-# Kill all processes on the used ports
 lsof -ti:5001 | xargs kill -9 2>/dev/null
 lsof -ti:5050 | xargs kill -9 2>/dev/null
 pkill -f cloudflared
