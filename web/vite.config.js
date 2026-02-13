@@ -15,6 +15,8 @@ export default defineConfig({
         target: 'https://cxc-call-service.onrender.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/call-service/, ''),
+        timeout: 600000,
+        proxyTimeout: 600000,
       },
     },
   },

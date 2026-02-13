@@ -5,7 +5,7 @@ FastAPI Backend for Customer Debt Management System
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import datetime, timedelta
 import sys
@@ -13,7 +13,20 @@ import os
 import json
 from pathlib import Path
 import asyncio
+import logging
+import time
 import requests
+
+# Configure logger for call pipeline
+logger = logging.getLogger("call_pipeline")
+logger.setLevel(logging.DEBUG)
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter(
+        "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    ))
+    logger.addHandler(_handler)
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -62,8 +75,66 @@ TRANSCRIPT_DIR = FILES_DIR / "transcripts"
 PLANNING_DIR.mkdir(exist_ok=True, parents=True)
 TRANSCRIPT_DIR.mkdir(exist_ok=True, parents=True)
 
+# OpenRouter / Gemini helper for generating call notes
+OPENROUTERS_API_KEY = os.getenv("OPENROUTERS_API_KEY")
+
+def generate_notes_from_transcript(transcript_text: str, customer_id: int = None) -> str:
+    """Use Gemini via OpenRouter to generate concise call notes from a transcript."""
+    ctx = f"customer_id={customer_id}" if customer_id else "unknown_customer"
+    transcript_len = len(transcript_text)
+
+    if not OPENROUTERS_API_KEY:
+        logger.warning("[gemini-notes] %s — Skipped: OPENROUTERS_API_KEY not configured", ctx)
+        return "AI call notes unavailable (no API key configured)."
+
+    logger.info("[gemini-notes] %s — Sending transcript (%d chars) to Gemini for note generation", ctx, transcript_len)
+    start = time.time()
+    try:
+        resp = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTERS_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "google/gemini-2.5-pro",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Analyze the following call transcript and produce a concise summary "
+                            "(3-5 sentences). Include: call outcome, customer sentiment, any promises "
+                            "or commitments made, and recommended next steps. Be factual and brief.\n\n"
+                            f"TRANSCRIPT:\n{transcript_text}"
+                        ),
+                    }
+                ],
+                "temperature": 0.3,
+                "max_tokens": 500,
+            },
+            timeout=30,
+        )
+        elapsed = time.time() - start
+
+        if resp.status_code == 200:
+            notes = resp.json()["choices"][0]["message"]["content"]
+            logger.info("[gemini-notes] %s — Success (%.2fs). Generated %d-char notes", ctx, elapsed, len(notes))
+            return notes
+        else:
+            logger.error("[gemini-notes] %s — OpenRouter returned HTTP %d (%.2fs): %s", ctx, resp.status_code, elapsed, resp.text[:300])
+    except requests.exceptions.Timeout:
+        elapsed = time.time() - start
+        logger.error("[gemini-notes] %s — Request timed out after %.2fs", ctx, elapsed)
+    except Exception as e:
+        elapsed = time.time() - start
+        logger.error("[gemini-notes] %s — Exception after %.2fs: %s", ctx, elapsed, e)
+
+    return "AI call notes generation failed."
+
+
 # Pydantic models for request/response
 class CustomerResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     first_name: str
     last_name: str
@@ -78,11 +149,9 @@ class CustomerResponse(BaseModel):
     preferred_contact_time: Optional[str] = None
     preferred_contact_days: Optional[str] = None
     total_debt: Optional[float] = None
-    
-    class Config:
-        from_attributes = True
 
 class DebtResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     customer_id: int
     debt_type: str
@@ -93,11 +162,9 @@ class DebtResponse(BaseModel):
     due_date: Optional[datetime]
     status: str
     days_past_due: int
-    
-    class Config:
-        from_attributes = True
 
 class CommunicationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     customer_id: int
     communication_type: str
@@ -106,9 +173,6 @@ class CommunicationResponse(BaseModel):
     outcome: Optional[str]
     notes: Optional[str]
     duration_seconds: Optional[int]
-    
-    class Config:
-        from_attributes = True
 
 class ScheduledCallRequest(BaseModel):
     customer_id: int
@@ -122,6 +186,7 @@ class PrepareEmailRequest(BaseModel):
     communication_type: str  # "email" or "sms"
 
 class ScheduledCallResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     customer_id: int
     scheduled_time: datetime
@@ -132,9 +197,6 @@ class ScheduledCallResponse(BaseModel):
     script_id: Optional[int] = None
     suggested_time: Optional[str] = None
     suggested_day: Optional[str] = None
-    
-    class Config:
-        from_attributes = True
 
 class TranscriptAnalysisResponse(BaseModel):
     call_metadata: dict
@@ -2071,30 +2133,37 @@ async def get_transcript_analysis(customer_id: int, communication_id: int):
 @app.post("/api/customers/{customer_id}/make-ai-call")
 async def make_ai_call(customer_id: int):
     """Initiate an AI-powered call to the customer"""
+    logger.info("[make-ai-call] customer_id=%d — Request received", customer_id)
     try:
         if not OUTBOUND_CALL_AVAILABLE:
+            logger.error("[make-ai-call] customer_id=%d — OutboundCallManager not available", customer_id)
             raise HTTPException(status_code=503, detail="AI call functionality is not available. OutboundCallManager not found.")
-        
+
         # Get customer
         customer = db_manager.get_customer(customer_id)
         if not customer:
+            logger.warning("[make-ai-call] customer_id=%d — Customer not found in DB", customer_id)
             raise HTTPException(status_code=404, detail="Customer not found")
-        
+
         if not customer.phone_primary:
+            logger.warning("[make-ai-call] customer_id=%d — No phone number on file", customer_id)
             raise HTTPException(status_code=400, detail="Customer phone number is required")
-        
+
         # Get webhook URL from environment or use default
         webhook_url = os.getenv('TWILIO_WEBHOOK_URL', 'http://localhost:5000/voice')
-        
+
         # Initialize outbound call manager
         call_manager = OutboundCallManager()
-        
+
         # Make the call
+        logger.info("[make-ai-call] customer_id=%d — Initiating Twilio call to %s", customer_id, customer.phone_primary)
+        call_start = time.time()
         call_sid = call_manager.make_call(
             to_number=customer.phone_primary,
             webhook_url=webhook_url
         )
-        
+        logger.info("[make-ai-call] customer_id=%d — Twilio call initiated (%.2fs). call_sid=%s", customer_id, time.time() - call_start, call_sid)
+
         # Create a communication log entry for the call
         comm_log = db_manager.create_communication_log(
             customer_id=customer_id,
@@ -2105,7 +2174,8 @@ async def make_ai_call(customer_id: int):
             notes=f"AI call initiated via Twilio. Call SID: {call_sid}",
             agent_id="ai_system"
         )
-        
+        logger.info("[make-ai-call] customer_id=%d — Communication log created: id=%d", customer_id, comm_log.id)
+
         return {
             "success": True,
             "message": "AI call initiated successfully",
@@ -2118,20 +2188,23 @@ async def make_ai_call(customer_id: int):
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
-        print(f"Error initiating AI call: {error_details}")
+        logger.error("[make-ai-call] customer_id=%d — Unhandled exception: %s", customer_id, error_details)
         raise HTTPException(status_code=500, detail=f"Failed to initiate AI call: {str(e)}")
 
 CALL_SERVICE_URL = os.getenv("CALL_SERVICE_URL", "https://cxc-call-service.onrender.com")
 
 @app.post("/api/customers/{customer_id}/make-call")
 async def proxy_make_call(customer_id: int, background_tasks: BackgroundTasks):
-    """Proxy call request to the external call service (fire-and-forget)."""
+    """Proxy call to external call service, wait for response, save transcript."""
+    logger.info("[make-call] customer_id=%d — Request received", customer_id)
     customer = db_manager.get_customer(customer_id)
     if not customer:
+        logger.warning("[make-call] customer_id=%d — Customer not found in DB", customer_id)
         raise HTTPException(status_code=404, detail="Customer not found")
 
-    debts = db_manager.get_debts_by_customer(customer_id)
+    debts = db_manager.get_customer_debts(customer_id)
     scheduled_calls = db_manager.get_scheduled_calls(customer_id)
+    logger.debug("[make-call] customer_id=%d — Loaded %d debts, %d scheduled calls", customer_id, len(debts), len(scheduled_calls))
 
     payload = {
         "customer": {col.name: getattr(customer, col.name) for col in customer.__table__.columns},
@@ -2139,22 +2212,112 @@ async def proxy_make_call(customer_id: int, background_tasks: BackgroundTasks):
         "scheduled_calls": [{col.name: getattr(c, col.name) for col in c.__table__.columns} for c in scheduled_calls],
     }
 
-    # Serialize datetimes to strings
+    # Serialize non-JSON types to strings
     import json as _json
+    from datetime import date as _date
+    from enum import Enum as _Enum
     def _default(o):
-        if isinstance(o, (datetime,)):
+        if isinstance(o, (datetime, _date)):
             return o.isoformat()
-        raise TypeError
+        if isinstance(o, _Enum):
+            return o.value
+        return str(o)
     serialized = _json.loads(_json.dumps(payload, default=_default))
 
-    def forward_call():
+    def forward_call_and_save_transcript():
+        call_start = time.time()
         try:
-            requests.post(f"{CALL_SERVICE_URL}/make_call", json=serialized, timeout=300)
-        except Exception as e:
-            print(f"Call service error: {e}")
+            logger.info("[make-call] customer_id=%d — Sending request to call service at %s", customer_id, CALL_SERVICE_URL)
+            resp = requests.post(f"{CALL_SERVICE_URL}/make_call", json=serialized, timeout=600)
+            call_elapsed = time.time() - call_start
 
-    background_tasks.add_task(forward_call)
+            if resp.status_code != 200:
+                logger.error("[make-call] customer_id=%d — Call service returned HTTP %d (%.2fs): %s", customer_id, resp.status_code, call_elapsed, resp.text[:300])
+                return
+
+            call_result = resp.json()
+            conversation_id = call_result.get("conversation_id", "unknown")
+            call_status = call_result.get("status", "unknown")
+            logger.info("[make-call] customer_id=%d — Call completed (%.2fs). conversation_id=%s, status=%s", customer_id, call_elapsed, conversation_id, call_status)
+
+            transcript = call_result.get("transcript", [])
+            if transcript:
+                logger.info("[make-call] customer_id=%d — Transcript received: %d messages", customer_id, len(transcript))
+                transcript_text = "\n".join(
+                    f"{'Agent' if t.get('role') == 'agent' else 'Customer'}: {t.get('message', '')}"
+                    for t in transcript
+                )
+                logger.info("[make-call] customer_id=%d — Formatted transcript: %d chars. Generating AI notes...", customer_id, len(transcript_text))
+                notes = generate_notes_from_transcript(transcript_text, customer_id=customer_id)
+                logger.info("[make-call] customer_id=%d — Saving communication log to DB", customer_id)
+                db_manager.log_communication(
+                    customer_id=customer_id,
+                    communication_type=CommunicationType.CALL,
+                    direction="outbound",
+                    contact_phone=customer.phone_primary or "",
+                    outcome="completed" if call_status == "done" else call_status,
+                    notes=notes,
+                    transcript=transcript_text,
+                    agent_id="ai_voice_agent",
+                )
+                total_elapsed = time.time() - call_start
+                logger.info("[make-call] customer_id=%d — Pipeline complete (%.2fs total). Transcript + notes saved", customer_id, total_elapsed)
+            else:
+                logger.warning("[make-call] customer_id=%d — No transcript returned from call service", customer_id)
+        except Exception as e:
+            elapsed = time.time() - call_start
+            logger.error("[make-call] customer_id=%d — Error after %.2fs: %s", customer_id, elapsed, e, exc_info=True)
+
+    background_tasks.add_task(forward_call_and_save_transcript)
+    logger.info("[make-call] customer_id=%d — Background task queued. Returning to client", customer_id)
     return {"success": True, "message": "Call is being initiated"}
+
+
+class SaveTranscriptRequest(BaseModel):
+    conversation_id: str
+    status: str
+    transcript: list
+    customer_id: int
+
+@app.post("/api/customers/{customer_id}/save-transcript")
+async def save_transcript(customer_id: int, req: SaveTranscriptRequest):
+    """Save call transcript from call service to the database."""
+    pipeline_start = time.time()
+    logger.info("[save-transcript] customer_id=%d — Request received. conversation_id=%s, status=%s, transcript_messages=%d",
+                customer_id, req.conversation_id, req.status, len(req.transcript))
+
+    customer = db_manager.get_customer(customer_id)
+    if not customer:
+        logger.warning("[save-transcript] customer_id=%d — Customer not found in DB", customer_id)
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    # Format transcript as readable text
+    transcript_text = "\n".join(
+        f"{'Agent' if t.get('role') == 'agent' else 'Customer'}: {t.get('message', '')}"
+        for t in req.transcript
+    )
+    logger.info("[save-transcript] customer_id=%d — Formatted transcript: %d chars", customer_id, len(transcript_text))
+
+    # Generate AI notes from transcript using Gemini
+    logger.info("[save-transcript] customer_id=%d — Generating AI notes via Gemini...", customer_id)
+    notes = generate_notes_from_transcript(transcript_text, customer_id=customer_id)
+
+    # Save as a communication log
+    logger.info("[save-transcript] customer_id=%d — Saving communication log to DB (outcome=%s)", customer_id, req.status)
+    comm_log = db_manager.log_communication(
+        customer_id=customer_id,
+        communication_type=CommunicationType.CALL,
+        direction="outbound",
+        contact_phone=customer.phone_primary or "",
+        outcome="completed" if req.status == "done" else req.status,
+        notes=notes,
+        transcript=transcript_text,
+        agent_id="ai_voice_agent",
+    )
+
+    total_elapsed = time.time() - pipeline_start
+    logger.info("[save-transcript] customer_id=%d — Pipeline complete (%.2fs). comm_log_id=%d", customer_id, total_elapsed, comm_log.id)
+    return {"success": True, "communication_log_id": comm_log.id}
 
 
 if __name__ == "__main__":

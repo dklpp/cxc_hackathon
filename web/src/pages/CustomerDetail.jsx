@@ -38,6 +38,7 @@ function CustomerDetail() {
   const [debts, setDebts] = useState([])
   const [scheduledCalls, setScheduledCalls] = useState([])
   const [callPlanningScripts, setCallPlanningScripts] = useState([])
+  const [communications, setCommunications] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [scheduling, setScheduling] = useState(false)
@@ -103,6 +104,7 @@ function CustomerDetail() {
       setDebts(response.data.debts)
       setScheduledCalls(response.data.scheduled_calls)
       setCallPlanningScripts(response.data.call_planning_scripts || [])
+      setCommunications(response.data.communications || [])
       setPlannedEmails(response.data.planned_emails || [])
       setError(null)
     } catch (err) {
@@ -120,35 +122,11 @@ function CustomerDetail() {
   const handleMakeCall = async () => {
     try {
       setMakingCall(true)
-      toast.info('Call in progress... This may take a few minutes.', { title: 'Make a Call', duration: 10000 })
-
-      const response = await fetch('/call-service/make_call', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customer, debts, scheduled_calls: scheduledCalls, call_planning_scripts: callPlanningScripts, planned_emails: plannedEmails }),
-      })
-      console.log(response);
-      if (!response.ok) throw new Error('Call request failed')
-
-      const callResult = await response.json()
-
-      // Save transcript to database
-      if (callResult.transcript && callResult.transcript.length > 0) {
-        try {
-          await api.post(`/customers/${id}/save-transcript`, {
-            conversation_id: callResult.conversation_id || 'unknown',
-            status: callResult.status || 'done',
-            transcript: callResult.transcript,
-            customer_id: parseInt(id),
-          })
-          toast.success('Call completed and transcript saved!', { title: 'Make a Call', duration: 4000 })
-          fetchCustomerDetail()
-        } catch (saveErr) {
-          console.error('Failed to save transcript:', saveErr)
-          toast.warning('Call completed but failed to save transcript', { title: 'Make a Call', duration: 4000 })
-        }
+      const response = await api.post(`/customers/${id}/make-call`)
+      if (response.data?.success) {
+        toast.success('Call initiated! Transcript will be saved automatically when the call ends.', { title: 'Make a Call', duration: 6000 })
       } else {
-        toast.success('Call completed!', { title: 'Make a Call', duration: 4000 })
+        throw new Error('Call request failed')
       }
     } catch (err) {
       console.error(err)
@@ -764,22 +742,25 @@ function CustomerDetail() {
                 View All
               </Link>
             </div>
-            {scheduledCalls.length === 0 && plannedEmails.length === 0 ? (
+            {scheduledCalls.length === 0 && plannedEmails.length === 0 && communications.length === 0 ? (
               <p className="text-gray-500 text-sm">No interactions</p>
             ) : (
               <div className="space-y-3">
                 {[
                   ...scheduledCalls.map(call => ({ ...call, interactionType: 'call' })),
-                  ...plannedEmails.map(email => ({ ...email, interactionType: 'email' }))
+                  ...plannedEmails.map(email => ({ ...email, interactionType: 'email' })),
+                  ...communications.map(comm => ({ ...comm, interactionType: 'communication' }))
                 ]
                   .filter(item => item.status !== 'cancelled') // Filter out cancelled interactions
                   .sort((a, b) => {
                     // Sort by scheduled_time/sent_at or created_at, most recent first
-                    const dateA = a.scheduled_time ? new Date(a.scheduled_time) 
+                    const dateA = a.scheduled_time ? new Date(a.scheduled_time)
                       : a.sent_at ? new Date(a.sent_at)
+                      : a.timestamp ? new Date(a.timestamp)
                       : new Date(a.created_at)
                     const dateB = b.scheduled_time ? new Date(b.scheduled_time)
                       : b.sent_at ? new Date(b.sent_at)
+                      : b.timestamp ? new Date(b.timestamp)
                       : new Date(b.created_at)
                     return dateB - dateA
                   })
@@ -845,6 +826,31 @@ function CustomerDetail() {
                           )}
                           {email.content && (
                             <p className="text-xs text-gray-600 mt-1 line-clamp-2">{email.content.substring(0, 100)}...</p>
+                          )}
+                        </div>
+                      )
+                    } else if (item.interactionType === 'communication') {
+                      const comm = item
+                      return (
+                        <div
+                          key={`comm_${comm.id}`}
+                          className="border border-gray-200 rounded-lg p-3 bg-green-50"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center space-x-2">
+                              <Phone className="h-4 w-4 text-green-600" />
+                              <span className="text-sm font-medium text-gray-900">
+                                {comm.timestamp
+                                  ? format(new Date(comm.timestamp), 'MMM d, yyyy h:mm a')
+                                  : 'Unknown time'}
+                              </span>
+                            </div>
+                            <span className="px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-800">
+                              {comm.outcome || 'completed'}
+                            </span>
+                          </div>
+                          {comm.notes && (
+                            <p className="text-xs text-gray-600 mt-1">{comm.notes}</p>
                           )}
                         </div>
                       )
