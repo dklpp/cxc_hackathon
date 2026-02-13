@@ -976,6 +976,9 @@ async def get_call_history(customer_id: int):
                     db_manager.get_session().close()
                 else:
                     call_data["has_transcript"] = False
+                # For completed scheduled calls, include transcript file path if communication log exists
+                if sc.communication_log_id:
+                    call_data["transcript_file_path"] = f"call_files/transcripts/call_{sc.communication_log_id}_transcript.md"
                 completed_calls.append(call_data)
         
         # Track which communication logs are already represented by scheduled calls
@@ -992,6 +995,7 @@ async def get_call_history(customer_id: int):
             
             # Check if transcript exists in database
             has_transcript = bool(c.transcript)
+            transcript_file_path = f"call_files/transcripts/call_{c.id}_transcript.md"
             
             completed_calls.append({
                 "id": c.id,
@@ -1008,6 +1012,7 @@ async def get_call_history(customer_id: int):
                 "planning_file_path": None,
                 "planning_script": None,
                 "has_transcript": has_transcript,
+                "transcript_file_path": transcript_file_path,
                 "scheduled_call_id": None,
             })
         
