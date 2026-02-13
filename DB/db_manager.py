@@ -192,6 +192,9 @@ class CommunicationLog(Base):
     outcome = Column(String(100), nullable=True)  # payment_promised, no_answer, voicemail, etc.
     notes = Column(Text, nullable=True)
     
+    # Transcript (for calls)
+    transcript = Column(Text, nullable=True)  # Full transcript content stored in database
+    
     # Metadata
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
     agent_id = Column(String(100), nullable=True)  # ID of the agent/system that made the contact
@@ -352,6 +355,7 @@ class DatabaseManager:
         Base.metadata.create_all(bind=self.engine)
         self._migrate_scheduled_calls_if_needed()
         self._migrate_customer_contact_preferences_if_needed()
+        self._migrate_communication_logs_transcript_if_needed()
         print("Database tables created successfully.")
     
     def _migrate_scheduled_calls_if_needed(self):
@@ -460,6 +464,39 @@ class DatabaseManager:
                         except Exception as e:
                             conn.rollback()
                             print(f"Warning: Migration failed (this is OK if columns already exist): {e}")
+                        finally:
+                            conn.close()
+        except Exception as e:
+            # Don't fail if migration can't run
+            print(f"Warning: Could not check/run migration: {e}")
+    
+    def _migrate_communication_logs_transcript_if_needed(self):
+        """Migrate communication_logs table to add transcript column if needed"""
+        try:
+            import sqlite3
+            from sqlalchemy import inspect
+            
+            # Only migrate if using SQLite
+            if 'sqlite' in str(self.engine.url):
+                inspector = inspect(self.engine)
+                if 'communication_logs' in inspector.get_table_names():
+                    columns = inspector.get_columns('communication_logs')
+                    column_names = [col['name'] for col in columns]
+                    
+                    if 'transcript' not in column_names:
+                        conn = self.engine.raw_connection()
+                        cursor = conn.cursor()
+                        
+                        try:
+                            cursor.execute("""
+                                ALTER TABLE communication_logs 
+                                ADD COLUMN transcript TEXT
+                            """)
+                            conn.commit()
+                            print("✓ Added transcript column to communication_logs table")
+                        except Exception as e:
+                            conn.rollback()
+                            print(f"Warning: Migration failed (this is OK if column already exists): {e}")
                         finally:
                             conn.close()
         except Exception as e:

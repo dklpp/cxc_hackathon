@@ -27,6 +27,14 @@ from strategy_planning.strategy_pipeline import GeminiStrategyGenerator
 from strategy_planning.prompt_template import classify_profile_type
 import re
 
+# Import outbound call manager
+try:
+    from custom_voice_pipeline.outbound_call import OutboundCallManager
+    OUTBOUND_CALL_AVAILABLE = True
+except ImportError:
+    OUTBOUND_CALL_AVAILABLE = False
+    print("Warning: OutboundCallManager not available. AI call functionality will be disabled.")
+
 app = FastAPI(title="Customer Debt Management API", version="1.0.0")
 
 # CORS middleware
@@ -893,6 +901,7 @@ async def get_call_planning_script(script_id: int):
 @app.get("/api/customers/{customer_id}/call-history")
 async def get_call_history(customer_id: int):
     """Get interaction history for a customer (includes calls, emails, SMS)"""
+    session = db_manager.get_session()
     try:
         # Get communication logs (all types)
         communications = db_manager.get_communication_logs(customer_id, limit=100)
@@ -954,6 +963,19 @@ async def get_call_history(customer_id: int):
             elif sc.status == "pending":
                 automatic_calls.append(call_data)
             elif sc.status == "completed":
+                # For completed scheduled calls, check if transcript exists in DB
+                if sc.communication_log_id:
+                    # Get communication log to check for transcript
+                    comm_log = db_manager.get_session().query(CommunicationLog).filter(
+                        CommunicationLog.id == sc.communication_log_id
+                    ).first()
+                    if comm_log and comm_log.transcript:
+                        call_data["has_transcript"] = True
+                    else:
+                        call_data["has_transcript"] = False
+                    db_manager.get_session().close()
+                else:
+                    call_data["has_transcript"] = False
                 # For completed scheduled calls, include transcript file path if communication log exists
                 if sc.communication_log_id:
                     call_data["transcript_file_path"] = f"call_files/transcripts/call_{sc.communication_log_id}_transcript.md"
@@ -971,6 +993,8 @@ async def get_call_history(customer_id: int):
             if c.id in communication_logs_represented:
                 continue
             
+            # Check if transcript exists in database
+            has_transcript = bool(c.transcript)
             transcript_file_path = f"call_files/transcripts/call_{c.id}_transcript.md"
             
             completed_calls.append({
@@ -987,6 +1011,7 @@ async def get_call_history(customer_id: int):
                 "duration_seconds": c.duration_seconds,
                 "planning_file_path": None,
                 "planning_script": None,
+                "has_transcript": has_transcript,
                 "transcript_file_path": transcript_file_path,
                 "scheduled_call_id": None,
             })
@@ -1079,6 +1104,8 @@ async def get_call_history(customer_id: int):
         error_details = traceback.format_exc()
         print(f"Error in get_call_history: {error_details}")
         raise HTTPException(status_code=500, detail=f"Error fetching call history: {str(e)}")
+    finally:
+        session.close()
 
 @app.get("/api/call-history/{call_id}/planning-file")
 async def get_planning_file(call_id: str):
@@ -1107,26 +1134,47 @@ async def get_planning_file(call_id: str):
 
 @app.get("/api/call-history/{call_id}/transcript-file")
 async def get_transcript_file(call_id: str):
-    """Get transcript file content for a call"""
+    """Get transcript content for a call from database"""
     try:
+        session = db_manager.get_session()
+        
         # Handle both numeric IDs and "scheduled_{id}" format
         if call_id.startswith("scheduled_"):
-            comm_id = int(call_id.replace("scheduled_", ""))
+            scheduled_call_id = int(call_id.replace("scheduled_", ""))
+            # Get the scheduled call to find its communication_log_id
+            scheduled_call = session.query(ScheduledCall).filter(
+                ScheduledCall.id == scheduled_call_id
+            ).first()
+            
+            if not scheduled_call or not scheduled_call.communication_log_id:
+                session.close()
+                raise HTTPException(status_code=404, detail="Scheduled call or communication log not found")
+            
+            comm_id = scheduled_call.communication_log_id
         else:
             comm_id = int(call_id)
         
-        file_path = f"call_files/transcripts/call_{comm_id}_transcript.md"
-        content = get_file_content(file_path)
+        # Get communication log with transcript
+        comm_log = session.query(CommunicationLog).filter(
+            CommunicationLog.id == comm_id
+        ).first()
         
-        if not content:
-            raise HTTPException(status_code=404, detail="Transcript file not found")
+        session.close()
+        
+        if not comm_log:
+            raise HTTPException(status_code=404, detail="Communication log not found")
+        
+        if not comm_log.transcript:
+            raise HTTPException(status_code=404, detail="Transcript not found in database")
         
         return {
-            "content": content,
-            "file_path": file_path,
+            "content": comm_log.transcript,
+            "communication_id": comm_log.id,
         }
     except HTTPException:
         raise
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid call ID format")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1591,6 +1639,119 @@ async def delete_planned_email(customer_id: int, email_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/api/customers/{customer_id}/communication-log/{log_id}")
+async def delete_communication_log(customer_id: int, log_id: int):
+    """Delete a communication log"""
+    session = db_manager.get_session()
+    try:
+        comm_log = session.query(CommunicationLog).filter(
+            CommunicationLog.id == log_id,
+            CommunicationLog.customer_id == customer_id
+        ).first()
+        
+        if not comm_log:
+            raise HTTPException(status_code=404, detail="Communication log not found")
+        
+        session.delete(comm_log)
+        session.commit()
+        
+        return {
+            "success": True,
+            "message": "Communication log deleted successfully",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        session.close()
+
+@app.post("/api/customers/{customer_id}/cleanup-interactions")
+async def cleanup_maria_interactions(customer_id: int):
+    """Clean up specific problematic interactions for Maria Elena Santos"""
+    try:
+        customer = db_manager.get_customer(customer_id)
+        if not customer:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        
+        # Verify it's Maria Elena Santos
+        if customer.first_name != "Maria" or customer.last_name != "Santos" or customer.middle_name != "Elena":
+            raise HTTPException(status_code=400, detail="This endpoint is only for Maria Elena Santos")
+        
+        session = db_manager.get_session()
+        deleted_count = 0
+        
+        try:
+            # Get all planned emails
+            planned_emails = session.query(PlannedEmail).filter(
+                PlannedEmail.customer_id == customer_id
+            ).all()
+            
+            # Delete planned emails matching the problematic patterns
+            for email in planned_emails:
+                should_delete = False
+                
+                # Check for JSON email
+                if email.content and ("```json" in email.content or '"profile_type"' in email.content):
+                    should_delete = True
+                
+                # Check for error email
+                elif email.content and "Error generating content" in email.content:
+                    should_delete = True
+                
+                # Check for payment reminder with traveling note
+                elif email.notes and "payment reminder" in email.notes.lower() and "traveling" in email.notes.lower():
+                    should_delete = True
+                
+                if should_delete:
+                    session.delete(email)
+                    deleted_count += 1
+            
+            # Get all communication logs
+            comm_logs = session.query(CommunicationLog).filter(
+                CommunicationLog.customer_id == customer_id,
+                CommunicationLog.communication_type.in_([CommunicationType.EMAIL, CommunicationType.SMS])
+            ).all()
+            
+            # Delete communication logs matching the problematic patterns
+            for comm in comm_logs:
+                should_delete = False
+                
+                # Check for JSON email in notes
+                if comm.notes and ("```json" in comm.notes or '"profile_type"' in comm.notes):
+                    should_delete = True
+                
+                # Check for error message
+                elif comm.notes and "Error generating content" in comm.notes:
+                    should_delete = True
+                
+                # Check for payment reminder
+                elif comm.notes and "payment reminder" in comm.notes.lower() and "traveling" in comm.notes.lower():
+                    should_delete = True
+                
+                if should_delete:
+                    session.delete(comm)
+                    deleted_count += 1
+            
+            session.commit()
+            
+            return {
+                "success": True,
+                "message": f"Deleted {deleted_count} problematic interactions",
+                "deleted_count": deleted_count
+            }
+        except Exception as e:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/customers/{customer_id}/send-email/{email_id}")
 async def send_email(customer_id: int, email_id: int):
     """Send a planned email/SMS"""
@@ -1664,49 +1825,85 @@ async def delete_call_file(
         else:
             call_id_int = int(call_id)
         
-        # Determine file path based on file type
-        if file_type == "planning":
+        if file_type == "transcript":
+            # For transcripts, delete from database instead of file
+            session = db_manager.get_session()
+            try:
+                # Check if this is a scheduled call with a communication_log_id
+                scheduled_call = session.query(ScheduledCall).filter(
+                    ScheduledCall.id == call_id_int
+                ).first()
+                
+                if scheduled_call and scheduled_call.communication_log_id:
+                    # Use communication_log_id for the transcript
+                    transcript_id = scheduled_call.communication_log_id
+                else:
+                    # Use call_id directly (it's a communication_log_id)
+                    transcript_id = call_id_int
+                
+                # Get communication log and clear transcript
+                comm_log = session.query(CommunicationLog).filter(
+                    CommunicationLog.id == transcript_id
+                ).first()
+                
+                if not comm_log:
+                    session.close()
+                    raise HTTPException(status_code=404, detail="Communication log not found")
+                
+                if not comm_log.transcript:
+                    session.close()
+                    raise HTTPException(status_code=404, detail="Transcript not found in database")
+                
+                # Clear transcript from database
+                comm_log.transcript = None
+                session.commit()
+                session.close()
+                
+                return {
+                    "success": True,
+                    "message": "Transcript deleted successfully from database"
+                }
+            except HTTPException:
+                raise
+            except Exception as e:
+                session.rollback()
+                session.close()
+                raise HTTPException(status_code=500, detail=str(e))
+        elif file_type == "planning":
+            # For planning files, delete from filesystem
             file_path = FILES_DIR.parent / f"call_files/planning/call_{call_id_int}_planning.md"
-        elif file_type == "transcript":
-            # For transcripts, check if this is a scheduled call with a communication_log_id
-            scheduled_call = db_manager.get_session().query(ScheduledCall).filter(
-                ScheduledCall.id == call_id_int
-            ).first()
             
-            if scheduled_call and scheduled_call.communication_log_id:
-                # Use communication_log_id for the transcript file
-                transcript_id = scheduled_call.communication_log_id
-            else:
-                # Use call_id directly (it's a communication_log_id)
-                transcript_id = call_id_int
+            # Check if file exists
+            if not file_path.exists():
+                raise HTTPException(status_code=404, detail=f"{file_type.capitalize()} file not found")
             
-            file_path = FILES_DIR.parent / f"call_files/transcripts/call_{transcript_id}_transcript.md"
+            # Delete the file
+            file_path.unlink()
+            
+            # Also clear the database reference
+            session = db_manager.get_session()
+            try:
+                # Get the scheduled call to find associated planning scripts
+                scheduled_call = session.query(ScheduledCall).filter(
+                    ScheduledCall.id == call_id_int
+                ).first()
+                
+                if scheduled_call:
+                    # Delete planning script records from database
+                    planning_scripts = session.query(CallPlanningScript).filter(
+                        CallPlanningScript.scheduled_call_id == call_id_int
+                    ).all()
+                    
+                    for script in planning_scripts:
+                        session.delete(script)
+                    session.commit()
+                session.close()
+            except Exception as e:
+                session.rollback()
+                session.close()
+                print(f"Warning: Could not delete planning scripts from DB: {e}")
         else:
             raise HTTPException(status_code=400, detail="Invalid file_type. Must be 'planning' or 'transcript'")
-        
-        # Check if file exists
-        if not file_path.exists():
-            raise HTTPException(status_code=404, detail=f"{file_type.capitalize()} file not found")
-        
-        # Delete the file
-        file_path.unlink()
-        
-        # If it's a planning file, also clear the database reference
-        if file_type == "planning":
-            # Get the scheduled call to find associated planning scripts
-            scheduled_call = db_manager.get_session().query(ScheduledCall).filter(
-                ScheduledCall.id == call_id_int
-            ).first()
-            
-            if scheduled_call:
-                # Delete planning script records from database
-                planning_scripts = db_manager.get_session().query(CallPlanningScript).filter(
-                    CallPlanningScript.scheduled_call_id == call_id_int
-                ).all()
-                
-                for script in planning_scripts:
-                    db_manager.get_session().delete(script)
-                db_manager.get_session().commit()
         
         return {
             "success": True,
@@ -1800,10 +1997,19 @@ async def upload_transcript(
             # Update database with results
             comm_log = analyzer.update_database(analysis_result)
             
-            # Save transcript file
-            file_path = None
+            # Save transcript to database instead of file
             if comm_log:
-                file_path = save_transcript_file(comm_log.id, file_text)
+                # Update the communication log with the transcript content
+                session = db_manager.get_session()
+                try:
+                    comm_log.transcript = file_text
+                    session.commit()
+                    session.refresh(comm_log)
+                except Exception as e:
+                    session.rollback()
+                    print(f"Error saving transcript to DB: {e}")
+                finally:
+                    session.close()
                 
                 # If linked to scheduled call, update it
                 if scheduled_call_id:
@@ -1818,10 +2024,9 @@ async def upload_transcript(
                 "analysis": analysis_result,
                 "message": "Transcript analyzed and database updated",
                 "communication_id": comm_log.id if comm_log else None,
-                "file_path": file_path,
             }
         else:
-            # For planning notes or other files, just save them
+            # For planning notes or other files, save as files (not transcripts)
             if scheduled_call_id:
                 # Save as additional file for the call
                 file_path = save_transcript_file(scheduled_call_id, file_text)
@@ -1862,6 +2067,59 @@ async def get_transcript_analysis(customer_id: int, communication_id: int):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/customers/{customer_id}/make-ai-call")
+async def make_ai_call(customer_id: int):
+    """Initiate an AI-powered call to the customer"""
+    try:
+        if not OUTBOUND_CALL_AVAILABLE:
+            raise HTTPException(status_code=503, detail="AI call functionality is not available. OutboundCallManager not found.")
+        
+        # Get customer
+        customer = db_manager.get_customer(customer_id)
+        if not customer:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        
+        if not customer.phone_primary:
+            raise HTTPException(status_code=400, detail="Customer phone number is required")
+        
+        # Get webhook URL from environment or use default
+        webhook_url = os.getenv('TWILIO_WEBHOOK_URL', 'http://localhost:5000/voice')
+        
+        # Initialize outbound call manager
+        call_manager = OutboundCallManager()
+        
+        # Make the call
+        call_sid = call_manager.make_call(
+            to_number=customer.phone_primary,
+            webhook_url=webhook_url
+        )
+        
+        # Create a communication log entry for the call
+        comm_log = db_manager.create_communication_log(
+            customer_id=customer_id,
+            communication_type=CommunicationType.CALL,
+            direction="outbound",
+            contact_phone=customer.phone_primary,
+            outcome="initiated",
+            notes=f"AI call initiated via Twilio. Call SID: {call_sid}",
+            agent_id="ai_system"
+        )
+        
+        return {
+            "success": True,
+            "message": "AI call initiated successfully",
+            "call_sid": call_sid,
+            "communication_log_id": comm_log.id,
+            "phone_number": customer.phone_primary
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error initiating AI call: {error_details}")
+        raise HTTPException(status_code=500, detail=f"Failed to initiate AI call: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

@@ -64,6 +64,7 @@ function CustomerDetail() {
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [emailType, setEmailType] = useState('email') // 'email' or 'sms'
   const [preparingEmail, setPreparingEmail] = useState(false)
+  const [makingCall, setMakingCall] = useState(false)
   const [plannedEmails, setPlannedEmails] = useState([])
   const [showEmailPreviewModal, setShowEmailPreviewModal] = useState(false)
   const [previewEmail, setPreviewEmail] = useState(null)
@@ -114,6 +115,42 @@ function CustomerDetail() {
 
   const openPrepareConfirmModal = () => {
     setShowPrepareConfirmModal(true)
+  }
+
+  const handleMakeAICall = async () => {
+    if (!customer?.phone_primary) {
+      toast.error('Customer phone number is required to make a call', {
+        title: 'Missing Phone Number',
+      })
+      return
+    }
+
+    try {
+      setMakingCall(true)
+      const response = await api.post(`/customers/${id}/make-ai-call`)
+      
+      if (response.data?.success) {
+        toast.success('AI call initiated successfully!', {
+          title: 'Call Started',
+          message: `Calling ${customer.first_name} ${customer.last_name} at ${customer.phone_primary}`,
+          duration: 5000,
+        })
+        // Refresh customer details to show the new call
+        await fetchCustomerDetail()
+      } else {
+        toast.error(response.data?.message || 'Failed to initiate call', {
+          title: 'Call Failed',
+        })
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail || err.message || 'Failed to initiate AI call'
+      toast.error(`Failed to initiate AI call: ${errorMsg}`, {
+        title: 'Error',
+      })
+      console.error('Make AI call error:', err)
+    } finally {
+      setMakingCall(false)
+    }
   }
 
   const handlePrepareCall = async () => {
@@ -496,6 +533,15 @@ function CustomerDetail() {
             <p className="text-gray-600 mt-1">Customer ID: {customer.id}</p>
           </div>
           <div className="flex space-x-3">
+            <button
+              onClick={handleMakeAICall}
+              disabled={makingCall || !customer.phone_primary}
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!customer.phone_primary ? "Customer phone number is required" : "Initiate an AI-powered call"}
+            >
+              <Phone className="h-4 w-4 mr-2" />
+              {makingCall ? 'Calling...' : 'Make AI Call'}
+            </button>
             <button
               onClick={openPrepareConfirmModal}
               disabled={preparing}
@@ -889,7 +935,7 @@ function CustomerDetail() {
                                 </p>
                               )}
                             </div>
-                          ) : call.status === 'planned' && (
+                          ) : call.status === 'planned' && !call.planning_script && !call.planning_file_path && (
                             <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
                               <div className="flex items-center space-x-2">
                                 <Clock className="h-3 w-3 text-yellow-600 animate-spin" />
