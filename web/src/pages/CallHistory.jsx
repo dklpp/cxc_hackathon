@@ -191,10 +191,16 @@ function CallHistory() {
       
       // For emails, content is shown separately in the email content section
 
-      // Load transcript if exists
-      if (call.transcript_file_path || (call.type === 'completed' && !call.planning_script)) {
+      // Load transcript if exists (check has_transcript flag from DB)
+      if (call.has_transcript || (call.type === 'completed' && call.communication_type === 'CALL')) {
         try {
-          const transcriptId = call.type === 'completed' ? call.id : (call.scheduled_call_id || call.id.replace('scheduled_', ''))
+          const transcriptId = call.type === 'completed' 
+            ? call.id 
+            : (call.scheduled_call_id 
+                ? `scheduled_${call.scheduled_call_id}` 
+                : call.id.startsWith('scheduled_') 
+                  ? call.id 
+                  : call.id.replace('scheduled_', ''))
           if (transcriptId) {
             const response = await api.get(`/call-history/${transcriptId}/transcript-file`)
             setTranscriptContent(response.data.content)
