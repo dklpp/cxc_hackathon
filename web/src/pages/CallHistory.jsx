@@ -627,7 +627,7 @@ function CallHistory() {
                     : call.scheduled_call_id || callIdStr
                   await openScheduleModal(parseInt(actualCallId))
                 }}
-                className="px-2 py-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded transition-colors"
+                className="px-2 py-1 text-xs font-medium text-tangerine-500 hover:text-tangerine-600 hover:bg-tangerine-50 rounded transition-colors"
                 title="Schedule this call"
               >
                 Schedule
@@ -649,7 +649,7 @@ function CallHistory() {
         </div>
         <button
           onClick={() => handleViewDetails(call)}
-          className="w-full mt-2 flex items-center justify-center space-x-1 text-sm text-primary-600 hover:text-primary-700 font-medium"
+          className="w-full mt-2 flex items-center justify-center space-x-1 text-sm text-tangerine-500 hover:text-tangerine-600 font-medium"
         >
           <span>View Details</span>
           <ChevronRight className="h-4 w-4" />
@@ -681,7 +681,7 @@ function CallHistory() {
 
   console.log('Rendering main content')
   return (
-    <div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-6">
         <Link
@@ -702,7 +702,7 @@ function CallHistory() {
       {/* Loading State */}
       {loading && (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-tangerine-500"></div>
           <p className="mt-2 text-gray-600">Loading interaction history...</p>
         </div>
       )}
@@ -790,7 +790,7 @@ function CallHistory() {
 
             {loadingDetails ? (
               <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-tangerine-500"></div>
                 <p className="mt-2 text-gray-600">Loading details...</p>
               </div>
             ) : (
@@ -857,7 +857,7 @@ function CallHistory() {
                               <button
                                 onClick={handleSaveEditedEmail}
                                 disabled={savingEmail}
-                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-1"
+                                className="px-3 py-1 text-sm bg-tangerine-500 text-white rounded hover:bg-tangerine-600 disabled:opacity-50 flex items-center space-x-1"
                               >
                                 {savingEmail ? (
                                   <>
@@ -917,7 +917,7 @@ function CallHistory() {
                             type="text"
                             value={editedEmailSubject}
                             onChange={(e) => setEditedEmailSubject(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent"
                             placeholder="Email subject"
                           />
                         ) : (
@@ -932,7 +932,7 @@ function CallHistory() {
                         value={editedEmailContent}
                         onChange={(e) => setEditedEmailContent(e.target.value)}
                         rows={15}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent font-mono text-sm"
                         placeholder="Email content"
                       />
                     ) : (
@@ -1011,7 +1011,7 @@ function CallHistory() {
                 <div className="flex justify-end">
                   <button
                     onClick={() => setShowUploadModal(true)}
-                    className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                    className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-lg hover:bg-tangerine-600"
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     Upload Files
@@ -1031,8 +1031,8 @@ function CallHistory() {
               Schedule Planned Call
             </h3>
             {suggestedTime && (
-              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-900">
+              <div className="mb-4 bg-tangerine-50 border border-tangerine-200 rounded-lg p-3">
+                <p className="text-sm text-tangerine-900">
                   <strong>Suggested from planning:</strong> {suggestedTime}
                   {suggestedDay && ` on ${suggestedDay}`}
                 </p>
@@ -1046,7 +1046,7 @@ function CallHistory() {
                 </label>
                 {loadingTimeSlots ? (
                   <div className="text-center py-4">
-                    <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+                    <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-tangerine-500"></div>
                     <p className="text-xs text-gray-500 mt-2">Loading time slots...</p>
                   </div>
                 ) : timeSlots.length > 0 ? (
@@ -1062,8 +1062,8 @@ function CallHistory() {
                         }}
                         className={`w-full text-left px-4 py-3 border-2 rounded-lg transition-colors ${
                           selectedTimeSlot?.start_time === slot.start_time
-                            ? 'border-primary-600 bg-primary-50'
-                            : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                            ? 'border-tangerine-500 bg-tangerine-50'
+                            : 'border-gray-200 hover:border-tangerine-300 hover:bg-gray-50'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -1072,7 +1072,7 @@ function CallHistory() {
                             <p className="text-xs text-gray-500 mt-1">10-minute window</p>
                           </div>
                           {selectedTimeSlot?.start_time === slot.start_time && (
-                            <CheckCircle className="h-5 w-5 text-primary-600" />
+                            <CheckCircle className="h-5 w-5 text-tangerine-500" />
                           )}
                         </div>
                       </button>
@@ -1097,7 +1097,7 @@ function CallHistory() {
                     setUseAutoTime(false)
                   }}
                   disabled={useAutoTime}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
               
@@ -1114,7 +1114,7 @@ function CallHistory() {
                       setSelectedTimeSlot(null)
                     }
                   }}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-tangerine-500 focus:ring-tangerine-500 border-gray-300 rounded"
                 />
                 <label htmlFor="useAutoTime" className="ml-2 block text-sm text-gray-700">
                   Use time from planning file
@@ -1128,7 +1128,7 @@ function CallHistory() {
                   value={scheduleNotes}
                   onChange={(e) => setScheduleNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent"
                   placeholder="Add any notes about this call..."
                 />
               </div>
@@ -1153,7 +1153,7 @@ function CallHistory() {
               <button
                 onClick={handleScheduleCall}
                 disabled={scheduling}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                className="px-4 py-2 bg-tangerine-500 text-white rounded-lg hover:bg-tangerine-600 disabled:opacity-50"
               >
                 {scheduling ? 'Scheduling...' : 'Schedule Call'}
               </button>
@@ -1176,7 +1176,7 @@ function CallHistory() {
                   type="file"
                   accept=".txt,.json,.md"
                   onChange={handleFileSelect}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent"
                 />
                 {selectedFile && (
                   <p className="mt-2 text-sm text-gray-600">Selected: {selectedFile.name}</p>
@@ -1194,7 +1194,7 @@ function CallHistory() {
                       value="transcript"
                       checked={fileType === 'transcript'}
                       onChange={(e) => setFileType(e.target.value)}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                      className="h-4 w-4 text-tangerine-500 focus:ring-tangerine-500"
                     />
                     <span className="ml-2 text-sm text-gray-700">Transcript</span>
                   </label>
@@ -1205,7 +1205,7 @@ function CallHistory() {
                       value="planning_notes"
                       checked={fileType === 'planning_notes'}
                       onChange={(e) => setFileType(e.target.value)}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                      className="h-4 w-4 text-tangerine-500 focus:ring-tangerine-500"
                     />
                     <span className="ml-2 text-sm text-gray-700">Planning Notes</span>
                   </label>
@@ -1216,7 +1216,7 @@ function CallHistory() {
                       value="other"
                       checked={fileType === 'other'}
                       onChange={(e) => setFileType(e.target.value)}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                      className="h-4 w-4 text-tangerine-500 focus:ring-tangerine-500"
                     />
                     <span className="ml-2 text-sm text-gray-700">Other Info</span>
                   </label>
@@ -1237,7 +1237,7 @@ function CallHistory() {
               <button
                 onClick={handleUpload}
                 disabled={!selectedFile || uploading}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                className="px-4 py-2 bg-tangerine-500 text-white rounded-lg hover:bg-tangerine-600 disabled:opacity-50"
               >
                 {uploading ? 'Uploading...' : 'Upload'}
               </button>

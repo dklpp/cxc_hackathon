@@ -14,27 +14,27 @@ const Toast = ({ toast, onClose }) => {
   const icons = {
     success: <CheckCircle className="h-5 w-5 text-green-500" />,
     error: <AlertCircle className="h-5 w-5 text-red-500" />,
-    info: <Info className="h-5 w-5 text-blue-500" />,
-    loading: <Loader className="h-5 w-5 text-blue-500 animate-spin" />,
+    info: <Info className="h-5 w-5 text-tangerine-500" />,
+    loading: <Loader className="h-5 w-5 text-tangerine-500 animate-spin" />,
   }
 
   const bgColors = {
     success: 'bg-green-50 border-green-200',
     error: 'bg-red-50 border-red-200',
-    info: 'bg-blue-50 border-blue-200',
-    loading: 'bg-blue-50 border-blue-200',
+    info: 'bg-tangerine-50 border-tangerine-200',
+    loading: 'bg-tangerine-50 border-tangerine-200',
   }
 
   const textColors = {
     success: 'text-green-800',
     error: 'text-red-800',
-    info: 'text-blue-800',
-    loading: 'text-blue-800',
+    info: 'text-tangerine-800',
+    loading: 'text-tangerine-800',
   }
 
   return (
     <div
-      className={`${bgColors[toast.type]} ${textColors[toast.type]} border rounded-lg shadow-lg p-4 mb-3 flex items-start gap-3 min-w-[300px] max-w-[500px] animate-slide-in`}
+      className={`${bgColors[toast.type]} ${textColors[toast.type]} border rounded-xl shadow-lg p-4 mb-3 flex items-start gap-3 min-w-[300px] max-w-[500px] animate-slide-in`}
     >
       <div className="flex-shrink-0 mt-0.5">
         {icons[toast.type]}

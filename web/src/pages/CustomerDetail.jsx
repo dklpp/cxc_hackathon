@@ -478,8 +478,8 @@ function CustomerDetail() {
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-tangerine-500"></div>
         <p className="mt-2 text-gray-600">Loading customer details...</p>
       </div>
     )
@@ -487,8 +487,10 @@ function CustomerDetail() {
 
   if (error || !customer) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-        {error || 'Customer not found'}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error || 'Customer not found'}
+        </div>
       </div>
     )
   }
@@ -497,7 +499,7 @@ function CustomerDetail() {
   const pendingCalls = scheduledCalls.filter((call) => call.status === 'pending')
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-6">
         <Link
@@ -519,7 +521,7 @@ function CustomerDetail() {
             <button
               onClick={handleMakeCall}
               disabled={makingCall}
-              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-full font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all disabled:opacity-50"
             >
               <Phone className="h-4 w-4 mr-2" />
               {makingCall ? 'Calling...' : 'Make AI Call'}
@@ -528,21 +530,21 @@ function CustomerDetail() {
             <button
               onClick={openPrepareConfirmModal}
               disabled={preparing}
-              className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-full font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all disabled:opacity-50"
             >
               <Sparkles className="h-4 w-4 mr-2" />
               {preparing ? 'Preparing...' : 'Create Customer Strategy'}
             </button>
             <button
               onClick={openScheduleModal}
-              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-full font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all"
             >
               <Phone className="h-4 w-4 mr-2" />
               Schedule Automatic Call
             </button>
             <button
               onClick={() => setShowEmailModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-full font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all"
             >
               <Mail className="h-4 w-4 mr-2" />
               Prepare Email
@@ -804,7 +806,7 @@ function CustomerDetail() {
                               {email.status === 'planned' && (
                                 <button
                                   onClick={() => handleSendEmail(email.id)}
-                                  className="text-primary-600 hover:text-primary-800 text-xs font-medium"
+                                  className="text-tangerine-500 hover:text-tangerine-600 text-xs font-medium"
                                   title="Send email"
                                 >
                                   Send
@@ -906,7 +908,7 @@ function CustomerDetail() {
                                       setShowScheduleModal(true)
                                     }
                                   }}
-                                  className="text-primary-600 hover:text-primary-800 text-xs font-medium"
+                                  className="text-tangerine-500 hover:text-tangerine-600 text-xs font-medium"
                                   title="Schedule this call"
                                 >
                                   Schedule
@@ -933,7 +935,7 @@ function CustomerDetail() {
                                       setSelectedScript(call.planning_script)
                                       setShowScriptModal(true)
                                     }}
-                                    className="text-xs text-primary-600 hover:text-primary-700"
+                                    className="text-xs text-tangerine-500 hover:text-primary-700"
                                   >
                                     View
                                   </button>
@@ -1057,8 +1059,8 @@ function CustomerDetail() {
             </div>
             <div className="space-y-4">
               {prepareResult.suggested_time && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-blue-900">
+                <div className="bg-tangerine-50 border border-tangerine-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-tangerine-900">
                     Suggested Contact Time: {prepareResult.suggested_time}
                     {prepareResult.suggested_day && ` on ${prepareResult.suggested_day}`}
                   </p>
@@ -1124,7 +1126,7 @@ function CustomerDetail() {
                     onClick={() => setEmailType('email')}
                     className={`flex-1 px-4 py-2 rounded-lg border-2 transition-colors ${
                       emailType === 'email'
-                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                        ? 'border-tangerine-500 bg-tangerine-50 text-tangerine-700'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -1135,7 +1137,7 @@ function CustomerDetail() {
                     onClick={() => setEmailType('sms')}
                     className={`flex-1 px-4 py-2 rounded-lg border-2 transition-colors ${
                       emailType === 'sms'
-                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                        ? 'border-tangerine-500 bg-tangerine-50 text-tangerine-700'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -1158,7 +1160,7 @@ function CustomerDetail() {
               <button
                 onClick={handlePrepareEmail}
                 disabled={preparingEmail}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-tangerine-500 text-white rounded-full hover:bg-tangerine-600 transition-colors disabled:opacity-50"
               >
                 {preparingEmail ? 'Preparing...' : `Create ${emailType === 'email' ? 'Email' : 'SMS'}`}
               </button>
@@ -1202,7 +1204,7 @@ function CustomerDetail() {
               <button
                 onClick={handlePrepareCall}
                 disabled={preparing}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center"
+                className="px-4 py-2 bg-tangerine-500 text-white rounded-lg hover:bg-tangerine-600 disabled:opacity-50 flex items-center"
               >
                 {preparing ? (
                   <>
@@ -1229,8 +1231,8 @@ function CustomerDetail() {
               {schedulingPlannedCallId ? 'Schedule Planned Call' : 'Schedule Automatic Call'}
             </h3>
             {suggestedTime && (
-              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-900">
+              <div className="mb-4 bg-tangerine-50 border border-tangerine-200 rounded-lg p-3">
+                <p className="text-sm text-tangerine-900">
                   <strong>Suggested from planning:</strong> {suggestedTime}
                   {suggestedDay && ` on ${suggestedDay}`}
                 </p>
@@ -1245,7 +1247,7 @@ function CustomerDetail() {
                   </label>
                   {loadingTimeSlots ? (
                     <div className="text-center py-4">
-                      <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+                      <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-tangerine-500"></div>
                       <p className="text-xs text-gray-500 mt-2">Loading time slots...</p>
                     </div>
                   ) : timeSlots.length > 0 ? (
@@ -1261,8 +1263,8 @@ function CustomerDetail() {
                           }}
                           className={`w-full text-left px-4 py-3 border-2 rounded-lg transition-colors ${
                             selectedTimeSlot?.start_time === slot.start_time
-                              ? 'border-primary-600 bg-primary-50'
-                              : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                              ? 'border-tangerine-500 bg-tangerine-50'
+                              : 'border-gray-200 hover:border-tangerine-300 hover:bg-gray-50'
                           }`}
                         >
                           <div className="flex items-center justify-between">
@@ -1271,7 +1273,7 @@ function CustomerDetail() {
                               <p className="text-xs text-gray-500 mt-1">10-minute window</p>
                             </div>
                             {selectedTimeSlot?.start_time === slot.start_time && (
-                              <CheckCircle className="h-5 w-5 text-primary-600" />
+                              <CheckCircle className="h-5 w-5 text-tangerine-500" />
                             )}
                           </div>
                         </button>
@@ -1297,7 +1299,7 @@ function CustomerDetail() {
                     setUseAutoTime(false)
                   }}
                   disabled={useAutoTime}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
               
@@ -1314,7 +1316,7 @@ function CustomerDetail() {
                       setSelectedTimeSlot(null)
                     }
                   }}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-tangerine-500 focus:ring-tangerine-500 border-gray-300 rounded"
                 />
                 <label htmlFor="useAutoTime" className="ml-2 block text-sm text-gray-700">
                   {schedulingPlannedCallId 
@@ -1330,7 +1332,7 @@ function CustomerDetail() {
                   value={scheduleNotes}
                   onChange={(e) => setScheduleNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent"
                   placeholder="Add any notes about this call..."
                 />
               </div>
@@ -1355,7 +1357,7 @@ function CustomerDetail() {
               <button
                 onClick={handleScheduleCall}
                 disabled={scheduling}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                className="px-4 py-2 bg-tangerine-500 text-white rounded-lg hover:bg-tangerine-600 disabled:opacity-50"
               >
                 {scheduling ? 'Scheduling...' : 'Schedule Call'}
               </button>
@@ -1383,8 +1385,8 @@ function CustomerDetail() {
             </div>
             <div className="space-y-4">
               {selectedScript.suggested_time && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-blue-900">
+                <div className="bg-tangerine-50 border border-tangerine-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-tangerine-900">
                     Suggested Contact Time: {selectedScript.suggested_time}
                     {selectedScript.suggested_day && ` on ${selectedScript.suggested_day}`}
                   </p>
@@ -1472,7 +1474,7 @@ function CustomerDetail() {
                       type="text"
                       value={editedEmailSubject}
                       onChange={(e) => setEditedEmailSubject(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent"
                       placeholder="Email subject"
                     />
                   ) : (
@@ -1492,7 +1494,7 @@ function CustomerDetail() {
                     value={editedEmailContent}
                     onChange={(e) => setEditedEmailContent(e.target.value)}
                     rows={15}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent font-mono text-sm"
                     placeholder="Email content"
                   />
                 ) : (
@@ -1521,7 +1523,7 @@ function CustomerDetail() {
                   <button
                     onClick={handleSaveEditedEmail}
                     disabled={savingEmail}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                    className="px-4 py-2 bg-tangerine-500 text-white rounded-lg hover:bg-tangerine-600 transition-colors disabled:opacity-50 flex items-center space-x-2"
                   >
                     {savingEmail ? (
                       <>
