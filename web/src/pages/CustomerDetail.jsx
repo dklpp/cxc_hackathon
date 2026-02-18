@@ -521,7 +521,7 @@ function CustomerDetail() {
             <button
               onClick={handleMakeCall}
               disabled={makingCall}
-              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-full font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-medium shadow-sm hover:bg-green-700 hover:shadow transition-all disabled:opacity-50"
             >
               <Phone className="h-4 w-4 mr-2" />
               {makingCall ? 'Calling...' : 'Make AI Call'}
@@ -530,21 +530,21 @@ function CustomerDetail() {
             <button
               onClick={openPrepareConfirmModal}
               disabled={preparing}
-              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-full font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-lg font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all disabled:opacity-50"
             >
               <Sparkles className="h-4 w-4 mr-2" />
               {preparing ? 'Preparing...' : 'Create Customer Strategy'}
             </button>
             <button
               onClick={openScheduleModal}
-              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-full font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all"
+              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-lg font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all"
             >
               <Phone className="h-4 w-4 mr-2" />
               Schedule Automatic Call
             </button>
             <button
               onClick={() => setShowEmailModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-full font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all"
+              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-lg font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all"
             >
               <Mail className="h-4 w-4 mr-2" />
               Prepare Email

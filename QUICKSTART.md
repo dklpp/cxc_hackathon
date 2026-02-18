@@ -19,9 +19,23 @@ This will install:
 - Uvicorn
 - Other required packages
 
-### 2. Initialize Database
+### 2. Set Up PostgreSQL Database
 
-The database will be automatically created when you first run the API. To populate with sample data:
+Make sure you have PostgreSQL installed and running. Create a database:
+
+```bash
+createdb banking_system
+```
+
+Set the `DATABASE_URL` environment variable:
+
+```bash
+export DATABASE_URL="postgresql://username:password@localhost:5432/banking_system"
+```
+
+Or add it to your `.env` file (copy from `.env.example`).
+
+The database tables will be automatically created when you first run the API. To populate with sample data:
 
 ```bash
 uv run python DB/db_usage_example.py
@@ -77,8 +91,15 @@ The web app will be available at `http://localhost:5173`
 
 If you need to recreate the database:
 ```bash
-rm DB/banking_system.db
+# Drop and recreate the PostgreSQL database
+dropdb banking_system
+createdb banking_system
 uv run python DB/db_usage_example.py
+```
+
+Make sure your `DATABASE_URL` environment variable is set correctly:
+```bash
+export DATABASE_URL="postgresql://username:password@localhost:5432/banking_system"
 ```
 
 ### Port Conflicts

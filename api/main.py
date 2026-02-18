@@ -16,6 +16,10 @@ import asyncio
 import logging
 import time
 import requests
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logger for call pipeline
 logger = logging.getLogger("call_pipeline")
@@ -62,10 +66,6 @@ app.add_middleware(
 # Database dependency
 db_manager = DatabaseManager()
 db_manager.create_tables()
-# Run migration for scheduled_calls table if needed
-db_manager._migrate_scheduled_calls_if_needed()
-# Run migration for customer contact preferences if needed
-db_manager._migrate_customer_contact_preferences_if_needed()
 
 # Create directories for storing files
 FILES_DIR = Path(__file__).parent.parent / "call_files"

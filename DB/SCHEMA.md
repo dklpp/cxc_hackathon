@@ -1,7 +1,14 @@
 # Database Schema Documentation
 
 ## Overview
-This document describes the database schema for the internal banking system used to track customer data and debts.
+This document describes the PostgreSQL database schema for the internal banking system used to track customer data and debts.
+
+## Database Setup
+
+Set the `DATABASE_URL` environment variable to connect to PostgreSQL:
+```bash
+export DATABASE_URL="postgresql://username:password@localhost:5432/banking_system"
+```
 
 ## Database Design
 

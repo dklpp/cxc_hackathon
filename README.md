@@ -22,7 +22,7 @@ A four-stage automated pipeline that analyzes customer data, generates personali
         │                      │                      │                      │
         ▼                      ▼                      ▼                      ▼
    Customer DB            AI Agents             ElevenLabs              Track all
-   (SQLite)               analyze &             Voice Calls            interactions
+   (PostgreSQL)           analyze &             Voice Calls            interactions
                           strategize            + Email/SMS            & outcomes
 ```
 
@@ -36,7 +36,7 @@ A four-stage automated pipeline that analyzes customer data, generates personali
 - **Python 3.9+** - Core language
 - **FastAPI** - REST API framework
 - **SQLAlchemy** - ORM for database operations
-- **SQLite** - Database
+- **PostgreSQL** - Database
 
 ### Frontend
 - **React 18** - UI framework

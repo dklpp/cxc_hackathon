@@ -12,7 +12,10 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 from sqlalchemy.exc import SQLAlchemyError
+from dotenv import load_dotenv
 import enum
+
+load_dotenv()
 
 Base = declarative_base()
 
@@ -339,13 +342,17 @@ class DatabaseManager:
         Initialize the database manager.
         
         Args:
-            database_url: SQLAlchemy database URL. If None, defaults to SQLite in DB directory.
+            database_url: SQLAlchemy database URL. If None, reads from DATABASE_URL env var.
         """
         if database_url is None:
-            # Default to SQLite database in the DB directory
-            db_dir = os.path.dirname(os.path.abspath(__file__))
-            db_path = os.path.join(db_dir, 'banking_system.db')
-            database_url = f'sqlite:///{db_path}'
+            # Read from environment variable
+            database_url = os.environ.get('DATABASE_URL')
+            if database_url is None:
+                raise ValueError(
+                    "DATABASE_URL environment variable is not set. "
+                    "Please set it to a PostgreSQL connection string, e.g.: "
+                    "postgresql://username:password@localhost:5432/banking_system"
+                )
         
         self.engine = create_engine(database_url, echo=False)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
@@ -359,146 +366,91 @@ class DatabaseManager:
         print("Database tables created successfully.")
     
     def _migrate_scheduled_calls_if_needed(self):
-        """Migrate scheduled_calls table to allow NULL scheduled_time if needed"""
+        """Migrate scheduled_calls table to allow NULL scheduled_time if needed (PostgreSQL)"""
         try:
-            import sqlite3
-            from sqlalchemy import inspect
+            from sqlalchemy import inspect, text
             
-            # Only migrate if using SQLite
-            if 'sqlite' in str(self.engine.url):
-                inspector = inspect(self.engine)
-                if 'scheduled_calls' in inspector.get_table_names():
-                    # Check if scheduled_time is nullable
-                    columns = inspector.get_columns('scheduled_calls')
-                    scheduled_time_col = next((col for col in columns if col['name'] == 'scheduled_time'), None)
-                    
-                    if scheduled_time_col and not scheduled_time_col.get('nullable', False):
-                        # Need to migrate
-                        conn = self.engine.raw_connection()
-                        cursor = conn.cursor()
-                        
+            inspector = inspect(self.engine)
+            if 'scheduled_calls' in inspector.get_table_names():
+                # Check if scheduled_time is nullable
+                columns = inspector.get_columns('scheduled_calls')
+                scheduled_time_col = next((col for col in columns if col['name'] == 'scheduled_time'), None)
+                
+                if scheduled_time_col and not scheduled_time_col.get('nullable', False):
+                    # Need to migrate - PostgreSQL supports ALTER COLUMN directly
+                    with self.engine.connect() as conn:
                         try:
-                            # Create new table
-                            cursor.execute("""
-                                CREATE TABLE scheduled_calls_new (
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    customer_id INTEGER NOT NULL,
-                                    scheduled_time DATETIME,
-                                    status VARCHAR(50) NOT NULL DEFAULT 'pending',
-                                    agent_id VARCHAR(100),
-                                    notes TEXT,
-                                    communication_log_id INTEGER,
-                                    created_at DATETIME,
-                                    updated_at DATETIME,
-                                    FOREIGN KEY (customer_id) REFERENCES customers(id),
-                                    FOREIGN KEY (communication_log_id) REFERENCES communication_logs(id)
-                                )
-                            """)
-                            
-                            # Copy data
-                            cursor.execute("""
-                                INSERT INTO scheduled_calls_new 
-                                (id, customer_id, scheduled_time, status, agent_id, notes, 
-                                 communication_log_id, created_at, updated_at)
-                                SELECT 
-                                    id, customer_id, scheduled_time, status, agent_id, notes,
-                                    communication_log_id, created_at, updated_at
-                                FROM scheduled_calls
-                            """)
-                            
-                            # Drop old and rename
-                            cursor.execute("DROP TABLE scheduled_calls")
-                            cursor.execute("ALTER TABLE scheduled_calls_new RENAME TO scheduled_calls")
+                            conn.execute(text("""
+                                ALTER TABLE scheduled_calls 
+                                ALTER COLUMN scheduled_time DROP NOT NULL
+                            """))
                             conn.commit()
                             print("✓ Migrated scheduled_calls table to allow NULL scheduled_time")
                         except Exception as e:
                             conn.rollback()
-                            print(f"Warning: Migration failed (this is OK if table is already migrated): {e}")
-                        finally:
-                            conn.close()
+                            print(f"Warning: Migration failed (this is OK if already migrated): {e}")
         except Exception as e:
             # Don't fail if migration can't run
             print(f"Warning: Could not check/run migration: {e}")
     
     def _migrate_customer_contact_preferences_if_needed(self):
-        """Migrate customers table to add preferred_contact_time and preferred_contact_days if needed"""
+        """Migrate customers table to add preferred_contact_time and preferred_contact_days if needed (PostgreSQL)"""
         try:
-            import sqlite3
-            from sqlalchemy import inspect
+            from sqlalchemy import inspect, text
             
-            # Only migrate if using SQLite
-            if 'sqlite' in str(self.engine.url):
-                inspector = inspect(self.engine)
-                if 'customers' in inspector.get_table_names():
-                    columns = inspector.get_columns('customers')
-                    column_names = [col['name'] for col in columns]
-                    
-                    needs_migration = False
-                    if 'preferred_contact_time' not in column_names:
-                        needs_migration = True
-                    if 'preferred_contact_days' not in column_names:
-                        needs_migration = True
-                    
-                    if needs_migration:
-                        conn = self.engine.raw_connection()
-                        cursor = conn.cursor()
+            inspector = inspect(self.engine)
+            if 'customers' in inspector.get_table_names():
+                columns = inspector.get_columns('customers')
+                column_names = [col['name'] for col in columns]
+                
+                with self.engine.connect() as conn:
+                    try:
+                        # Add preferred_contact_time if missing
+                        if 'preferred_contact_time' not in column_names:
+                            conn.execute(text("""
+                                ALTER TABLE customers 
+                                ADD COLUMN preferred_contact_time VARCHAR(100)
+                            """))
+                            print("✓ Added preferred_contact_time column to customers table")
                         
-                        try:
-                            # Add preferred_contact_time if missing
-                            if 'preferred_contact_time' not in column_names:
-                                cursor.execute("""
-                                    ALTER TABLE customers 
-                                    ADD COLUMN preferred_contact_time VARCHAR(100)
-                                """)
-                                print("✓ Added preferred_contact_time column to customers table")
-                            
-                            # Add preferred_contact_days if missing
-                            if 'preferred_contact_days' not in column_names:
-                                cursor.execute("""
-                                    ALTER TABLE customers 
-                                    ADD COLUMN preferred_contact_days VARCHAR(100)
-                                """)
-                                print("✓ Added preferred_contact_days column to customers table")
-                            
-                            conn.commit()
-                        except Exception as e:
-                            conn.rollback()
-                            print(f"Warning: Migration failed (this is OK if columns already exist): {e}")
-                        finally:
-                            conn.close()
+                        # Add preferred_contact_days if missing
+                        if 'preferred_contact_days' not in column_names:
+                            conn.execute(text("""
+                                ALTER TABLE customers 
+                                ADD COLUMN preferred_contact_days VARCHAR(100)
+                            """))
+                            print("✓ Added preferred_contact_days column to customers table")
+                        
+                        conn.commit()
+                    except Exception as e:
+                        conn.rollback()
+                        print(f"Warning: Migration failed (this is OK if columns already exist): {e}")
         except Exception as e:
             # Don't fail if migration can't run
             print(f"Warning: Could not check/run migration: {e}")
     
     def _migrate_communication_logs_transcript_if_needed(self):
-        """Migrate communication_logs table to add transcript column if needed"""
+        """Migrate communication_logs table to add transcript column if needed (PostgreSQL)"""
         try:
-            import sqlite3
-            from sqlalchemy import inspect
+            from sqlalchemy import inspect, text
             
-            # Only migrate if using SQLite
-            if 'sqlite' in str(self.engine.url):
-                inspector = inspect(self.engine)
-                if 'communication_logs' in inspector.get_table_names():
-                    columns = inspector.get_columns('communication_logs')
-                    column_names = [col['name'] for col in columns]
-                    
-                    if 'transcript' not in column_names:
-                        conn = self.engine.raw_connection()
-                        cursor = conn.cursor()
-                        
+            inspector = inspect(self.engine)
+            if 'communication_logs' in inspector.get_table_names():
+                columns = inspector.get_columns('communication_logs')
+                column_names = [col['name'] for col in columns]
+                
+                if 'transcript' not in column_names:
+                    with self.engine.connect() as conn:
                         try:
-                            cursor.execute("""
+                            conn.execute(text("""
                                 ALTER TABLE communication_logs 
                                 ADD COLUMN transcript TEXT
-                            """)
+                            """))
                             conn.commit()
                             print("✓ Added transcript column to communication_logs table")
                         except Exception as e:
                             conn.rollback()
                             print(f"Warning: Migration failed (this is OK if column already exists): {e}")
-                        finally:
-                            conn.close()
         except Exception as e:
             # Don't fail if migration can't run
             print(f"Warning: Could not check/run migration: {e}")
