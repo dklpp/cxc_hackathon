@@ -80,7 +80,7 @@ example_customer_json = """
             "payment_date": "2024-12-01",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-2024-12-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Monthly payment"
         },
         {
@@ -89,7 +89,7 @@ example_customer_json = """
             "payment_date": "2024-11-15",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-2024-11-015",
-            "status": "completed",
+            "status": "done",
             "notes": "Regular payment"
         }
     ],

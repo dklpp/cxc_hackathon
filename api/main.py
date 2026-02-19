@@ -966,9 +966,9 @@ async def get_call_history(customer_id: int):
     session = db_manager.get_session()
     try:
         # Get communication logs (all types)
-        communications = db_manager.get_communication_logs(customer_id, limit=100)
+        communications = db_manager.get_communication_logs(customer_id, limit=500)
         calls = [c for c in communications if c.communication_type == CommunicationType.CALL]
-        emails_sms = [c for c in communications if c.communication_type in [CommunicationType.EMAIL, CommunicationType.SMS]]
+        emails_sms = [c for c in communications if c.communication_type != CommunicationType.CALL]
         
         # Get scheduled calls (including planned)
         scheduled_calls = db_manager.get_scheduled_calls(customer_id=customer_id)
@@ -1024,7 +1024,7 @@ async def get_call_history(customer_id: int):
                 planned_calls.append(call_data)
             elif sc.status == "pending":
                 automatic_calls.append(call_data)
-            elif sc.status == "completed":
+            elif sc.status == "done" or sc.status == "completed":
                 # For completed scheduled calls, check if transcript exists in DB
                 if sc.communication_log_id:
                     # Get communication log to check for transcript
@@ -1038,9 +1038,10 @@ async def get_call_history(customer_id: int):
                     db_manager.get_session().close()
                 else:
                     call_data["has_transcript"] = False
-                # For completed scheduled calls, include transcript file path if communication log exists
-                if sc.communication_log_id:
-                    call_data["transcript_file_path"] = f"call_files/transcripts/call_{sc.communication_log_id}_transcript.md"
+                if sc.communication_log_id and comm_log:
+                    call_data["conversation_id"] = comm_log.conversation_id
+                    call_data["call_sid"] = comm_log.call_sid
+                    call_data["transcript"] = comm_log.transcript
                 completed_calls.append(call_data)
         
         # Track which communication logs are already represented by scheduled calls
@@ -1061,23 +1062,25 @@ async def get_call_history(customer_id: int):
             
             completed_calls.append({
                 "id": c.id,
-                "type": "completed",
+                "type": "done",
                 "customer_id": c.customer_id,
                 "communication_type": c.communication_type.value,
                 "direction": c.direction,
                 "timestamp": c.timestamp.isoformat(),
                 "scheduled_time": None,
-                "status": "completed",
+                "status": "done",
                 "outcome": c.outcome,
                 "notes": c.notes,
                 "duration_seconds": c.duration_seconds,
                 "planning_file_path": None,
                 "planning_script": None,
                 "has_transcript": has_transcript,
-                "transcript_file_path": transcript_file_path,
+                "transcript": c.transcript,
                 "scheduled_call_id": None,
+                "conversation_id": c.conversation_id,
+                "call_sid": c.call_sid,
             })
-        
+
         # Process planned emails
         for pe in planned_emails:
             # Get planning script if exists
@@ -1131,13 +1134,13 @@ async def get_call_history(customer_id: int):
             
             sent_emails_list.append({
                 "id": comm.id,
-                "type": "completed",
+                "type": "done",
                 "customer_id": comm.customer_id,
                 "communication_type": comm.communication_type.value,
                 "direction": comm.direction,
                 "timestamp": comm.timestamp.isoformat(),
                 "scheduled_time": None,
-                "status": "completed",
+                "status": "done",
                 "subject": None,
                 "content": comm.notes,  # Use notes as content for sent emails
                 "outcome": comm.outcome,
@@ -2078,9 +2081,9 @@ async def upload_transcript(
                     db_manager.update_scheduled_call(
                         scheduled_call_id,
                         communication_log_id=comm_log.id,
-                        status="completed"
+                        status="done"
                     )
-            
+
             return {
                 "success": True,
                 "analysis": analysis_result,
@@ -2236,34 +2239,42 @@ async def proxy_make_call(customer_id: int, background_tasks: BackgroundTasks):
                 return
 
             call_result = resp.json()
-            conversation_id = call_result.get("conversation_id", "unknown")
-            call_status = call_result.get("status", "unknown")
-            logger.info("[make-call] customer_id=%d — Call completed (%.2fs). conversation_id=%s, status=%s", customer_id, call_elapsed, conversation_id, call_status)
+            conversation_id = call_result.get("conversation_id") or call_result.get("conversationId")
+            call_sid = call_result.get("callSid") or call_result.get("call_sid")
+            call_status = call_result.get("status", "done")
+            logger.info("[make-call] customer_id=%d — Call result (%.2fs). conversation_id=%s, call_sid=%s, status=%s", customer_id, call_elapsed, conversation_id, call_sid, call_status)
 
+            # Always create a communication log immediately with callSid + conversation_id
+            comm_log = db_manager.log_communication(
+                customer_id=customer_id,
+                communication_type=CommunicationType.CALL,
+                direction="outbound",
+                contact_phone=customer.phone_primary or "",
+                outcome="done" if call_status == "done" else call_status,
+                agent_id="ai_voice_agent",
+                conversation_id=conversation_id,
+                call_sid=call_sid,
+            )
+            logger.info("[make-call] customer_id=%d — Communication log created (id=%d)", customer_id, comm_log.id)
+
+            # If transcript available, enrich the log with notes + transcript text
             transcript = call_result.get("transcript", [])
             if transcript:
-                logger.info("[make-call] customer_id=%d — Transcript received: %d messages", customer_id, len(transcript))
+                logger.info("[make-call] customer_id=%d — Transcript received: %d messages. Generating AI notes...", customer_id, len(transcript))
                 transcript_text = "\n".join(
                     f"{'Agent' if t.get('role') == 'agent' else 'Customer'}: {t.get('message', '')}"
                     for t in transcript
                 )
-                logger.info("[make-call] customer_id=%d — Formatted transcript: %d chars. Generating AI notes...", customer_id, len(transcript_text))
                 notes = generate_notes_from_transcript(transcript_text, customer_id=customer_id)
-                logger.info("[make-call] customer_id=%d — Saving communication log to DB", customer_id)
-                db_manager.log_communication(
-                    customer_id=customer_id,
-                    communication_type=CommunicationType.CALL,
-                    direction="outbound",
-                    contact_phone=customer.phone_primary or "",
-                    outcome="completed" if call_status == "done" else call_status,
-                    notes=notes,
+                db_manager.update_communication_log(
+                    comm_log.id,
                     transcript=transcript_text,
-                    agent_id="ai_voice_agent",
+                    notes=notes,
                 )
                 total_elapsed = time.time() - call_start
                 logger.info("[make-call] customer_id=%d — Pipeline complete (%.2fs total). Transcript + notes saved", customer_id, total_elapsed)
             else:
-                logger.warning("[make-call] customer_id=%d — No transcript returned from call service", customer_id)
+                logger.info("[make-call] customer_id=%d — No transcript in call result; log saved with callSid/conversation_id only", customer_id)
         except Exception as e:
             elapsed = time.time() - call_start
             logger.error("[make-call] customer_id=%d — Error after %.2fs: %s", customer_id, elapsed, e, exc_info=True)
@@ -2302,18 +2313,30 @@ async def save_transcript(customer_id: int, req: SaveTranscriptRequest):
     logger.info("[save-transcript] customer_id=%d — Generating AI notes via Gemini...", customer_id)
     notes = generate_notes_from_transcript(transcript_text, customer_id=customer_id)
 
-    # Save as a communication log
-    logger.info("[save-transcript] customer_id=%d — Saving communication log to DB (outcome=%s)", customer_id, req.status)
-    comm_log = db_manager.log_communication(
-        customer_id=customer_id,
-        communication_type=CommunicationType.CALL,
-        direction="outbound",
-        contact_phone=customer.phone_primary or "",
-        outcome="completed" if req.status == "done" else req.status,
-        notes=notes,
-        transcript=transcript_text,
-        agent_id="ai_voice_agent",
-    )
+    # Check if a log was already created by make_call (matched by conversation_id)
+    existing_log = db_manager.get_communication_log_by_conversation_id(req.conversation_id) if req.conversation_id else None
+
+    if existing_log:
+        logger.info("[save-transcript] customer_id=%d — Found existing log (id=%d) by conversation_id; updating with transcript + notes", customer_id, existing_log.id)
+        comm_log = db_manager.update_communication_log(
+            existing_log.id,
+            outcome="done" if req.status == "done" else req.status,
+            notes=notes,
+            transcript=transcript_text,
+        )
+    else:
+        logger.info("[save-transcript] customer_id=%d — No existing log found; creating new (outcome=%s)", customer_id, req.status)
+        comm_log = db_manager.log_communication(
+            customer_id=customer_id,
+            communication_type=CommunicationType.CALL,
+            direction="outbound",
+            contact_phone=customer.phone_primary or "",
+            outcome="done" if req.status == "done" else req.status,
+            notes=notes,
+            transcript=transcript_text,
+            agent_id="ai_voice_agent",
+            conversation_id=req.conversation_id,
+        )
 
     total_elapsed = time.time() - pipeline_start
     logger.info("[save-transcript] customer_id=%d — Pipeline complete (%.2fs). comm_log_id=%d", customer_id, total_elapsed, comm_log.id)

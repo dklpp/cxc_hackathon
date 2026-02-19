@@ -75,7 +75,7 @@
             "payment_date": "2024-03-01",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-RM-2024-03-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Last payment on primary card"
         },
         {
@@ -84,7 +84,7 @@
             "payment_date": "2024-03-15",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-RM-2024-03-002",
-            "status": "completed",
+            "status": "done",
             "notes": "Last payment before unemployment"
         },
         {
@@ -93,7 +93,7 @@
             "payment_date": "2024-02-28",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-RM-2024-02-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Minimum payment"
         }
     ],

@@ -45,7 +45,7 @@
             "payment_date": "2024-12-01",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-2024-12-002",
-            "status": "completed",
+            "status": "done",
             "notes": "Monthly payment"
         }
     ],

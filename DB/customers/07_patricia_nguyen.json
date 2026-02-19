@@ -60,7 +60,7 @@
             "payment_date": "2025-02-04",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-PN-2025-02-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Payment initiated Jan 30, delayed due to bank processing. Customer has documentation."
         },
         {
@@ -69,7 +69,7 @@
             "payment_date": "2025-01-28",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-PN-2025-01-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Paid full statement balance"
         },
         {
@@ -78,7 +78,7 @@
             "payment_date": "2024-12-28",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-PN-2024-12-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Regular payment plus extra principal"
         },
         {
@@ -87,7 +87,7 @@
             "payment_date": "2024-11-28",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-PN-2024-11-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Regular payment plus extra principal"
         },
         {
@@ -96,7 +96,7 @@
             "payment_date": "2024-12-28",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-PN-2024-12-002",
-            "status": "completed",
+            "status": "done",
             "notes": "Holiday purchases paid in full"
         }
     ],

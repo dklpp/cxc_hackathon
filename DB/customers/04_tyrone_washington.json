@@ -60,7 +60,7 @@
             "payment_date": "2024-11-08",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-TW-2024-11-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Last payment before medical emergency"
         },
         {
@@ -69,7 +69,7 @@
             "payment_date": "2024-11-18",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-TW-2024-11-002",
-            "status": "completed",
+            "status": "done",
             "notes": "Regular payment"
         },
         {
@@ -78,7 +78,7 @@
             "payment_date": "2024-10-07",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-TW-2024-10-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Paid above minimum"
         },
         {
@@ -87,7 +87,7 @@
             "payment_date": "2024-10-18",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-TW-2024-10-002",
-            "status": "completed",
+            "status": "done",
             "notes": "Regular payment"
         }
     ],

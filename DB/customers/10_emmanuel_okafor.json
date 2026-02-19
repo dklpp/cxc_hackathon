@@ -60,7 +60,7 @@
             "payment_date": "2025-01-15",
             "payment_method": "debit_card",
             "transaction_id": "TXN-EO-2025-01-001",
-            "status": "completed",
+            "status": "done",
             "notes": "First payment after receiving paycheck"
         },
         {
@@ -69,7 +69,7 @@
             "payment_date": "2024-12-28",
             "payment_method": "debit_card",
             "transaction_id": "TXN-EO-2024-12-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Minimum payment from savings"
         },
         {
@@ -78,7 +78,7 @@
             "payment_date": "2024-11-28",
             "payment_method": "debit_card",
             "transaction_id": "TXN-EO-2024-11-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Minimum payment from savings"
         }
     ],

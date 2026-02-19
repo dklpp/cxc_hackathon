@@ -8,18 +8,13 @@ import {
   Phone,
   Mail,
   Upload,
-  FileText,
-  Calendar,
   Clock,
   CheckCircle,
   XCircle,
   AlertCircle,
-  BookOpen,
-  Eye,
   X,
   ChevronRight,
   ChevronDown,
-  Plus,
   Trash2,
   Edit,
   Check,
@@ -191,17 +186,10 @@ function CallHistory() {
       
       // For emails, content is shown separately in the email content section
 
-      // Load transcript if exists
-      if (call.transcript_file_path || (call.type === 'completed' && !call.planning_script)) {
-        try {
-          const transcriptId = call.type === 'completed' ? call.id : (call.scheduled_call_id || call.id.replace('scheduled_', ''))
-          if (transcriptId) {
-            const response = await api.get(`/call-history/${transcriptId}/transcript-file`)
-            setTranscriptContent(response.data.content)
-          }
-        } catch (err) {
-          console.warn('Could not load transcript:', err)
-        }
+      // Load transcript — use the value already in the call object (no extra API call needed)
+      if (call.transcript) {
+        setTranscriptContent(call.transcript)
+        setTranscriptExpanded(true)
       }
     } catch (err) {
       console.error('Error loading call details:', err)
@@ -439,7 +427,7 @@ function CallHistory() {
         }
       }
       
-      const response = await api.post(`/scheduled-calls/${schedulingPlannedCallId}/schedule`, {
+      await api.post(`/scheduled-calls/${schedulingPlannedCallId}/schedule`, {
         scheduled_time: scheduledTimeForAPI || null,
         use_auto_time: useAutoTime && !finalDateTime,
       })
@@ -475,6 +463,7 @@ function CallHistory() {
       pending: 'bg-yellow-100 text-yellow-800',
       planned: 'bg-purple-100 text-purple-800',
       completed: 'bg-green-100 text-green-800',
+      done: 'bg-green-100 text-green-800',
       cancelled: 'bg-red-100 text-red-800',
       missed: 'bg-gray-100 text-gray-800',
     }
@@ -830,6 +819,18 @@ function CallHistory() {
                         <span className="ml-2 font-medium">{selectedCall.outcome}</span>
                       </div>
                     )}
+                    {selectedCall.conversation_id && (
+                      <div className="col-span-2">
+                        <span className="text-gray-500">Conversation ID:</span>
+                        <span className="ml-2 font-mono text-xs text-gray-700 break-all">{selectedCall.conversation_id}</span>
+                      </div>
+                    )}
+                    {selectedCall.call_sid && (
+                      <div className="col-span-2">
+                        <span className="text-gray-500">Call SID:</span>
+                        <span className="ml-2 font-mono text-xs text-gray-700 break-all">{selectedCall.call_sid}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -945,6 +946,16 @@ function CallHistory() {
                   </div>
                 )}
 
+                {/* AI Summary */}
+                {selectedCall.notes && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">AI Summary</h4>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-gray-800 whitespace-pre-wrap">
+                      {selectedCall.notes}
+                    </div>
+                  </div>
+                )}
+                
                 {/* Planning File */}
                 {planningContent && (
                   <div>
@@ -1000,14 +1011,23 @@ function CallHistory() {
                       </button>
                     </div>
                     {transcriptExpanded && (
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 prose max-w-none">
-                        <ReactMarkdown>{transcriptContent}</ReactMarkdown>
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm space-y-1 max-h-96 overflow-y-auto">
+                        {transcriptContent.split('\n').filter(Boolean).map((line, i) => {
+                          const isAgent = line.startsWith('Agent:')
+                          const isUser = line.startsWith('User:') || line.startsWith('Customer:')
+                          return (
+                            <p key={i} className={`${isAgent ? 'text-blue-800' : isUser ? 'text-gray-800' : 'text-gray-500'}`}>
+                              {line}
+                            </p>
+                          )
+                        })}
                       </div>
                     )}
                   </div>
                 )}
 
                 {/* Upload Files Button */}
+                {selectedCall.status !== 'done' && selectedCall.status !== 'completed' && (
                 <div className="flex justify-end">
                   <button
                     onClick={() => setShowUploadModal(true)}
@@ -1017,6 +1037,7 @@ function CallHistory() {
                     Upload Files
                   </button>
                 </div>
+                )}
               </div>
             )}
           </div>

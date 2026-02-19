@@ -176,7 +176,7 @@ def populate_planning_scripts():
                     scheduled_call = db_manager.create_scheduled_call(
                         customer_id=call_log.customer_id,
                         scheduled_time=call_log.timestamp,
-                        status="completed",
+                        status="done",
                         communication_log_id=call_log.id,
                         agent_id=call_log.agent_id or "system",
                         notes=f"Retroactively created for completed call on {call_log.timestamp.strftime('%Y-%m-%d')}"

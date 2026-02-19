@@ -45,7 +45,7 @@
             "payment_date": "2024-12-20",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-MS-2024-12-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Regular monthly payment"
         },
         {
@@ -54,7 +54,7 @@
             "payment_date": "2024-11-18",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-MS-2024-11-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Regular monthly payment"
         },
         {
@@ -63,7 +63,7 @@
             "payment_date": "2024-10-15",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-MS-2024-10-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Extra payment - paid more than minimum"
         }
     ],

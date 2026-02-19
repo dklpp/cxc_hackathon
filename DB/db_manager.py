@@ -197,7 +197,9 @@ class CommunicationLog(Base):
     
     # Transcript (for calls)
     transcript = Column(Text, nullable=True)  # Full transcript content stored in database
-    
+    conversation_id = Column(String(255), nullable=True)  # External conversation ID (e.g. ElevenLabs)
+    call_sid = Column(String(255), nullable=True)  # Telephony call SID (e.g. Twilio)
+
     # Metadata
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
     agent_id = Column(String(100), nullable=True)  # ID of the agent/system that made the contact
@@ -363,6 +365,8 @@ class DatabaseManager:
         self._migrate_scheduled_calls_if_needed()
         self._migrate_customer_contact_preferences_if_needed()
         self._migrate_communication_logs_transcript_if_needed()
+        self._migrate_communication_logs_conversation_id_if_needed()
+        self._migrate_communication_logs_call_sid_if_needed()
         print("Database tables created successfully.")
     
     def _migrate_scheduled_calls_if_needed(self):
@@ -455,6 +459,56 @@ class DatabaseManager:
             # Don't fail if migration can't run
             print(f"Warning: Could not check/run migration: {e}")
     
+    def _migrate_communication_logs_conversation_id_if_needed(self):
+        """Migrate communication_logs table to add conversation_id column if needed (PostgreSQL)"""
+        try:
+            from sqlalchemy import inspect, text
+
+            inspector = inspect(self.engine)
+            if 'communication_logs' in inspector.get_table_names():
+                columns = inspector.get_columns('communication_logs')
+                column_names = [col['name'] for col in columns]
+
+                if 'conversation_id' not in column_names:
+                    with self.engine.connect() as conn:
+                        try:
+                            conn.execute(text("""
+                                ALTER TABLE communication_logs
+                                ADD COLUMN conversation_id VARCHAR(255)
+                            """))
+                            conn.commit()
+                            print("✓ Added conversation_id column to communication_logs table")
+                        except Exception as e:
+                            conn.rollback()
+                            print(f"Warning: Migration failed (this is OK if column already exists): {e}")
+        except Exception as e:
+            print(f"Warning: Could not check/run migration: {e}")
+
+    def _migrate_communication_logs_call_sid_if_needed(self):
+        """Migrate communication_logs table to add call_sid column if needed (PostgreSQL)"""
+        try:
+            from sqlalchemy import inspect, text
+
+            inspector = inspect(self.engine)
+            if 'communication_logs' in inspector.get_table_names():
+                columns = inspector.get_columns('communication_logs')
+                column_names = [col['name'] for col in columns]
+
+                if 'call_sid' not in column_names:
+                    with self.engine.connect() as conn:
+                        try:
+                            conn.execute(text("""
+                                ALTER TABLE communication_logs
+                                ADD COLUMN call_sid VARCHAR(255)
+                            """))
+                            conn.commit()
+                            print("✓ Added call_sid column to communication_logs table")
+                        except Exception as e:
+                            conn.rollback()
+                            print(f"Warning: Migration failed (this is OK if column already exists): {e}")
+        except Exception as e:
+            print(f"Warning: Could not check/run migration: {e}")
+
     def get_session(self) -> Session:
         """Get a database session"""
         return self.SessionLocal()
@@ -681,7 +735,34 @@ class DatabaseManager:
             ).order_by(CommunicationLog.timestamp.desc()).limit(limit).all()
         finally:
             session.close()
-    
+
+    def get_communication_log_by_conversation_id(self, conversation_id: str) -> Optional[CommunicationLog]:
+        """Look up a communication log by its external conversation ID"""
+        session = self.get_session()
+        try:
+            return session.query(CommunicationLog).filter(
+                CommunicationLog.conversation_id == conversation_id
+            ).first()
+        finally:
+            session.close()
+
+    def update_communication_log(self, log_id: int, **kwargs) -> Optional[CommunicationLog]:
+        """Update fields on an existing communication log"""
+        session = self.get_session()
+        try:
+            log = session.query(CommunicationLog).filter(CommunicationLog.id == log_id).first()
+            if log:
+                for key, value in kwargs.items():
+                    setattr(log, key, value)
+                session.commit()
+                session.refresh(log)
+            return log
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise Exception(f"Error updating communication log: {str(e)}")
+        finally:
+            session.close()
+
     # Account Operations
     def create_account(self, customer_id: int, **kwargs) -> Account:
         """Create a bank account record"""

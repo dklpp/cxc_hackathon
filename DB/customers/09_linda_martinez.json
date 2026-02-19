@@ -75,7 +75,7 @@
             "payment_date": "2024-12-01",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-LM-2024-12-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Regular payment on medical debt"
         },
         {
@@ -84,7 +84,7 @@
             "payment_date": "2024-12-03",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-LM-2024-12-002",
-            "status": "completed",
+            "status": "done",
             "notes": "Minimum payment"
         },
         {
@@ -93,7 +93,7 @@
             "payment_date": "2024-12-08",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-LM-2024-12-003",
-            "status": "completed",
+            "status": "done",
             "notes": "Regular payment"
         },
         {
@@ -102,7 +102,7 @@
             "payment_date": "2024-11-01",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-LM-2024-11-001",
-            "status": "completed",
+            "status": "done",
             "notes": "Regular payment"
         },
         {
@@ -111,7 +111,7 @@
             "payment_date": "2024-11-05",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-LM-2024-11-002",
-            "status": "completed",
+            "status": "done",
             "notes": "Above minimum payment"
         },
         {
@@ -120,7 +120,7 @@
             "payment_date": "2024-11-08",
             "payment_method": "bank_transfer",
             "transaction_id": "TXN-LM-2024-11-003",
-            "status": "completed",
+            "status": "done",
             "notes": "Regular payment"
         }
     ],
