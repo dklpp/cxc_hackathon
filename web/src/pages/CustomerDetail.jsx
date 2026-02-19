@@ -523,7 +523,7 @@ function CustomerDetail() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+      <div className="flex flex-col items-center justify-center flex-1 py-12">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-tangerine-500"></div>
         <p className="mt-2 text-gray-600">Loading customer details...</p>
       </div>

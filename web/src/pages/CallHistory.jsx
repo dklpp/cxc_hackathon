@@ -712,7 +712,7 @@ function CallHistory() {
               <h2 className="text-lg font-semibold text-purple-900">Planned Interactions</h2>
               <p className="text-sm text-purple-700">{plannedCalls.length} items</p>
             </div>
-            <div className="bg-gray-50 border-x border-b border-gray-200 rounded-b-lg p-4 space-y-3 min-h-[400px]">
+            <div className="bg-gray-50 border-x border-b border-gray-200 rounded-b-lg p-4 space-y-3 h-[calc(100vh-18rem)] overflow-y-auto">
               {plannedCalls.length === 0 ? (
                 <p className="text-gray-500 text-sm text-center py-8">No planned interactions</p>
               ) : (
@@ -727,7 +727,7 @@ function CallHistory() {
               <h2 className="text-lg font-semibold text-yellow-900">Scheduled Automatic Calls</h2>
               <p className="text-sm text-yellow-700">{automaticCalls.length} calls</p>
             </div>
-            <div className="bg-gray-50 border-x border-b border-gray-200 rounded-b-lg p-4 space-y-3 min-h-[400px]">
+            <div className="bg-gray-50 border-x border-b border-gray-200 rounded-b-lg p-4 space-y-3 h-[calc(100vh-18rem)] overflow-y-auto">
               {automaticCalls.length === 0 ? (
                 <p className="text-gray-500 text-sm text-center py-8">No automatic calls</p>
               ) : (
@@ -742,7 +742,7 @@ function CallHistory() {
               <h2 className="text-lg font-semibold text-green-900">Completed Interactions</h2>
               <p className="text-sm text-green-700">{completedCalls.length} items</p>
             </div>
-            <div className="bg-gray-50 border-x border-b border-gray-200 rounded-b-lg p-4 space-y-3 min-h-[400px]">
+            <div className="bg-gray-50 border-x border-b border-gray-200 rounded-b-lg p-4 space-y-3 h-[calc(100vh-18rem)] overflow-y-auto">
               {completedCalls.length === 0 ? (
                 <p className="text-gray-500 text-sm text-center py-8">No completed interactions</p>
               ) : (
