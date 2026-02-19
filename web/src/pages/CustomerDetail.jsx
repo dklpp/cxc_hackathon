@@ -1595,7 +1595,7 @@ function CustomerDetail() {
                   </span>
                 </button>
                 {viewScriptExpanded && (
-                  <div className="prose max-w-none bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="prose max-w-none bg-gray-50 p-4 rounded-lg border border-gray-200 overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:whitespace-pre-wrap [&_code]:break-words [&_p]:break-words">
                     <ReactMarkdown>
                       {selectedScript.strategy_content}
                     </ReactMarkdown>

@@ -14,7 +14,7 @@ from DB.db_manager import (
     DatabaseManager, DebtStatus, PaymentStatus, CommunicationType, Base
 )
 from strategy_planning.prompt_template import (
-    build_voice_prompt,
+    build_strategy_prompt,
     build_email_prompt,
     classify_profile_type,
     get_customer_data_template
@@ -35,7 +35,6 @@ class GeminiStrategy:
     opening_script: Optional[str] = None
     main_talking_points_script: Optional[str] = None
     objection_responses: Optional[Dict[str, str]] = None
-    closing_script: Optional[str] = None
     
     # Email-specific fields
     email_subject: Optional[str] = None
@@ -195,13 +194,45 @@ class GeminiStrategyGenerator:
             due_date_str=due_date_str,
             last_payment_date_str=last_payment_date_str
         )
-        
+
         # Select prompt builder based on channel
-        prompt = (
-            build_email_prompt(customer_data) 
-            if preferred_channel in ["email", "sms"] 
-            else build_voice_prompt(customer_data)
-        )
+        if preferred_channel in ["email", "sms"]:
+            prompt = build_email_prompt(customer_data)
+        else:
+            prompt = build_strategy_prompt(
+                customer_first_name=customer.first_name,
+                customer_last_name=customer.last_name,
+                age=age,
+                employment_status=customer.employment_status,
+                annual_income=customer.annual_income,
+                credit_score=customer.credit_score,
+                preferred_channel=preferred_channel,
+                email=customer.email,
+                phone=customer.phone_primary,
+                total_debt=total_debt,
+                days_past_due=max_days_past_due,
+                debt_details=debt_details,
+                payment_history_count=len(completed_payments),
+                total_paid=total_paid,
+                recent_payments=recent_payments,
+                communication_history=comm_history,
+                customer_notes=customer.notes,
+                address=address,
+                city=customer.city,
+                state=customer.state,
+                zip_code=customer.zip_code,
+                employer_name=customer.employer_name,
+                debt_type=primary_debt.debt_type if primary_debt else None,
+                current_balance=primary_debt.current_balance if primary_debt else None,
+                minimum_payment=primary_debt.minimum_payment if primary_debt else None,
+                due_date=due_date_str,
+                last_payment_date=last_payment_date_str,
+                institution_name=self.institution_name,
+                agent_name=self.agent_name,
+                support_phone=self.support_phone,
+                support_email=self.support_email,
+                payment_portal_url=self.payment_portal_url,
+            )
         
         headers = {
             "Authorization": f"Bearer {self.api_key}",

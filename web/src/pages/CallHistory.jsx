@@ -980,7 +980,7 @@ function CallHistory() {
                       </button>
                     </div>
                     {planningExpanded && (
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 prose max-w-none">
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 prose max-w-none overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:whitespace-pre-wrap [&_code]:break-words [&_p]:break-words">
                         <ReactMarkdown>{planningContent}</ReactMarkdown>
                       </div>
                     )}

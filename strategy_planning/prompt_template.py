@@ -350,7 +350,6 @@ Provide your response in the following JSON format:
         prompt += """    "opening_script": "Natural greeting and opening",
     "main_talking_points_script": "Key conversation points",
     "objection_responses": {"objection1": "response1"},
-    "closing_script": "Confirmation and closing"
 """
     elif preferred_channel == "email":
         prompt += """    "email_subject": "Subject line",
