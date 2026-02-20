@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
 import CustomerList from './pages/CustomerList'
 import CustomerDetail from './pages/CustomerDetail'
 import CallHistory from './pages/CallHistory'
+import ProfileTypes from './pages/ProfileTypes'
 import ToastContainer, { useToast } from './components/ToastContainer'
 
 const ToastContext = createContext(null)
@@ -62,6 +63,7 @@ function App() {
               <Route path="/" element={<CustomerList />} />
               <Route path="/customer/:id" element={<CustomerDetail />} />
               <Route path="/customer/:id/call-history" element={<CallHistory />} />
+              <Route path="/profile-types" element={<ProfileTypes />} />
             </Routes>
           </main>
 

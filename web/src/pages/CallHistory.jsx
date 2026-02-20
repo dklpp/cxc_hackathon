@@ -19,9 +19,9 @@ import {
   Edit,
   Check,
   Send,
+  Info,
 } from 'lucide-react'
 import { format } from 'date-fns'
-import ReactMarkdown from 'react-markdown'
 
 function CallHistory() {
   console.log('CallHistory component rendering')
@@ -42,7 +42,6 @@ function CallHistory() {
   const [planningContent, setPlanningContent] = useState(null)
   const [transcriptContent, setTranscriptContent] = useState(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
-  const [planningExpanded, setPlanningExpanded] = useState(false)
   const [transcriptExpanded, setTranscriptExpanded] = useState(false)
   const [showCancelCallModal, setShowCancelCallModal] = useState(false)
   const [callToCancel, setCallToCancel] = useState(null)
@@ -63,7 +62,79 @@ function CallHistory() {
   const [loadingTimeSlots, setLoadingTimeSlots] = useState(false)
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null)
   const [scheduling, setScheduling] = useState(false)
+  const [showRawJson, setShowRawJson] = useState(false)
   const isPollingRef = useRef(false)
+
+  const formatScriptKey = (key) =>
+    key.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+
+  const renderScriptValue = (value, key) => {
+    if (value === null || value === undefined)
+      return <span className="text-gray-400 italic">N/A</span>
+
+    if (key === 'risk_level') {
+      const colors = {
+        low: 'bg-green-100 text-green-800 border border-green-200',
+        moderate: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+        high: 'bg-red-100 text-red-800 border border-red-200',
+        vip: 'bg-purple-100 text-purple-800 border border-purple-200',
+      }
+      const v = String(value).toLowerCase()
+      return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${colors[v] || 'bg-gray-100 text-gray-700 border border-gray-200'}`}>{value}</span>
+    }
+
+    if (key === 'communication_channel') {
+      const colors = {
+        call: 'bg-blue-100 text-blue-800 border border-blue-200',
+        email: 'bg-indigo-100 text-indigo-800 border border-indigo-200',
+        sms: 'bg-orange-100 text-orange-800 border border-orange-200',
+      }
+      const v = String(value).toLowerCase()
+      return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${colors[v] || 'bg-gray-100 text-gray-700 border border-gray-200'}`}>{value}</span>
+    }
+
+    if (key === 'tone_recommendation' && typeof value === 'string' && value.includes('|')) {
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {value.split('|').map((t, i) => (
+            <span key={i} className="px-2 py-0.5 bg-tangerine-50 text-tangerine-700 border border-tangerine-200 rounded-full text-xs font-medium capitalize">
+              {t.trim().replace(/_/g, ' ')}
+            </span>
+          ))}
+        </div>
+      )
+    }
+
+    if ((key === 'best_contact_time' || key === 'best_contact_day') && typeof value === 'string')
+      return <span className="capitalize font-medium text-gray-800">{value}</span>
+
+    if (key === 'suggested_payment_amount' && typeof value === 'number')
+      return <span className="font-semibold text-gray-900">${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+
+    if (typeof value === 'boolean')
+      return value ? (
+        <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">Yes</span>
+      ) : (
+        <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">No</span>
+      )
+    if (Array.isArray(value)) {
+      if (value.length === 0) return <span className="text-gray-400 italic">None</span>
+      return (
+        <ul className="space-y-1.5">
+          {value.map((item, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-gray-800">
+              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-tangerine-400 flex-shrink-0" />
+              {String(item)}
+            </li>
+          ))}
+        </ul>
+      )
+    }
+    if (typeof value === 'number') return value.toLocaleString()
+    if (typeof value === 'object')
+      return <pre className="text-xs whitespace-pre-wrap break-words bg-gray-50 p-2 rounded">{JSON.stringify(value, null, 2)}</pre>
+    return <span className="whitespace-pre-wrap">{String(value)}</span>
+  }
 
   const fetchCallHistory = async () => {
     if (!id) {
@@ -156,8 +227,8 @@ function CallHistory() {
     setLoadingDetails(true)
     setPlanningContent(null)
     setTranscriptContent(null)
-    setPlanningExpanded(false)
     setTranscriptExpanded(false)
+    setShowRawJson(false)
     setEditingEmail(false)
     setEditedEmailContent('')
     setEditedEmailSubject('')
@@ -765,8 +836,8 @@ function CallHistory() {
                   setSelectedCall(null)
                   setPlanningContent(null)
                   setTranscriptContent(null)
-                  setPlanningExpanded(false)
                   setTranscriptExpanded(false)
+                  setShowRawJson(false)
                   setEditingEmail(false)
                   setEditedEmailContent('')
                   setEditedEmailSubject('')
@@ -959,18 +1030,8 @@ function CallHistory() {
                 {/* Planning File */}
                 {planningContent && (
                   <div>
-                    <div className="w-full flex items-center justify-between mb-2">
-                      <button
-                        onClick={() => setPlanningExpanded(!planningExpanded)}
-                        className="flex items-center text-left flex-1"
-                      >
-                        {planningExpanded ? (
-                          <ChevronDown className="h-5 w-5 text-gray-400 mr-2" />
-                        ) : (
-                          <ChevronRight className="h-5 w-5 text-gray-400 mr-2" />
-                        )}
-                        <h4 className="text-lg font-semibold text-gray-900">Planning File</h4>
-                      </button>
+                    <div className="w-full flex items-center justify-between mb-3">
+                      <h4 className="text-lg font-semibold text-gray-900">Call Planning Strategy</h4>
                       <button
                         onClick={() => handleDeleteFileClick('planning')}
                         className="ml-2 p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
@@ -979,11 +1040,76 @@ function CallHistory() {
                         <Trash2 className="h-5 w-5" />
                       </button>
                     </div>
-                    {planningExpanded && (
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 prose max-w-none overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_code]:whitespace-pre-wrap [&_code]:break-words [&_p]:break-words">
-                        <ReactMarkdown>{planningContent}</ReactMarkdown>
-                      </div>
-                    )}
+                    {(() => {
+                      let parsed = null
+                      try {
+                        let raw = typeof planningContent === 'string'
+                          ? planningContent
+                          : JSON.stringify(planningContent)
+                        raw = raw.replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '').trim()
+                        parsed = JSON.parse(raw)
+                      } catch (e) {}
+
+                      if (!parsed || showRawJson) {
+                        return (
+                          <div>
+                            <pre className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-xs overflow-auto whitespace-pre-wrap break-words">
+                              {(typeof planningContent === 'string'
+                                ? planningContent
+                                : JSON.stringify(planningContent, null, 2)
+                              ).replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '').trim()}
+                            </pre>
+                            {parsed && (
+                              <button
+                                onClick={() => setShowRawJson(false)}
+                                className="mt-2 text-xs text-tangerine-500 hover:text-tangerine-600 underline"
+                              >
+                                View Formatted Table
+                              </button>
+                            )}
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <div>
+                          <div className="border border-gray-200 rounded-lg overflow-hidden">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <tbody className="divide-y divide-gray-100">
+                                {Object.entries(parsed).map(([key, value], idx) => (
+                                  <tr key={key} className={idx % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/50 hover:bg-gray-100/60'}>
+                                    <td className="px-4 py-3 text-sm font-medium text-gray-500 w-2/5 align-top whitespace-nowrap">
+                                      <span className="inline-flex items-center gap-1.5">
+                                        {formatScriptKey(key)}
+                                        {key === 'profile_type' && (
+                                          <Link
+                                            to="/profile-types"
+                                            target="_blank"
+                                            title="Learn about profile types"
+                                            className="text-gray-400 hover:text-tangerine-500 transition-colors"
+                                          >
+                                            <Info className="h-3.5 w-3.5" />
+                                          </Link>
+                                        )}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-gray-900 align-top">
+                                      {renderScriptValue(value, key)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <button
+                            onClick={() => setShowRawJson(true)}
+                            className="mt-3 text-xs text-gray-400 hover:text-gray-600 underline"
+                          >
+                            View Raw JSON
+                          </button>
+                        </div>
+                      )
+                    })()}
                   </div>
                 )}
 

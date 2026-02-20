@@ -12,7 +12,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/call-service': {
-        target: 'https://cxc-call-service.onrender.com',
+        target: 'http://127.0.0.1:5000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/call-service/, ''),
         timeout: 600000,

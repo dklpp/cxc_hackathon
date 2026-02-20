@@ -262,7 +262,14 @@ async def get_customer_detail(customer_id: int):
         communications = summary['recent_communications']
         scheduled_calls = db_manager.get_scheduled_calls(customer_id=customer_id)
         planned_emails = db_manager.get_planned_emails(customer_id=customer_id)
-        
+
+        # Batch-fetch all planning scripts for this customer (1 query instead of 2N)
+        all_scripts = db_manager.get_call_planning_scripts(customer_id)
+        scripts_by_call_id = {}
+        for s in all_scripts:
+            if s.scheduled_call_id not in scripts_by_call_id:
+                scripts_by_call_id[s.scheduled_call_id] = s
+
         # Calculate max days past due
         active_debts = [d for d in debts if d.status.value == 'active']
         max_days_past_due = max((d.days_past_due for d in active_debts), default=0)
@@ -333,18 +340,15 @@ async def get_customer_detail(customer_id: int):
                     "notes": sc.notes,
                     "agent_id": sc.agent_id,
                     "created_at": sc.created_at.isoformat(),
-                    "planning_file_path": f"call_files/planning/call_{sc.id}_planning.md" if db_manager.get_call_planning_scripts(customer_id, sc.id) else None,
-                    "planning_script": next(iter([
-                        {
-                            "id": s.id,
-                            "strategy_content": s.strategy_content,
-                            "suggested_time": s.suggested_time,
-                            "suggested_day": s.suggested_day,
-                            "communication_channel": s.communication_channel,
-                            "created_at": s.created_at.isoformat(),
-                        }
-                        for s in db_manager.get_call_planning_scripts(customer_id, sc.id)
-                    ]), None),
+                    "planning_file_path": f"call_files/planning/call_{sc.id}_planning.md" if sc.id in scripts_by_call_id else None,
+                    "planning_script": (lambda s: {
+                        "id": s.id,
+                        "strategy_content": s.strategy_content,
+                        "suggested_time": s.suggested_time,
+                        "suggested_day": s.suggested_day,
+                        "communication_channel": s.communication_channel,
+                        "created_at": s.created_at.isoformat(),
+                    })(scripts_by_call_id[sc.id]) if sc.id in scripts_by_call_id else None,
                 }
                 for sc in scheduled_calls
             ],
@@ -972,23 +976,45 @@ async def get_call_history(customer_id: int):
         
         # Get scheduled calls (including planned)
         scheduled_calls = db_manager.get_scheduled_calls(customer_id=customer_id)
-        
+
         # Get planned emails
         planned_emails = db_manager.get_planned_emails(customer_id=customer_id)
-        
+
+        # Batch-fetch all planning scripts (1 query instead of N)
+        all_scripts = db_manager.get_call_planning_scripts(customer_id)
+        scripts_by_call_id = {}
+        scripts_by_id = {}
+        for s in all_scripts:
+            scripts_by_id[s.id] = s
+            if s.scheduled_call_id not in scripts_by_call_id:
+                scripts_by_call_id[s.scheduled_call_id] = s
+
+        # Batch-fetch communication logs for completed scheduled calls (1 query instead of N)
+        comm_log_ids = [sc.communication_log_id for sc in scheduled_calls if sc.communication_log_id]
+        comm_logs_by_id = {}
+        if comm_log_ids:
+            _session = db_manager.get_session()
+            try:
+                _logs = _session.query(CommunicationLog).filter(
+                    CommunicationLog.id.in_(comm_log_ids)
+                ).all()
+                comm_logs_by_id = {log.id: log for log in _logs}
+            finally:
+                _session.close()
+
         # Separate calls into planned, scheduled (automatic), and completed
         planned_calls = []
         automatic_calls = []
         completed_calls = []
-        
+
         # Separate emails into planned and sent
         planned_emails_list = []
         sent_emails_list = []
-        
+
         # Process scheduled calls
         for sc in scheduled_calls:
-            # Get planning script if exists
-            scripts = db_manager.get_call_planning_scripts(customer_id, sc.id)
+            # Get planning script from pre-fetched map
+            scripts = [scripts_by_call_id[sc.id]] if sc.id in scripts_by_call_id else []
             planning_file_path = None
             planning_script = None
             if scripts:
@@ -1025,20 +1051,9 @@ async def get_call_history(customer_id: int):
             elif sc.status == "pending":
                 automatic_calls.append(call_data)
             elif sc.status == "done" or sc.status == "completed":
-                # For completed scheduled calls, check if transcript exists in DB
-                if sc.communication_log_id:
-                    # Get communication log to check for transcript
-                    comm_log = db_manager.get_session().query(CommunicationLog).filter(
-                        CommunicationLog.id == sc.communication_log_id
-                    ).first()
-                    if comm_log and comm_log.transcript:
-                        call_data["has_transcript"] = True
-                    else:
-                        call_data["has_transcript"] = False
-                    db_manager.get_session().close()
-                else:
-                    call_data["has_transcript"] = False
-                if sc.communication_log_id and comm_log:
+                comm_log = comm_logs_by_id.get(sc.communication_log_id) if sc.communication_log_id else None
+                call_data["has_transcript"] = bool(comm_log and comm_log.transcript)
+                if comm_log:
                     call_data["conversation_id"] = comm_log.conversation_id
                     call_data["call_sid"] = comm_log.call_sid
                     call_data["transcript"] = comm_log.transcript
@@ -1087,7 +1102,7 @@ async def get_call_history(customer_id: int):
             planning_script = None
             planning_file_path = None
             if pe.planning_script_id:
-                script = db_manager.get_call_planning_script(pe.planning_script_id)
+                script = scripts_by_id.get(pe.planning_script_id)
                 if script:
                     planning_file_path = f"call_files/planning/email_{pe.id}_planning.md"
                     planning_script = {
@@ -2194,7 +2209,7 @@ async def make_ai_call(customer_id: int):
         logger.error("[make-ai-call] customer_id=%d — Unhandled exception: %s", customer_id, error_details)
         raise HTTPException(status_code=500, detail=f"Failed to initiate AI call: {str(e)}")
 
-CALL_SERVICE_URL = os.getenv("CALL_SERVICE_URL", "https://cxc-call-service.onrender.com")
+CALL_SERVICE_URL = os.getenv("CALL_SERVICE_URL")
 
 @app.post("/api/customers/{customer_id}/make-call")
 async def proxy_make_call(customer_id: int, background_tasks: BackgroundTasks):
