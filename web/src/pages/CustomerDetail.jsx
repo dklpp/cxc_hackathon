@@ -64,7 +64,6 @@ function CustomerDetail() {
   const [editedEmailContent, setEditedEmailContent] = useState("");
   const [editedEmailSubject, setEditedEmailSubject] = useState("");
   const [savingEmail, setSavingEmail] = useState(false);
-  const [checkingEmailStatus, setCheckingEmailStatus] = useState(false);
 
   useEffect(() => {
     fetchCustomerDetail();
@@ -277,10 +276,10 @@ function CustomerDetail() {
         communication_type: emailType,
       });
       const emailId = response.data.email_id;
-      const loadingToastId = toast.loading("Generating email content...", {
-        title: "Email Generation",
+      const typeLabel = emailType === "sms" ? "SMS" : "Email";
+      const loadingToastId = toast.loading(`Generating ${typeLabel.toLowerCase()} content...`, {
+        title: `${typeLabel} Generation`,
       });
-      setCheckingEmailStatus(true);
 
       let checkCount = 0;
       const maxChecks = 60;
@@ -299,7 +298,6 @@ function CustomerDetail() {
             if (email.content.startsWith("Error:")) {
               toast.removeToast(loadingToastId);
               toast.error(email.content, { title: "Generation Failed" });
-              setCheckingEmailStatus(false);
               return;
             }
             toast.removeToast(loadingToastId);
@@ -308,7 +306,6 @@ function CustomerDetail() {
             setEditedEmailSubject(email.subject || "");
             setShowEmailPreviewModal(true);
             setEditingEmail(false);
-            setCheckingEmailStatus(false);
             fetchCustomerDetail(false);
           } else if (checkCount < maxChecks) {
             setTimeout(checkEmailReady, 2000);
@@ -324,7 +321,6 @@ function CustomerDetail() {
                 { title: "Generation Timeout" },
               );
             }
-            setCheckingEmailStatus(false);
           }
         } catch (err) {
           console.error("Error checking email status:", err);
@@ -333,7 +329,6 @@ function CustomerDetail() {
           } else {
             toast.removeToast(loadingToastId);
             toast.error("Failed to check email status", { title: "Error" });
-            setCheckingEmailStatus(false);
           }
         }
       };
@@ -842,8 +837,8 @@ function CustomerDetail() {
 
       {/* Create Strategy Confirmation */}
       {showPrepareConfirmModal && customer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowPrepareConfirmModal(false)}>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold text-gray-900">Create Call Strategy</h3>
               <button onClick={() => setShowPrepareConfirmModal(false)} className="text-gray-400 hover:text-gray-600">
