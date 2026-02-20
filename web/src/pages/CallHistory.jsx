@@ -179,19 +179,20 @@ function CallHistory() {
       if (callIdStr.startsWith('email_')) {
         await api.delete(`/customers/${id}/planned-email/${callIdStr.replace('email_', '')}`)
         toast.success('Email cancelled successfully', { title: 'Email Cancelled' })
+      } else if (callIdStr.startsWith('scheduled_')) {
+        await api.delete(`/scheduled-calls/${callIdStr.replace('scheduled_', '')}`)
+        toast.success('Call removed successfully', { title: 'Call Removed' })
       } else {
-        const scheduledCallId = callIdStr.startsWith('scheduled_')
-          ? callIdStr.replace('scheduled_', '')
-          : callToCancel
-        await api.delete(`/scheduled-calls/${scheduledCallId}`)
-        toast.success('Call cancelled successfully', { title: 'Call Cancelled' })
+        // Direct communication log (orphaned completed call)
+        await api.delete(`/communication-logs/${callIdStr}`)
+        toast.success('Call removed from history', { title: 'Removed' })
       }
       setShowCancelCallModal(false)
       setCallToCancel(null)
       fetchCallHistory()
     } catch (err) {
-      toast.error('Failed to cancel: ' + (err.response?.data?.detail || err.message), {
-        title: 'Cancel Failed',
+      toast.error('Failed to remove: ' + (err.response?.data?.detail || err.message), {
+        title: 'Remove Failed',
       })
     }
   }
@@ -340,10 +341,10 @@ function CallHistory() {
         isOpen={showCancelCallModal}
         onClose={() => { setShowCancelCallModal(false); setCallToCancel(null) }}
         onConfirm={handleCancelCall}
-        title="Cancel Scheduled Call"
-        message="Are you sure you want to cancel this scheduled call? This action cannot be undone."
-        confirmText="Cancel Call"
-        cancelText="Keep Scheduled"
+        title="Remove Interaction"
+        message="Are you sure you want to remove this interaction? This action cannot be undone."
+        confirmText="Remove"
+        cancelText="Keep"
         confirmButtonClass="bg-red-600 hover:bg-red-700"
         isLoading={false}
       />

@@ -20,6 +20,7 @@ export default function CallCard({ call, onViewDetails, onCancel, onSchedule, ge
     idStr.startsWith('email_')
   const Icon = isEmail ? Mail : Phone
   const canCancel = call.status === 'pending' || call.status === 'planned'
+  const canRemove = call.status === 'done' || call.status === 'completed'
 
   const getCallId = () => {
     if (idStr.startsWith('scheduled_')) return idStr
@@ -95,14 +96,14 @@ export default function CallCard({ call, onViewDetails, onCancel, onSchedule, ge
               Schedule
             </button>
           )}
-          {canCancel && (
+          {(canCancel || canRemove) && (
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 onCancel(getCallId())
               }}
               className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-              title={`Cancel ${isEmail ? 'email' : 'call'}`}
+              title={canRemove ? 'Remove from history' : `Cancel ${isEmail ? 'email' : 'call'}`}
             >
               <X className="h-4 w-4" />
             </button>

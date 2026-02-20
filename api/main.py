@@ -103,14 +103,14 @@ def generate_notes_from_transcript(transcript_text: str, customer_id: int = None
                         "role": "user",
                         "content": (
                             "Analyze the following call transcript and produce a concise summary "
-                            "(3-5 sentences). Include: call outcome, customer sentiment, any promises "
-                            "or commitments made, and recommended next steps. Be factual and brief.\n\n"
+                            "in exactly 2-3 sentences. Cover: call outcome, customer response, "
+                            "and the single most important next step. Be direct and factual.\n\n"
                             f"TRANSCRIPT:\n{transcript_text}"
                         ),
                     }
                 ],
-                "temperature": 0.3,
-                "max_tokens": 500,
+                "temperature": 0.2,
+                "max_tokens": 200,
             },
             timeout=30,
         )
@@ -130,6 +130,50 @@ def generate_notes_from_transcript(transcript_text: str, customer_id: int = None
         logger.error("[gemini-notes] %s — Exception after %.2fs: %s", ctx, elapsed, e)
 
     return "AI call notes generation failed."
+
+
+_SUMMARY_PROMPTS = {
+    "transcript": (
+        "You are a debt collection analyst. Summarize this call transcript in 2-3 sentences. "
+        "State the outcome, the customer's position, and the key next action. Be direct.\n\nTRANSCRIPT:\n"
+    ),
+    "email": (
+        "You are a debt collection analyst. Summarize this outreach message in 2-3 sentences. "
+        "State the purpose, the main ask, and the expected customer response. Be direct.\n\nCONTENT:\n"
+    ),
+    "planning": (
+        "You are a debt collection analyst. Summarize this call strategy in 2-3 sentences. "
+        "State the recommended approach, best contact timing, and primary goal. Be direct.\n\nSTRATEGY:\n"
+    ),
+    "notes": (
+        "Summarize the following in 2-3 short sentences. Be direct and factual.\n\nNOTES:\n"
+    ),
+}
+
+
+def generate_ai_summary(context: str, context_type: str = "notes", customer_id: int = None) -> Optional[str]:
+    """Generate a 2-3 sentence summary via OpenRouter."""
+    if not OPENROUTERS_API_KEY:
+        return None
+    prompt = _SUMMARY_PROMPTS.get(context_type, _SUMMARY_PROMPTS["notes"]) + context[:3000]
+    try:
+        resp = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={"Authorization": f"Bearer {OPENROUTERS_API_KEY}", "Content-Type": "application/json"},
+            json={
+                "model": "google/gemini-2.0-flash-001",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.2,
+                "max_tokens": 200,
+            },
+            timeout=15,
+        )
+        if resp.status_code == 200:
+            return resp.json()["choices"][0]["message"]["content"].strip()
+        logger.error("[ai-summary] OpenRouter HTTP %d: %s", resp.status_code, resp.text[:200])
+    except Exception as e:
+        logger.error("[ai-summary] Exception: %s", e)
+    return None
 
 
 # Pydantic models for request/response
@@ -912,6 +956,40 @@ async def cancel_scheduled_call(call_id: int):
                 "status": scheduled_call.status,
             }
         }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class AISummaryRequest(BaseModel):
+    context: str
+    context_type: str = "notes"  # transcript | email | planning | notes
+    customer_id: Optional[int] = None
+
+@app.post("/api/ai-summary")
+async def get_ai_summary(request: AISummaryRequest):
+    """Generate a concise 2-3 sentence AI summary from provided context."""
+    if not request.context or len(request.context.strip()) < 20:
+        raise HTTPException(status_code=400, detail="Insufficient context for summary generation")
+    summary = generate_ai_summary(request.context, request.context_type, request.customer_id)
+    if not summary:
+        raise HTTPException(status_code=503, detail="Summary generation unavailable — check OPENROUTERS_API_KEY")
+    return {"summary": summary}
+
+@app.delete("/api/communication-logs/{log_id}")
+async def delete_communication_log(log_id: int):
+    """Delete a communication log entry"""
+    try:
+        session = db_manager.get_session()
+        try:
+            log = session.query(CommunicationLog).filter(CommunicationLog.id == log_id).first()
+            if not log:
+                raise HTTPException(status_code=404, detail="Communication log not found")
+            session.delete(log)
+            session.commit()
+            return {"success": True, "message": "Communication log deleted"}
+        finally:
+            session.close()
     except HTTPException:
         raise
     except Exception as e:

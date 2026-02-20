@@ -76,10 +76,7 @@ cxc_hackathon/
 │   ├── master_prompt_voice.md   # Voice call agent prompt
 │   └── master_prompt_email.md   # Email/SMS prompt
 │
-├── stt/                         # Speech-to-text
-│   └── speech_to_text.py        # Deepgram integration
-│
-├── tts/                         # Text-to-speech
+├── tts-stt/                         # Text-to-speech
 │   └── text_to_speech.py        # ElevenLabs integration
 │
 ├── web/                         # React dashboard
@@ -140,7 +137,6 @@ Edit `.env` with your API keys:
 TWILIO_ACCOUNT_SID=your_twilio_sid
 TWILIO_AUTH_TOKEN=your_twilio_token
 ELEVEN_LABS_API_KEY=your_elevenlabs_key
-DEEPGRAM_API_KEY=your_deepgram_key
 ```
 
 ### 3. Initialize Database

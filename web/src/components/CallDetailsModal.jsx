@@ -23,6 +23,8 @@ export default function CallDetailsModal({ call, isOpen, onClose, onRefresh, cus
   const [uploading, setUploading] = useState(false)
   const [showDeleteFileModal, setShowDeleteFileModal] = useState(false)
   const [fileToDelete, setFileToDelete] = useState(null)
+  const [aiSummary, setAiSummary] = useState(null)
+  const [loadingSummary, setLoadingSummary] = useState(false)
 
   useEffect(() => {
     if (call && isOpen) loadDetails(call)
@@ -37,27 +39,68 @@ export default function CallDetailsModal({ call, isOpen, onClose, onRefresh, cus
     setEditingEmail(false)
     setEditedEmailContent('')
     setEditedEmailSubject('')
+    setAiSummary(null)
+
+    let resolvedPlanning = null
+    let resolvedTranscript = null
 
     try {
       if (selectedCall.planning_file_path || selectedCall.planning_script) {
         if (selectedCall.planning_script?.strategy_content) {
-          setPlanningContent(selectedCall.planning_script.strategy_content)
+          resolvedPlanning = selectedCall.planning_script.strategy_content
+          setPlanningContent(resolvedPlanning)
         } else if (selectedCall.planning_file_path) {
           const planningId = String(selectedCall.id).startsWith('scheduled_')
             ? String(selectedCall.id).replace('scheduled_', '')
             : selectedCall.scheduled_call_id || selectedCall.id
           const response = await api.get(`/call-history/scheduled_${planningId}/planning-file`)
-          setPlanningContent(response.data.content)
+          resolvedPlanning = response.data.content
+          setPlanningContent(resolvedPlanning)
         }
       }
       if (selectedCall.transcript) {
-        setTranscriptContent(selectedCall.transcript)
+        resolvedTranscript = selectedCall.transcript
+        setTranscriptContent(resolvedTranscript)
         setTranscriptExpanded(true)
       }
     } catch (err) {
       console.error('Error loading call details:', err)
     } finally {
       setLoadingDetails(false)
+    }
+
+    // Pick the best context for summary generation
+    const isEmail = selectedCall.communication_type === 'email' || selectedCall.communication_type === 'sms'
+    const PLACEHOLDERS = ['generating content', 'planned call -', 'planning script generated', 'ai call notes unavailable', 'generation failed']
+    const isPlaceholder = (s) => !s || PLACEHOLDERS.some(p => s.toLowerCase().includes(p))
+
+    let context = null
+    let contextType = 'notes'
+
+    if (resolvedTranscript) {
+      context = resolvedTranscript
+      contextType = 'transcript'
+    } else if (isEmail && selectedCall.content && !isPlaceholder(selectedCall.content)) {
+      context = (selectedCall.subject ? `Subject: ${selectedCall.subject}\n\n` : '') + selectedCall.content
+      contextType = 'email'
+    } else if (resolvedPlanning) {
+      context = resolvedPlanning
+      contextType = 'planning'
+    } else if (!isPlaceholder(selectedCall.notes)) {
+      context = selectedCall.notes
+      contextType = 'notes'
+    }
+
+    if (context) {
+      setLoadingSummary(true)
+      try {
+        const res = await api.post('/ai-summary', { context, context_type: contextType })
+        setAiSummary(res.data.summary)
+      } catch {
+        // No summary available
+      } finally {
+        setLoadingSummary(false)
+      }
     }
   }
 
@@ -352,11 +395,20 @@ export default function CallDetailsModal({ call, isOpen, onClose, onRefresh, cus
               )}
 
               {/* AI Summary */}
-              {call.notes && (
+              {(loadingSummary || aiSummary) && (
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">AI Summary</h4>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-gray-800 whitespace-pre-wrap">
-                    {call.notes}
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h4 className="text-lg font-semibold text-gray-900">AI Summary</h4>
+                    {loadingSummary && (
+                      <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-blue-400" />
+                    )}
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-gray-800">
+                    {loadingSummary && !aiSummary ? (
+                      <span className="text-gray-400">Generating summary...</span>
+                    ) : (
+                      aiSummary
+                    )}
                   </div>
                 </div>
               )}
