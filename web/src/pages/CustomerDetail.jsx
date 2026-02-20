@@ -3,6 +3,10 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import api from "../api/client";
 import { useToastContext } from "../App";
 import ConfirmModal from "../components/ConfirmModal";
+import ScheduleCallModal from "../components/ScheduleCallModal";
+import CallPlanningStrategyModal from "../components/CallPlanningStrategyModal";
+import EmailModal from "../components/EmailModal";
+import EmailPreviewModal from "../components/EmailPreviewModal";
 import {
   ArrowLeft,
   Phone,
@@ -19,14 +23,8 @@ import {
   X,
   Sparkles,
   AlertCircle,
-  ChevronDown,
-  ChevronRight,
-  Edit,
-  Check,
-  Info,
 } from "lucide-react";
 import { format } from "date-fns";
-import ReactMarkdown from "react-markdown";
 
 function CustomerDetail() {
   const { id } = useParams();
@@ -42,7 +40,6 @@ function CustomerDetail() {
   const [scheduling, setScheduling] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [showPrepareModal, setShowPrepareModal] = useState(false);
   const [showPrepareConfirmModal, setShowPrepareConfirmModal] = useState(false);
   const [showScriptModal, setShowScriptModal] = useState(false);
   const [selectedScript, setSelectedScript] = useState(null);
@@ -51,17 +48,14 @@ function CustomerDetail() {
   const [useAutoTime, setUseAutoTime] = useState(false);
   const [suggestedTime, setSuggestedTime] = useState(null);
   const [suggestedDay, setSuggestedDay] = useState(null);
-  const [prepareResult, setPrepareResult] = useState(null);
   const [schedulingPlannedCallId, setSchedulingPlannedCallId] = useState(null);
   const [timeSlots, setTimeSlots] = useState([]);
   const [loadingTimeSlots, setLoadingTimeSlots] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
-  const [prepareScriptExpanded, setPrepareScriptExpanded] = useState(false);
   const [showCancelCallModal, setShowCancelCallModal] = useState(false);
   const [callToCancel, setCallToCancel] = useState(null);
-  const [showRawJson, setShowRawJson] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailType, setEmailType] = useState("email"); // 'email' or 'sms'
+  const [emailType, setEmailType] = useState("email");
   const [preparingEmail, setPreparingEmail] = useState(false);
   const [plannedEmails, setPlannedEmails] = useState([]);
   const [showEmailPreviewModal, setShowEmailPreviewModal] = useState(false);
@@ -76,20 +70,14 @@ function CustomerDetail() {
     fetchCustomerDetail();
   }, [id]);
 
-  // Poll for planning script updates
   useEffect(() => {
     if (!scheduledCalls || scheduledCalls.length === 0) return;
-
     const interval = setInterval(() => {
-      // Check if there are planned calls without planning scripts
       const hasPendingPlanning = scheduledCalls.some(
         (call) => call.status === "planned" && !call.planning_script,
       );
-      if (hasPendingPlanning) {
-        fetchCustomerDetail(false);
-      }
-    }, 5000); // Poll every 5 seconds
-
+      if (hasPendingPlanning) fetchCustomerDetail(false);
+    }, 5000);
     return () => clearInterval(interval);
   }, [id, scheduledCalls]);
 
@@ -112,10 +100,6 @@ function CustomerDetail() {
     }
   };
 
-  const openPrepareConfirmModal = () => {
-    setShowPrepareConfirmModal(true);
-  };
-
   const handleMakeCall = async () => {
     try {
       const response = await api.post(`/customers/${id}/make-call`);
@@ -129,11 +113,8 @@ function CustomerDetail() {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to initiate the call", {
-        title: "Make a Call",
-        duration: 4000,
-      });
-    } 
+      toast.error("Failed to initiate the call", { title: "Make a Call", duration: 4000 });
+    }
   };
 
   const handlePrepareCall = async () => {
@@ -142,33 +123,24 @@ function CustomerDetail() {
       setShowPrepareConfirmModal(false);
       const response = await api.post(`/customers/${id}/prepare-call`);
       if (response.data && response.data.success !== false) {
-        // Show success message
         toast.success("Planning script generation started!", {
           title: "Call Preparation",
           message:
             "The planning script is being generated in the background. You can continue viewing other information while it processes.",
           duration: 6000,
         });
-        // Refresh customer details to show the new planned call
         await fetchCustomerDetail(false);
-        // Don't show modal immediately - user can check call history or refresh later
       } else {
         toast.error(
-          "Failed to prepare call strategy: " +
-            (response.data?.error || "Unknown error"),
-          {
-            title: "Error",
-          },
+          "Failed to prepare call strategy: " + (response.data?.error || "Unknown error"),
+          { title: "Error" },
         );
       }
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.detail ||
-        err.message ||
-        "Failed to prepare call strategy";
-      toast.error(`Failed to prepare call strategy: ${errorMsg}`, {
-        title: "Error",
-      });
+      toast.error(
+        `Failed to prepare call strategy: ${err.response?.data?.detail || err.message || "Failed to prepare call strategy"}`,
+        { title: "Error" },
+      );
       console.error("Prepare call error:", err);
     } finally {
       setPreparing(false);
@@ -176,96 +148,77 @@ function CustomerDetail() {
   };
 
   const handleScheduleCall = async () => {
-    // Determine the scheduled time: selected slot > manual input > auto
     let finalDateTime = null;
     if (selectedTimeSlot) {
       finalDateTime = selectedTimeSlot.start_time;
     } else if (scheduleDateTime) {
       finalDateTime = scheduleDateTime;
     } else if (useAutoTime) {
-      // Will be handled by backend
+      // handled by backend
     } else {
       toast.info(
         "Please select a time slot, enter a date/time manually, or choose automatic time selection",
-        {
-          title: "Time Selection Required",
-        },
+        { title: "Time Selection Required" },
       );
       return;
     }
 
     try {
       setScheduling(true);
-
-      // If scheduling a planned call, use the schedule endpoint
       if (schedulingPlannedCallId) {
-        const response = await api.post(
-          `/scheduled-calls/${schedulingPlannedCallId}/schedule`,
-          {
-            scheduled_time: finalDateTime || null,
-            use_auto_time: useAutoTime && !finalDateTime,
-          },
-        );
-        toast.success("Call scheduled successfully!", {
-          title: "Call Scheduled",
-          message:
-            "Strategy planning has started in the background. The planning file will be available shortly.",
-          duration: 6000,
+        await api.post(`/scheduled-calls/${schedulingPlannedCallId}/schedule`, {
+          scheduled_time: finalDateTime || null,
+          use_auto_time: useAutoTime && !finalDateTime,
         });
       } else {
-        // Regular scheduling - convert to ISO string format
         let scheduledTimeForAPI = null;
         if (finalDateTime) {
-          // If it's already an ISO string from time slot, use as-is
           if (finalDateTime.includes("T") && finalDateTime.includes("Z")) {
             scheduledTimeForAPI = finalDateTime;
           } else if (finalDateTime.includes("T")) {
-            // ISO string without Z, add it
             scheduledTimeForAPI = finalDateTime + "Z";
           } else {
-            // Convert datetime-local to ISO
             scheduledTimeForAPI = new Date(finalDateTime).toISOString();
           }
         }
-
-        const response = await api.post("/scheduled-calls", {
+        await api.post("/scheduled-calls", {
           customer_id: parseInt(id),
           scheduled_time: scheduledTimeForAPI,
           notes: scheduleNotes,
           agent_id: "current_user",
           use_auto_time: useAutoTime && !finalDateTime,
         });
-
-        toast.success("Call scheduled successfully!", {
-          title: "Call Scheduled",
-          message:
-            "Strategy planning has started in the background. The planning file will be available shortly.",
-          duration: 6000,
-        });
       }
 
-      setShowScheduleModal(false);
-      setScheduleDateTime("");
-      setScheduleNotes("");
-      setUseAutoTime(false);
-      setSchedulingPlannedCallId(null);
-      setSuggestedTime(null);
-      setSuggestedDay(null);
-      setSelectedTimeSlot(null);
-      setTimeSlots([]);
+      toast.success("Call scheduled successfully!", {
+        title: "Call Scheduled",
+        message:
+          "Strategy planning has started in the background. The planning file will be available shortly.",
+        duration: 6000,
+      });
+      closeScheduleModal();
       fetchCustomerDetail(false);
     } catch (err) {
       toast.error(
-        "Failed to schedule call: " +
-          (err.response?.data?.detail || err.message),
-        {
-          title: "Scheduling Failed",
-        },
+        "Failed to schedule call: " + (err.response?.data?.detail || err.message),
+        { title: "Scheduling Failed" },
       );
       console.error(err);
     } finally {
       setScheduling(false);
     }
+  };
+
+  const closeScheduleModal = () => {
+    setShowScheduleModal(false);
+    setScheduleDateTime("");
+    setScheduleNotes("");
+    setUseAutoTime(false);
+    setSchedulingPlannedCallId(null);
+    setSuggestedTime(null);
+    setSuggestedDay(null);
+    setSelectedTimeSlot(null);
+    setTimeSlots([]);
   };
 
   const handleCancelCallClick = (callId) => {
@@ -275,21 +228,16 @@ function CustomerDetail() {
 
   const handleCancelCall = async () => {
     if (!callToCancel) return;
-
     try {
       await api.delete(`/scheduled-calls/${callToCancel}`);
-      toast.success("Call cancelled successfully", {
-        title: "Call Cancelled",
-      });
+      toast.success("Call cancelled successfully", { title: "Call Cancelled" });
       setShowCancelCallModal(false);
       setCallToCancel(null);
       fetchCustomerDetail(false);
     } catch (err) {
       toast.error(
         "Failed to cancel call: " + (err.response?.data?.detail || err.message),
-        {
-          title: "Cancel Failed",
-        },
+        { title: "Cancel Failed" },
       );
       console.error(err);
     }
@@ -301,111 +249,15 @@ function CustomerDetail() {
       setSelectedScript(response.data);
       setShowScriptModal(true);
     } catch (err) {
-      toast.error("Failed to load script", {
-        title: "Error",
-      });
+      toast.error("Failed to load script", { title: "Error" });
       console.error(err);
     }
   };
 
-  const formatScriptKey = (key) =>
-    key.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-
-  const renderScriptValue = (value, key) => {
-    if (value === null || value === undefined)
-      return <span className="text-gray-400 italic">N/A</span>;
-
-    // Risk level badge
-    if (key === "risk_level") {
-      const colors = {
-        low: "bg-green-100 text-green-800 border border-green-200",
-        moderate: "bg-yellow-100 text-yellow-800 border border-yellow-200",
-        high: "bg-red-100 text-red-800 border border-red-200",
-        vip: "bg-purple-100 text-purple-800 border border-purple-200",
-      };
-      const v = String(value).toLowerCase();
-      return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${colors[v] || "bg-gray-100 text-gray-700 border border-gray-200"}`}>{value}</span>;
-    }
-
-    // Communication channel badge
-    if (key === "communication_channel") {
-      const colors = {
-        call: "bg-blue-100 text-blue-800 border border-blue-200",
-        email: "bg-indigo-100 text-indigo-800 border border-indigo-200",
-        sms: "bg-orange-100 text-orange-800 border border-orange-200",
-      };
-      const v = String(value).toLowerCase();
-      return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${colors[v] || "bg-gray-100 text-gray-700 border border-gray-200"}`}>{value}</span>;
-    }
-
-    // Tone recommendation: pipe-separated → pill tags
-    if (key === "tone_recommendation" && typeof value === "string" && value.includes("|")) {
-      return (
-        <div className="flex flex-wrap gap-1.5">
-          {value.split("|").map((t, i) => (
-            <span key={i} className="px-2 py-0.5 bg-tangerine-50 text-tangerine-700 border border-tangerine-200 rounded-full text-xs font-medium capitalize">
-              {t.trim().replace(/_/g, " ")}
-            </span>
-          ))}
-        </div>
-      );
-    }
-
-    // Best contact time / day: capitalize
-    if ((key === "best_contact_time" || key === "best_contact_day") && typeof value === "string") {
-      return <span className="capitalize font-medium text-gray-800">{value}</span>;
-    }
-
-    // Payment amount: format as currency
-    if (key === "suggested_payment_amount" && typeof value === "number") {
-      return <span className="font-semibold text-gray-900">${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
-    }
-
-    if (typeof value === "boolean")
-      return value ? (
-        <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">Yes</span>
-      ) : (
-        <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">No</span>
-      );
-    if (Array.isArray(value)) {
-      if (value.length === 0)
-        return <span className="text-gray-400 italic">None</span>;
-      return (
-        <ul className="space-y-1.5">
-          {value.map((item, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-gray-800">
-              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-tangerine-400 flex-shrink-0" />
-              {String(item)}
-            </li>
-          ))}
-        </ul>
-      );
-    }
-    if (typeof value === "number") return value.toLocaleString();
-    if (typeof value === "object")
-      return <pre className="text-xs whitespace-pre-wrap break-words bg-gray-50 p-2 rounded">{JSON.stringify(value, null, 2)}</pre>;
-    return <span className="whitespace-pre-wrap">{String(value)}</span>;
-  };
-
-  const getStatusBadge = (status) => {
-    const badges = {
-      pending: "bg-yellow-100 text-yellow-800",
-      planned: "bg-purple-100 text-purple-800",
-      completed: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800",
-      missed: "bg-gray-100 text-gray-800",
-      no_answer: "bg-red-100 text-red-800",
-      "no answer": "bg-red-100 text-red-800",
-    };
-    return badges[status] || "bg-gray-100 text-gray-800";
-  };
-
   const openScheduleModal = async () => {
-    // Fetch suggested time slots when opening modal
     setShowScheduleModal(true);
     setLoadingTimeSlots(true);
     setSelectedTimeSlot(null);
-
     try {
       const response = await api.get(`/customers/${id}/suggested-time-slots`);
       setTimeSlots(response.data.slots || []);
@@ -424,43 +276,32 @@ function CustomerDetail() {
       const response = await api.post(`/customers/${id}/prepare-email`, {
         communication_type: emailType,
       });
-
       const emailId = response.data.email_id;
-
       const loadingToastId = toast.loading("Generating email content...", {
         title: "Email Generation",
       });
-
       setCheckingEmailStatus(true);
 
-      // Poll for email content generation completion
       let checkCount = 0;
-      const maxChecks = 60; // Maximum 60 checks (120 seconds) - email generation can take longer
+      const maxChecks = 60;
 
       const checkEmailReady = async () => {
         checkCount++;
         try {
-          const emailResponse = await api.get(
-            `/customers/${id}/planned-email/${emailId}`,
-          );
+          const emailResponse = await api.get(`/customers/${id}/planned-email/${emailId}`);
           const email = emailResponse.data;
 
-          // Check if content is generated (not just placeholder)
           if (
             email.content &&
             email.content !== "Generating email content..." &&
             email.status === "planned"
           ) {
-            // Check if there's an error in the content
             if (email.content.startsWith("Error:")) {
               toast.removeToast(loadingToastId);
-              toast.error(email.content, {
-                title: "Generation Failed",
-              });
+              toast.error(email.content, { title: "Generation Failed" });
               setCheckingEmailStatus(false);
               return;
             }
-
             toast.removeToast(loadingToastId);
             setPreviewEmail(email);
             setEditedEmailContent(email.content);
@@ -470,26 +311,17 @@ function CustomerDetail() {
             setCheckingEmailStatus(false);
             fetchCustomerDetail(false);
           } else if (checkCount < maxChecks) {
-            // Check again in 2 seconds
             setTimeout(checkEmailReady, 2000);
           } else {
-            // Timeout - stop checking
             toast.removeToast(loadingToastId);
-            // Check if there's an error message in notes or content
-            if (email.notes && email.notes.includes("Error")) {
-              toast.error(email.notes, {
-                title: "Generation Failed",
-              });
-            } else if (email.content && email.content.includes("Error:")) {
-              toast.error(email.content, {
-                title: "Generation Failed",
-              });
+            if (email.notes?.includes("Error")) {
+              toast.error(email.notes, { title: "Generation Failed" });
+            } else if (email.content?.includes("Error:")) {
+              toast.error(email.content, { title: "Generation Failed" });
             } else {
               toast.error(
-                'Email generation is taking longer than expected. The email may still be generating in the background. Check the "Last Interactions" section.',
-                {
-                  title: "Generation Timeout",
-                },
+                'Email generation is taking longer than expected. Check the "Last Interactions" section.',
+                { title: "Generation Timeout" },
               );
             }
             setCheckingEmailStatus(false);
@@ -500,24 +332,17 @@ function CustomerDetail() {
             setTimeout(checkEmailReady, 2000);
           } else {
             toast.removeToast(loadingToastId);
-            toast.error("Failed to check email status", {
-              title: "Error",
-            });
+            toast.error("Failed to check email status", { title: "Error" });
             setCheckingEmailStatus(false);
           }
         }
       };
 
-      // Start checking after 3 seconds
       setTimeout(checkEmailReady, 3000);
     } catch (err) {
-      toast.remove();
       toast.error(
-        "Failed to prepare email: " +
-          (err.response?.data?.detail || err.message),
-        {
-          title: "Email Preparation Failed",
-        },
+        "Failed to prepare email: " + (err.response?.data?.detail || err.message),
+        { title: "Email Preparation Failed" },
       );
       console.error(err);
     } finally {
@@ -528,18 +353,14 @@ function CustomerDetail() {
   const handleSendEmail = async (emailId) => {
     try {
       await api.post(`/customers/${id}/send-email/${emailId}`);
-      toast.success("Email sent successfully", {
-        title: "Email Sent",
-      });
+      toast.success("Email sent successfully", { title: "Email Sent" });
       setShowEmailPreviewModal(false);
       setPreviewEmail(null);
       fetchCustomerDetail(false);
     } catch (err) {
       toast.error(
         "Failed to send email: " + (err.response?.data?.detail || err.message),
-        {
-          title: "Send Failed",
-        },
+        { title: "Send Failed" },
       );
       console.error(err);
     }
@@ -547,22 +368,16 @@ function CustomerDetail() {
 
   const handleDeclineEmail = async () => {
     if (!previewEmail) return;
-
     try {
       await api.delete(`/customers/${id}/planned-email/${previewEmail.id}`);
-      toast.success("Email cancelled", {
-        title: "Email Cancelled",
-      });
+      toast.success("Email cancelled", { title: "Email Cancelled" });
       setShowEmailPreviewModal(false);
       setPreviewEmail(null);
       fetchCustomerDetail(false);
     } catch (err) {
       toast.error(
-        "Failed to cancel email: " +
-          (err.response?.data?.detail || err.message),
-        {
-          title: "Cancel Failed",
-        },
+        "Failed to cancel email: " + (err.response?.data?.detail || err.message),
+        { title: "Cancel Failed" },
       );
       console.error(err);
     }
@@ -570,32 +385,20 @@ function CustomerDetail() {
 
   const handleSaveEditedEmail = async () => {
     if (!previewEmail) return;
-
     try {
       setSavingEmail(true);
       await api.put(`/customers/${id}/planned-email/${previewEmail.id}`, {
         subject: editedEmailSubject,
         content: editedEmailContent,
       });
-
-      toast.success("Email updated successfully", {
-        title: "Email Updated",
-      });
-
-      // Update preview email with edited content
-      setPreviewEmail({
-        ...previewEmail,
-        subject: editedEmailSubject,
-        content: editedEmailContent,
-      });
+      toast.success("Email updated successfully", { title: "Email Updated" });
+      setPreviewEmail({ ...previewEmail, subject: editedEmailSubject, content: editedEmailContent });
       setEditingEmail(false);
       fetchCustomerDetail(false);
     } catch (err) {
       toast.error(
         "Failed to save email: " + (err.response?.data?.detail || err.message),
-        {
-          title: "Save Failed",
-        },
+        { title: "Save Failed" },
       );
       console.error(err);
     } finally {
@@ -603,10 +406,23 @@ function CustomerDetail() {
     }
   };
 
+  const getStatusBadge = (status) => {
+    const badges = {
+      pending: "bg-yellow-100 text-yellow-800",
+      planned: "bg-purple-100 text-purple-800",
+      completed: "bg-green-100 text-green-800",
+      cancelled: "bg-red-100 text-red-800",
+      missed: "bg-gray-100 text-gray-800",
+      no_answer: "bg-red-100 text-red-800",
+      "no answer": "bg-red-100 text-red-800",
+    };
+    return badges[status] || "bg-gray-100 text-gray-800";
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center flex-1 py-12">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-tangerine-500"></div>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-tangerine-500" />
         <p className="mt-2 text-gray-600">Loading customer details...</p>
       </div>
     );
@@ -622,22 +438,14 @@ function CustomerDetail() {
     );
   }
 
-  const totalDebt = debts.reduce(
-    (sum, debt) => sum + (debt.current_balance || 0),
-    0,
-  );
-  const pendingCalls = scheduledCalls.filter(
-    (call) => call.status === "pending",
-  );
+  const totalDebt = debts.reduce((sum, debt) => sum + (debt.current_balance || 0), 0);
+  const pendingCalls = scheduledCalls.filter((call) => call.status === "pending");
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-6">
-        <Link
-          to="/"
-          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4"
-        >
+        <Link to="/" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Customers
         </Link>
@@ -653,30 +461,29 @@ function CustomerDetail() {
           <div className="flex space-x-3">
             <button
               onClick={handleMakeCall}
-              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-medium shadow-sm hover:bg-green-700 hover:shadow transition-all disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-medium shadow-sm hover:bg-green-700 transition-all"
             >
               <Phone className="h-4 w-4 mr-2" />
               Make AI Call
             </button>
-
             <button
-              onClick={openPrepareConfirmModal}
+              onClick={() => setShowPrepareConfirmModal(true)}
               disabled={preparing}
-              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-lg font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-lg font-medium shadow-sm hover:bg-tangerine-600 transition-all disabled:opacity-50"
             >
               <Sparkles className="h-4 w-4 mr-2" />
               {preparing ? "Preparing..." : "Create Customer Strategy"}
             </button>
             <button
               onClick={openScheduleModal}
-              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-lg font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all"
+              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-lg font-medium shadow-sm hover:bg-tangerine-600 transition-all"
             >
               <Phone className="h-4 w-4 mr-2" />
               Schedule Automatic Call
             </button>
             <button
               onClick={() => setShowEmailModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-lg font-medium shadow-sm hover:bg-tangerine-600 hover:shadow transition-all"
+              className="inline-flex items-center px-4 py-2 bg-tangerine-500 text-white rounded-lg font-medium shadow-sm hover:bg-tangerine-600 transition-all"
             >
               <Mail className="h-4 w-4 mr-2" />
               Prepare Email
@@ -692,17 +499,12 @@ function CustomerDetail() {
             <div>
               <p className="text-sm text-gray-600">Total Debt</p>
               <p className="text-2xl font-bold text-red-600 mt-1">
-                $
-                {totalDebt.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+                ${totalDebt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <DollarSign className="h-8 w-8 text-red-500" />
           </div>
         </div>
-
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -714,49 +516,40 @@ function CustomerDetail() {
             <CheckCircle className="h-8 w-8 text-green-500" />
           </div>
         </div>
-
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Days Past Due</p>
               <p className="text-2xl font-bold text-red-600 mt-1">
-                {customer?.max_days_past_due ||
-                  Math.max(...debts.map((d) => d.days_past_due || 0), 0)}
+                {customer?.max_days_past_due || Math.max(...debts.map((d) => d.days_past_due || 0), 0)}
               </p>
             </div>
             <AlertCircle className="h-8 w-8 text-red-500" />
           </div>
         </div>
-
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Pending Calls</p>
-              <p className="text-2xl font-bold text-yellow-600 mt-1">
-                {pendingCalls.length}
-              </p>
+              <p className="text-2xl font-bold text-yellow-600 mt-1">{pendingCalls.length}</p>
             </div>
             <Clock className="h-8 w-8 text-yellow-500" />
           </div>
         </div>
       </div>
 
-      {/* Customer Details */}
+      {/* Customer Details + Last Interactions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Customer Information
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Customer Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {customer.date_of_birth && (
                 <div className="flex items-center text-gray-700">
                   <Calendar className="h-5 w-5 mr-3 text-gray-400" />
                   <div>
                     <p className="text-sm text-gray-500">Date of Birth</p>
-                    <p className="font-medium">
-                      {format(new Date(customer.date_of_birth), "MMM d, yyyy")}
-                    </p>
+                    <p className="font-medium">{format(new Date(customer.date_of_birth), "MMM d, yyyy")}</p>
                   </div>
                 </div>
               )}
@@ -836,11 +629,7 @@ function CustomerDetail() {
                   <div>
                     <p className="text-sm text-gray-500">Annual Income</p>
                     <p className="font-medium">
-                      $
-                      {customer.annual_income.toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      ${customer.annual_income.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
@@ -849,29 +638,20 @@ function CustomerDetail() {
                 <div className="flex items-center text-gray-700">
                   <Phone className="h-5 w-5 mr-3 text-gray-400" />
                   <div>
-                    <p className="text-sm text-gray-500">
-                      Preferred Contact Method
-                    </p>
-                    <p className="font-medium capitalize">
-                      {customer.preferred_communication_method}
-                    </p>
+                    <p className="text-sm text-gray-500">Preferred Contact Method</p>
+                    <p className="font-medium capitalize">{customer.preferred_communication_method}</p>
                   </div>
                 </div>
               )}
-              {(customer.preferred_contact_time ||
-                customer.preferred_contact_days) && (
+              {(customer.preferred_contact_time || customer.preferred_contact_days) && (
                 <div className="flex items-center text-gray-700">
                   <Clock className="h-5 w-5 mr-3 text-gray-400" />
                   <div>
-                    <p className="text-sm text-gray-500">
-                      Preferred Contact Time
-                    </p>
+                    <p className="text-sm text-gray-500">Preferred Contact Time</p>
                     <p className="font-medium">
-                      {customer.preferred_contact_time &&
-                      customer.preferred_contact_days
+                      {customer.preferred_contact_time && customer.preferred_contact_days
                         ? `${customer.preferred_contact_time}, ${customer.preferred_contact_days}`
-                        : customer.preferred_contact_time ||
-                          customer.preferred_contact_days}
+                        : customer.preferred_contact_time || customer.preferred_contact_days}
                     </p>
                   </div>
                 </div>
@@ -880,20 +660,17 @@ function CustomerDetail() {
             {customer.notes && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <p className="text-sm text-gray-500 mb-1">Notes</p>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                  {customer.notes}
-                </p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{customer.notes}</p>
               </div>
             )}
           </div>
         </div>
 
+        {/* Last Interactions */}
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Last Interactions
-              </h2>
+              <h2 className="text-xl font-semibold text-gray-900">Last Interactions</h2>
               <Link
                 to={`/customer/${id}/call-history`}
                 className="inline-flex items-center px-3 py-1.5 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
@@ -902,298 +679,59 @@ function CustomerDetail() {
                 View All
               </Link>
             </div>
-            {scheduledCalls.length === 0 &&
-            plannedEmails.length === 0 &&
-            communications.length === 0 ? (
+            {scheduledCalls.length === 0 && plannedEmails.length === 0 && communications.length === 0 ? (
               <p className="text-gray-500 text-sm">No interactions</p>
             ) : (
               <div className="space-y-3">
                 {[
-                  ...scheduledCalls.map((call) => ({
-                    ...call,
-                    interactionType: "call",
-                  })),
-                  ...plannedEmails.map((email) => ({
-                    ...email,
-                    interactionType: "email",
-                  })),
-                  ...communications.map((comm) => ({
-                    ...comm,
-                    interactionType: "communication",
-                  })),
+                  ...scheduledCalls.map((call) => ({ ...call, interactionType: "call" })),
+                  ...plannedEmails.map((email) => ({ ...email, interactionType: "email" })),
+                  ...communications.map((comm) => ({ ...comm, interactionType: "communication" })),
                 ]
-                  .filter((item) => item.status !== "cancelled") // Filter out cancelled interactions
+                  .filter((item) => item.status !== "cancelled")
                   .sort((a, b) => {
-                    // Sort by scheduled_time/sent_at or created_at, most recent first
-                    const dateA = a.scheduled_time
-                      ? new Date(a.scheduled_time)
-                      : a.sent_at
-                        ? new Date(a.sent_at)
-                        : a.timestamp
-                          ? new Date(a.timestamp)
-                          : new Date(a.created_at);
-                    const dateB = b.scheduled_time
-                      ? new Date(b.scheduled_time)
-                      : b.sent_at
-                        ? new Date(b.sent_at)
-                        : b.timestamp
-                          ? new Date(b.timestamp)
-                          : new Date(b.created_at);
-                    return dateB - dateA;
+                    const getDate = (item) =>
+                      item.scheduled_time
+                        ? new Date(item.scheduled_time)
+                        : item.sent_at
+                        ? new Date(item.sent_at)
+                        : item.timestamp
+                        ? new Date(item.timestamp)
+                        : new Date(item.created_at);
+                    return getDate(b) - getDate(a);
                   })
                   .slice(0, 3)
                   .map((item) => {
                     if (item.interactionType === "email") {
-                      const email = item;
-                      return (
-                        <div
-                          key={`email_${email.id}`}
-                          className={`border border-gray-200 rounded-lg p-3 ${
-                            email.status === "planned"
-                              ? "bg-purple-50"
-                              : email.status === "sent"
-                                ? "bg-green-50"
-                                : "bg-gray-50"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center space-x-2">
-                              <Mail className="h-4 w-4 text-gray-500" />
-                              <span className="text-sm font-medium text-gray-900">
-                                {email.sent_at
-                                  ? format(
-                                      new Date(email.sent_at),
-                                      "MMM d, yyyy h:mm a",
-                                    )
-                                  : email.scheduled_send_time
-                                    ? format(
-                                        new Date(email.scheduled_send_time),
-                                        "MMM d, yyyy h:mm a",
-                                      )
-                                    : email.created_at
-                                      ? format(
-                                          new Date(email.created_at),
-                                          "MMM d, yyyy h:mm a",
-                                        )
-                                      : "Not scheduled yet"}
-                              </span>
-                              <span className="text-xs text-gray-500 uppercase">
-                                {email.communication_type}
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(
-                                  email.status,
-                                )}`}
-                              >
-                                {email.status}
-                              </span>
-                              {email.status === "planned" && (
-                                <button
-                                  onClick={() => handleSendEmail(email.id)}
-                                  className="text-tangerine-500 hover:text-tangerine-600 text-xs font-medium"
-                                  title="Send email"
-                                >
-                                  Send
-                                </button>
-                              )}
-                              {email.status === "planned" && (
-                                <button
-                                  onClick={() =>
-                                    handleCancelCallClick(`email_${email.id}`)
-                                  }
-                                  className="text-red-600 hover:text-red-800"
-                                  title="Cancel email"
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                          {email.subject && (
-                            <p className="text-xs font-medium text-gray-700 mt-1">
-                              Subject: {email.subject}
-                            </p>
-                          )}
-                          {email.content && (
-                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                              {email.content.substring(0, 100)}...
-                            </p>
-                          )}
-                        </div>
-                      );
-                    } else if (item.interactionType === "communication") {
-                      const comm = item;
-                      return (
-                        <div
-                          key={`comm_${comm.id}`}
-                          className={`border border-gray-200 rounded-lg p-3 ${
-                            comm.outcome === "no_answer" || comm.outcome === "no answer"
-                              ? "bg-red-50"
-                              : "bg-green-50"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center space-x-2">
-                              <Phone className={`h-4 w-4 ${comm.outcome === "no_answer" || comm.outcome === "no answer" ? "text-red-600" : "text-green-600"}`} />
-                              <span className="text-sm font-medium text-gray-900">
-                                {comm.timestamp
-                                  ? format(
-                                      new Date(comm.timestamp),
-                                      "MMM d, yyyy h:mm a",
-                                    )
-                                  : "Unknown time"}
-                              </span>
-                            </div>
-                            <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(comm.outcome)}`}>
-                              {comm.outcome || "completed"}
-                            </span>
-                          </div>
-                          {comm.notes && (
-                            <p className="text-xs text-gray-600 mt-1 line-clamp-5">
-                              {comm.notes}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    } else {
-                      const call = item;
-                      return (
-                        <div
-                          key={call.id}
-                          className={`border border-gray-200 rounded-lg p-3 ${
-                            call.status === "planned"
-                              ? "bg-purple-50"
-                              : call.status === "pending"
-                                ? "bg-yellow-50"
-                                : call.status === "completed"
-                                  ? "bg-green-50"
-                                  : "bg-gray-50"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center space-x-2">
-                              <Phone className="h-4 w-4 text-gray-500" />
-                              <span className="text-sm font-medium text-gray-900">
-                                {call.scheduled_time
-                                  ? format(
-                                      new Date(call.scheduled_time),
-                                      "MMM d, yyyy h:mm a",
-                                    )
-                                  : call.created_at
-                                    ? format(
-                                        new Date(call.created_at),
-                                        "MMM d, yyyy h:mm a",
-                                      )
-                                    : "Not scheduled yet"}
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(
-                                  call.status,
-                                )}`}
-                              >
-                                {call.status === "pending"
-                                  ? "automatic"
-                                  : call.status}
-                              </span>
-                              {call.status === "planned" && (
-                                <button
-                                  onClick={async () => {
-                                    // Get planning script for this call
-                                    try {
-                                      const scriptsResponse = await api.get(
-                                        `/customers/${id}/call-planning-scripts`,
-                                        {
-                                          params: {
-                                            scheduled_call_id: call.id,
-                                          },
-                                        },
-                                      );
-                                      if (scriptsResponse.data.length > 0) {
-                                        const script = scriptsResponse.data[0];
-                                        setSuggestedTime(script.suggested_time);
-                                        setSuggestedDay(script.suggested_day);
-                                      }
-                                      setSchedulingPlannedCallId(call.id);
-                                      setShowScheduleModal(true);
-                                      setScheduleNotes(
-                                        `Scheduling planned call ${call.id}`,
-                                      );
-                                    } catch (err) {
-                                      setSchedulingPlannedCallId(call.id);
-                                      setShowScheduleModal(true);
-                                    }
-                                  }}
-                                  className="text-tangerine-500 hover:text-tangerine-600 text-xs font-medium"
-                                  title="Schedule this call"
-                                >
-                                  Schedule
-                                </button>
-                              )}
-                              {(call.status === "pending" ||
-                                call.status === "planned") && (
-                                <button
-                                  onClick={() => handleCancelCallClick(call.id)}
-                                  className="text-red-600 hover:text-red-800"
-                                  title="Cancel call"
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                          {call.planning_script || call.planning_file_path ? (
-                            <div className="mt-2 p-2 bg-white rounded border border-gray-200">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs font-medium text-gray-700">
-                                  Planning Script
-                                </span>
-                                {call.planning_script && (
-                                  <button
-                                    onClick={() => {
-                                      setSelectedScript(call.planning_script);
-                                      setShowScriptModal(true);
-                                    }}
-                                    className="text-xs text-tangerine-500 hover:text-primary-700"
-                                  >
-                                    View
-                                  </button>
-                                )}
-                              </div>
-                              {call.planning_script?.suggested_time && (
-                                <p className="text-xs text-gray-500">
-                                  Suggested:{" "}
-                                  {call.planning_script.suggested_time}
-                                  {call.planning_script.suggested_day &&
-                                    ` on ${call.planning_script.suggested_day}`}
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            call.status === "planned" &&
-                            !call.planning_script &&
-                            !call.planning_file_path && (
-                              <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
-                                <div className="flex items-center space-x-2">
-                                  <Clock className="h-3 w-3 text-yellow-600 animate-spin" />
-                                  <span className="text-xs text-yellow-700">
-                                    Generating planning script...
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                          )}
-                          {call.notes && (
-                            <p className="text-xs text-gray-600 mt-1 line-clamp-5">
-                              {call.notes}
-                            </p>
-                          )}
-                        </div>
-                      );
+                      return <EmailInteractionCard key={`email_${item.id}`} email={item} onSend={handleSendEmail} onCancel={handleCancelCallClick} getStatusBadge={getStatusBadge} />;
                     }
+                    if (item.interactionType === "communication") {
+                      return <CommunicationCard key={`comm_${item.id}`} comm={item} getStatusBadge={getStatusBadge} />;
+                    }
+                    return (
+                      <ScheduledCallCard
+                        key={item.id}
+                        call={item}
+                        onCancel={handleCancelCallClick}
+                        onSchedule={async (callId) => {
+                          try {
+                            const scriptsResponse = await api.get(`/customers/${id}/call-planning-scripts`, { params: { scheduled_call_id: callId } });
+                            if (scriptsResponse.data.length > 0) {
+                              setSuggestedTime(scriptsResponse.data[0].suggested_time);
+                              setSuggestedDay(scriptsResponse.data[0].suggested_day);
+                            }
+                          } catch {}
+                          setSchedulingPlannedCallId(callId);
+                          setShowScheduleModal(true);
+                          setScheduleNotes(`Scheduling planned call ${callId}`);
+                        }}
+                        onViewScript={(script) => {
+                          setSelectedScript(script);
+                          setShowScriptModal(true);
+                        }}
+                        getStatusBadge={getStatusBadge}
+                      />
+                    );
                   })}
               </div>
             )}
@@ -1211,66 +749,35 @@ function CustomerDetail() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Original Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Current Balance
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Days Past Due
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Due Date
-                  </th>
+                  {["Type", "Original Amount", "Current Balance", "Status", "Days Past Due", "Due Date"].map((h) => (
+                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {debts.map((debt) => (
                   <tr key={debt.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {debt.debt_type}
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{debt.debt_type}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      $
-                      {debt.original_amount?.toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      ${debt.original_amount?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600">
-                      $
-                      {debt.current_balance?.toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      ${debt.current_balance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded ${
-                          debt.status === "active"
-                            ? "bg-red-100 text-red-800"
-                            : debt.status === "paid_off"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
+                      <span className={`px-2 py-1 text-xs font-medium rounded ${
+                        debt.status === "active" ? "bg-red-100 text-red-800"
+                        : debt.status === "paid_off" ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                      }`}>
                         {debt.status}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{debt.days_past_due || 0}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {debt.days_past_due || 0}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {debt.due_date
-                        ? format(new Date(debt.due_date), "MMM d, yyyy")
-                        : "N/A"}
+                      {debt.due_date ? format(new Date(debt.due_date), "MMM d, yyyy") : "N/A"}
                     </td>
                   </tr>
                 ))}
@@ -1280,175 +787,76 @@ function CustomerDetail() {
         )}
       </div>
 
-      {/* Prepare Call Modal */}
-      {showPrepareModal && prepareResult && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Call Preparation Script
-              </h3>
-              <button
-                onClick={() => {
-                  setShowPrepareModal(false);
-                  setPrepareResult(null);
-                  setPrepareScriptExpanded(false);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              {prepareResult.suggested_time && (
-                <div className="bg-tangerine-50 border border-tangerine-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-tangerine-900">
-                    Suggested Contact Time: {prepareResult.suggested_time}
-                    {prepareResult.suggested_day &&
-                      ` on ${prepareResult.suggested_day}`}
-                  </p>
-                </div>
-              )}
-              <div>
-                <button
-                  onClick={() =>
-                    setPrepareScriptExpanded(!prepareScriptExpanded)
-                  }
-                  className="w-full flex items-center text-left mb-2"
-                >
-                  {prepareScriptExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-gray-400 mr-2" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-gray-400 mr-2" />
-                  )}
-                  <span className="text-sm font-medium text-gray-700">
-                    Call Preparation Script
-                  </span>
-                </button>
-                {prepareScriptExpanded && (
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <div className="prose max-w-none">
-                      <ReactMarkdown>{prepareResult.strategy}</ReactMarkdown>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => {
-                  setShowPrepareModal(false);
-                  setPrepareResult(null);
-                  setPrepareScriptExpanded(false);
-                }}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modals */}
+      <CallPlanningStrategyModal
+        script={showScriptModal ? selectedScript : null}
+        onClose={() => { setShowScriptModal(false); setSelectedScript(null); }}
+      />
 
-      {/* Email Modal */}
-      {showEmailModal && customer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Customize Email
-              </h3>
-              <button
-                onClick={() => setShowEmailModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Communication Type
-                </label>
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => setEmailType("email")}
-                    className={`flex-1 px-4 py-2 rounded-lg border-2 transition-colors ${
-                      emailType === "email"
-                        ? "border-tangerine-500 bg-tangerine-50 text-tangerine-700"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <Mail className="h-4 w-4 mx-auto mb-1" />
-                    Email
-                  </button>
-                  <button
-                    onClick={() => setEmailType("sms")}
-                    className={`flex-1 px-4 py-2 rounded-lg border-2 transition-colors ${
-                      emailType === "sms"
-                        ? "border-tangerine-500 bg-tangerine-50 text-tangerine-700"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <Phone className="h-4 w-4 mx-auto mb-1" />
-                    SMS
-                  </button>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600">
-                This will generate a personalized{" "}
-                {emailType === "email" ? "email" : "SMS"} using AI strategy
-                planning.
-              </p>
-            </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowEmailModal(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePrepareEmail}
-                disabled={preparingEmail}
-                className="px-4 py-2 bg-tangerine-500 text-white rounded-full hover:bg-tangerine-600 transition-colors disabled:opacity-50"
-              >
-                {preparingEmail
-                  ? "Preparing..."
-                  : `Create ${emailType === "email" ? "Email" : "SMS"}`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ScheduleCallModal
+        isOpen={showScheduleModal}
+        onClose={closeScheduleModal}
+        onSchedule={handleScheduleCall}
+        suggestedTime={suggestedTime}
+        suggestedDay={suggestedDay}
+        timeSlots={timeSlots}
+        loadingTimeSlots={loadingTimeSlots}
+        selectedTimeSlot={selectedTimeSlot}
+        onSelectTimeSlot={(slot) => { setSelectedTimeSlot(slot); setScheduleDateTime(""); setUseAutoTime(false); }}
+        scheduleDateTime={scheduleDateTime}
+        onScheduleDateTimeChange={(val) => { setScheduleDateTime(val); setSelectedTimeSlot(null); setUseAutoTime(false); }}
+        scheduleNotes={scheduleNotes}
+        onScheduleNotesChange={setScheduleNotes}
+        useAutoTime={useAutoTime}
+        onUseAutoTimeChange={(val) => { setUseAutoTime(val); if (val) { setScheduleDateTime(""); setSelectedTimeSlot(null); } }}
+        scheduling={scheduling}
+        title={schedulingPlannedCallId ? "Schedule Planned Call" : "Schedule Automatic Call"}
+        showTimeSlots={!schedulingPlannedCallId}
+        autoTimeLabel={schedulingPlannedCallId ? "Use time from planning file" : "Let AI choose the best time automatically"}
+      />
 
-      {/* Prepare Call Confirmation Modal */}
+      <EmailModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        emailType={emailType}
+        onEmailTypeChange={setEmailType}
+        onSubmit={handlePrepareEmail}
+        preparing={preparingEmail}
+      />
+
+      <EmailPreviewModal
+        email={showEmailPreviewModal ? previewEmail : null}
+        editing={editingEmail}
+        editedContent={editedEmailContent}
+        editedSubject={editedEmailSubject}
+        saving={savingEmail}
+        onClose={() => { setShowEmailPreviewModal(false); setPreviewEmail(null); setEditingEmail(false); }}
+        onDecline={handleDeclineEmail}
+        onSend={handleSendEmail}
+        onStartEdit={() => { setEditingEmail(true); setEditedEmailContent(previewEmail?.content || ""); setEditedEmailSubject(previewEmail?.subject || ""); }}
+        onCancelEdit={() => { setEditingEmail(false); setEditedEmailContent(previewEmail?.content || ""); setEditedEmailSubject(previewEmail?.subject || ""); }}
+        onSave={handleSaveEditedEmail}
+        onContentChange={setEditedEmailContent}
+        onSubjectChange={setEditedEmailSubject}
+      />
+
+      {/* Create Strategy Confirmation */}
       {showPrepareConfirmModal && customer && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Create Call Strategy
-              </h3>
-              <button
-                onClick={() => setShowPrepareConfirmModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
+              <h3 className="text-xl font-semibold text-gray-900">Create Call Strategy</h3>
+              <button onClick={() => setShowPrepareConfirmModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="h-6 w-6" />
               </button>
             </div>
             <div className="space-y-4">
               <p className="text-gray-700">
                 Do you want to create a call strategy for{" "}
-                <span className="font-semibold text-gray-900">
-                  {customer.first_name} {customer.last_name}
-                </span>
-                ?
+                <span className="font-semibold text-gray-900">{customer.first_name} {customer.last_name}</span>?
               </p>
               <p className="text-sm text-gray-500">
-                This will generate a personalized planning script that you can
-                use to prepare for the call. The script will be generated in the
-                background and will be available shortly.
+                This will generate a personalized planning script in the background.
               </p>
             </div>
             <div className="flex justify-end space-x-3 mt-6">
@@ -1465,7 +873,7 @@ function CustomerDetail() {
               >
                 {preparing ? (
                   <>
-                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                     Creating...
                   </>
                 ) : (
@@ -1480,288 +888,9 @@ function CustomerDetail() {
         </div>
       )}
 
-      {/* Schedule Call Modal */}
-      {showScheduleModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
-              {schedulingPlannedCallId
-                ? "Schedule Planned Call"
-                : "Schedule Automatic Call"}
-            </h3>
-            {suggestedTime && (
-              <div className="mb-4 bg-tangerine-50 border border-tangerine-200 rounded-lg p-3">
-                <p className="text-sm text-tangerine-900">
-                  <strong>Suggested from planning:</strong> {suggestedTime}
-                  {suggestedDay && ` on ${suggestedDay}`}
-                </p>
-              </div>
-            )}
-            <div className="space-y-4">
-              {/* Suggested Time Slots */}
-              {!schedulingPlannedCallId && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Suggested Time Slots (10-minute windows)
-                  </label>
-                  {loadingTimeSlots ? (
-                    <div className="text-center py-4">
-                      <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-tangerine-500"></div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Loading time slots...
-                      </p>
-                    </div>
-                  ) : timeSlots.length > 0 ? (
-                    <div className="space-y-2">
-                      {timeSlots.map((slot, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => {
-                            setSelectedTimeSlot(slot);
-                            setScheduleDateTime("");
-                            setUseAutoTime(false);
-                          }}
-                          className={`w-full text-left px-4 py-3 border-2 rounded-lg transition-colors ${
-                            selectedTimeSlot?.start_time === slot.start_time
-                              ? "border-tangerine-500 bg-tangerine-50"
-                              : "border-gray-200 hover:border-tangerine-300 hover:bg-gray-50"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                {slot.display}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                10-minute window
-                              </p>
-                            </div>
-                            {selectedTimeSlot?.start_time ===
-                              slot.start_time && (
-                              <CheckCircle className="h-5 w-5 text-tangerine-500" />
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">
-                      No time slots available
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Manual Date & Time Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Or Enter Date & Time Manually
-                </label>
-                <input
-                  type="datetime-local"
-                  value={scheduleDateTime}
-                  onChange={(e) => {
-                    setScheduleDateTime(e.target.value);
-                    setSelectedTimeSlot(null);
-                    setUseAutoTime(false);
-                  }}
-                  disabled={useAutoTime}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
-              </div>
-
-              {/* Automatic Time Selection */}
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="useAutoTime"
-                  checked={useAutoTime}
-                  onChange={(e) => {
-                    setUseAutoTime(e.target.checked);
-                    if (e.target.checked) {
-                      setScheduleDateTime("");
-                      setSelectedTimeSlot(null);
-                    }
-                  }}
-                  className="h-4 w-4 text-tangerine-500 focus:ring-tangerine-500 border-gray-300 rounded"
-                />
-                <label
-                  htmlFor="useAutoTime"
-                  className="ml-2 block text-sm text-gray-700"
-                >
-                  {schedulingPlannedCallId
-                    ? "Use time from planning file"
-                    : "Let AI choose the best time automatically"}
-                </label>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes (optional)
-                </label>
-                <textarea
-                  value={scheduleNotes}
-                  onChange={(e) => setScheduleNotes(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent"
-                  placeholder="Add any notes about this call..."
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowScheduleModal(false);
-                  setScheduleDateTime("");
-                  setScheduleNotes("");
-                  setUseAutoTime(false);
-                  setSchedulingPlannedCallId(null);
-                  setSuggestedTime(null);
-                  setSuggestedDay(null);
-                  setSelectedTimeSlot(null);
-                  setTimeSlots([]);
-                }}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleScheduleCall}
-                disabled={scheduling}
-                className="px-4 py-2 bg-tangerine-500 text-white rounded-lg hover:bg-tangerine-600 disabled:opacity-50"
-              >
-                {scheduling ? "Scheduling..." : "Schedule Call"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* View Script Modal */}
-      {showScriptModal && selectedScript && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Call Planning Strategy
-              </h3>
-              <button
-                onClick={() => {
-                  setShowScriptModal(false);
-                  setSelectedScript(null);
-                  setShowRawJson(false);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              {selectedScript.suggested_time && (
-                <div className="bg-tangerine-50 border border-tangerine-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-tangerine-900">
-                    Suggested Contact Time: {selectedScript.suggested_time}
-                    {selectedScript.suggested_day &&
-                      ` on ${selectedScript.suggested_day}`}
-                  </p>
-                </div>
-              )}
-              <div>
-                {(() => {
-                  let parsed = null;
-                  try {
-                    let raw = typeof selectedScript.strategy_content === "string"
-                      ? selectedScript.strategy_content
-                      : JSON.stringify(selectedScript.strategy_content);
-                    raw = raw.replace(/^```[\w]*\n?/, "").replace(/\n?```$/, "").trim();
-                    parsed = JSON.parse(raw);
-                  } catch (e) {}
-
-                  if (!parsed || showRawJson) {
-                    return (
-                      <div>
-                        <pre className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-xs overflow-auto whitespace-pre-wrap break-words">
-                          {(typeof selectedScript.strategy_content === "string"
-                            ? selectedScript.strategy_content
-                            : JSON.stringify(selectedScript.strategy_content, null, 2)
-                          ).replace(/^```[\w]*\n?/, "").replace(/\n?```$/, "").trim()}
-                        </pre>
-                        {parsed && (
-                          <button
-                            onClick={() => setShowRawJson(false)}
-                            className="mt-2 text-xs text-tangerine-500 hover:text-tangerine-600 underline"
-                          >
-                            View Formatted Table
-                          </button>
-                        )}
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div>
-                      <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <tbody className="divide-y divide-gray-100">
-                            {Object.entries(parsed).map(([key, value], idx) => (
-                              <tr key={key} className={idx % 2 === 0 ? "bg-white hover:bg-gray-50" : "bg-gray-50/50 hover:bg-gray-100/60"}>
-                                <td className="px-4 py-3 text-sm font-medium text-gray-500 w-2/5 align-top whitespace-nowrap">
-                                  <span className="inline-flex items-center gap-1.5">
-                                    {formatScriptKey(key)}
-                                    {key === "profile_type" && (
-                                      <Link
-                                        to="/profile-types"
-                                        target="_blank"
-                                        title="Learn about profile types"
-                                        className="text-gray-400 hover:text-tangerine-500 transition-colors"
-                                      >
-                                        <Info className="h-3.5 w-3.5" />
-                                      </Link>
-                                    )}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900 align-top">
-                                  {renderScriptValue(value, key)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      <button
-                        onClick={() => setShowRawJson(true)}
-                        className="mt-3 text-xs text-gray-400 hover:text-gray-600 underline"
-                      >
-                        View Raw JSON
-                      </button>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => {
-                  setShowScriptModal(false);
-                  setSelectedScript(null);
-                  setShowRawJson(false);
-                }}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Cancel Call Confirmation Modal */}
       <ConfirmModal
         isOpen={showCancelCallModal}
-        onClose={() => {
-          setShowCancelCallModal(false);
-          setCallToCancel(null);
-        }}
+        onClose={() => { setShowCancelCallModal(false); setCallToCancel(null); }}
         onConfirm={handleCancelCall}
         title="Cancel Scheduled Call"
         message="Are you sure you want to cancel this scheduled call? This action cannot be undone."
@@ -1770,139 +899,139 @@ function CustomerDetail() {
         confirmButtonClass="bg-red-600 hover:bg-red-700"
         isLoading={false}
       />
+    </div>
+  );
+}
 
-      {/* Email Preview Modal */}
-      {showEmailPreviewModal && previewEmail && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">
-                {previewEmail.communication_type === "email" ? "Email" : "SMS"}{" "}
-                Preview
-              </h3>
-              <button
-                onClick={() => {
-                  setShowEmailPreviewModal(false);
-                  setPreviewEmail(null);
-                  setEditingEmail(false);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
+// ── Small inline sub-components for the Last Interactions sidebar ──────────
+
+function EmailInteractionCard({ email, onSend, onCancel, getStatusBadge }) {
+  return (
+    <div className={`border border-gray-200 rounded-lg p-3 ${
+      email.status === "planned" ? "bg-purple-50" : email.status === "sent" ? "bg-green-50" : "bg-gray-50"
+    }`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center space-x-2">
+          <Mail className="h-4 w-4 text-gray-500" />
+          <span className="text-sm font-medium text-gray-900">
+            {email.sent_at
+              ? format(new Date(email.sent_at), "MMM d, yyyy h:mm a")
+              : email.scheduled_send_time
+              ? format(new Date(email.scheduled_send_time), "MMM d, yyyy h:mm a")
+              : email.created_at
+              ? format(new Date(email.created_at), "MMM d, yyyy h:mm a")
+              : "Not scheduled yet"}
+          </span>
+          <span className="text-xs text-gray-500 uppercase">{email.communication_type}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(email.status)}`}>
+            {email.status}
+          </span>
+          {email.status === "planned" && (
+            <button onClick={() => onSend(email.id)} className="text-tangerine-500 hover:text-tangerine-600 text-xs font-medium">
+              Send
+            </button>
+          )}
+          {email.status === "planned" && (
+            <button onClick={() => onCancel(`email_${email.id}`)} className="text-red-600 hover:text-red-800">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+      {email.subject && <p className="text-xs font-medium text-gray-700 mt-1">Subject: {email.subject}</p>}
+      {email.content && <p className="text-xs text-gray-600 mt-1 line-clamp-2">{email.content.substring(0, 100)}...</p>}
+    </div>
+  );
+}
+
+function CommunicationCard({ comm, getStatusBadge }) {
+  const isNoAnswer = comm.outcome === "no_answer" || comm.outcome === "no answer";
+  return (
+    <div className={`border border-gray-200 rounded-lg p-3 ${isNoAnswer ? "bg-red-50" : "bg-green-50"}`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center space-x-2">
+          <Phone className={`h-4 w-4 ${isNoAnswer ? "text-red-600" : "text-green-600"}`} />
+          <span className="text-sm font-medium text-gray-900">
+            {comm.timestamp ? format(new Date(comm.timestamp), "MMM d, yyyy h:mm a") : "Unknown time"}
+          </span>
+        </div>
+        <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(comm.outcome)}`}>
+          {comm.outcome || "completed"}
+        </span>
+      </div>
+      {comm.notes && <p className="text-xs text-gray-600 mt-1 line-clamp-5">{comm.notes}</p>}
+    </div>
+  );
+}
+
+function ScheduledCallCard({ call, onCancel, onSchedule, onViewScript, getStatusBadge }) {
+  return (
+    <div className={`border border-gray-200 rounded-lg p-3 ${
+      call.status === "planned" ? "bg-purple-50"
+      : call.status === "pending" ? "bg-yellow-50"
+      : call.status === "completed" ? "bg-green-50"
+      : "bg-gray-50"
+    }`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center space-x-2">
+          <Phone className="h-4 w-4 text-gray-500" />
+          <span className="text-sm font-medium text-gray-900">
+            {call.scheduled_time
+              ? format(new Date(call.scheduled_time), "MMM d, yyyy h:mm a")
+              : call.created_at
+              ? format(new Date(call.created_at), "MMM d, yyyy h:mm a")
+              : "Not scheduled yet"}
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(call.status)}`}>
+            {call.status === "pending" ? "automatic" : call.status}
+          </span>
+          {call.status === "planned" && (
+            <button
+              onClick={() => onSchedule(call.id)}
+              className="text-tangerine-500 hover:text-tangerine-600 text-xs font-medium"
+            >
+              Schedule
+            </button>
+          )}
+          {(call.status === "pending" || call.status === "planned") && (
+            <button onClick={() => onCancel(call.id)} className="text-red-600 hover:text-red-800">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+      {call.planning_script || call.planning_file_path ? (
+        <div className="mt-2 p-2 bg-white rounded border border-gray-200">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-gray-700">Planning Script</span>
+            {call.planning_script && (
+              <button onClick={() => onViewScript(call.planning_script)} className="text-xs text-tangerine-500 hover:text-tangerine-700">
+                View
               </button>
-            </div>
-
-            <div className="space-y-4">
-              {previewEmail.communication_type === "email" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Subject
-                  </label>
-                  {editingEmail ? (
-                    <input
-                      type="text"
-                      value={editedEmailSubject}
-                      onChange={(e) => setEditedEmailSubject(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent"
-                      placeholder="Email subject"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900 bg-gray-50 p-3 rounded-lg">
-                      {previewEmail.subject || "No subject"}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {previewEmail.communication_type === "email"
-                    ? "Email"
-                    : "SMS"}{" "}
-                  Content
-                </label>
-                {editingEmail ? (
-                  <textarea
-                    value={editedEmailContent}
-                    onChange={(e) => setEditedEmailContent(e.target.value)}
-                    rows={15}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tangerine-500 focus:border-transparent font-mono text-sm"
-                    placeholder="Email content"
-                  />
-                ) : (
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <div className="prose max-w-none whitespace-pre-wrap text-sm">
-                      {previewEmail.content}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
-              {editingEmail ? (
-                <>
-                  <button
-                    onClick={() => {
-                      setEditingEmail(false);
-                      setEditedEmailContent(previewEmail.content);
-                      setEditedEmailSubject(previewEmail.subject || "");
-                    }}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveEditedEmail}
-                    disabled={savingEmail}
-                    className="px-4 py-2 bg-tangerine-500 text-white rounded-lg hover:bg-tangerine-600 transition-colors disabled:opacity-50 flex items-center space-x-2"
-                  >
-                    {savingEmail ? (
-                      <>
-                        <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4" />
-                        <span>Save</span>
-                      </>
-                    )}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={handleDeclineEmail}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
-                  >
-                    <X className="h-4 w-4" />
-                    <span>Decline</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingEmail(true);
-                      setEditedEmailContent(previewEmail.content);
-                      setEditedEmailSubject(previewEmail.subject || "");
-                    }}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2"
-                  >
-                    <Edit className="h-4 w-4" />
-                    <span>Edit</span>
-                  </button>
-                  <button
-                    onClick={() => handleSendEmail(previewEmail.id)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                  >
-                    <Check className="h-4 w-4" />
-                    <span>Confirm & Send</span>
-                  </button>
-                </>
-              )}
+            )}
+          </div>
+          {call.planning_script?.suggested_time && (
+            <p className="text-xs text-gray-500">
+              Suggested: {call.planning_script.suggested_time}
+              {call.planning_script.suggested_day && ` on ${call.planning_script.suggested_day}`}
+            </p>
+          )}
+        </div>
+      ) : (
+        call.status === "planned" && !call.planning_script && !call.planning_file_path && (
+          <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-3 w-3 text-yellow-600 animate-spin" />
+              <span className="text-xs text-yellow-700">Generating planning script...</span>
             </div>
           </div>
-        </div>
+        )
       )}
+      {call.notes && <p className="text-xs text-gray-600 mt-1 line-clamp-5">{call.notes}</p>}
     </div>
   );
 }
