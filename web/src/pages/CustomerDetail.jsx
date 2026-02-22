@@ -23,6 +23,7 @@ import {
   X,
   Sparkles,
   AlertCircle,
+  Globe,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -648,6 +649,15 @@ function CustomerDetail() {
                         ? `${customer.preferred_contact_time}, ${customer.preferred_contact_days}`
                         : customer.preferred_contact_time || customer.preferred_contact_days}
                     </p>
+                  </div>
+                </div>
+              )}
+              {customer.preferred_language && (
+                <div className="flex items-center text-gray-700">
+                  <Globe className="h-5 w-5 mr-3 text-gray-400" />
+                  <div>
+                    <p className="text-sm text-gray-500">Preferred Language</p>
+                    <p className="font-medium">{customer.preferred_language}</p>
                   </div>
                 </div>
               )}

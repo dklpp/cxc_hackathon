@@ -1,0 +1,117 @@
+{
+    "customer": {
+        "first_name": "Carlos",
+        "last_name": "Rivera",
+        "middle_name": "Antonio",
+        "date_of_birth": "1979-07-22",
+        "ssn": "421-55-9012",
+        "email": "carlos.rivera@outlook.com",
+        "phone_primary": "+17135552341",
+        "phone_secondary": "+17135552342",
+        "address_line1": "4821 Westheimer Road",
+        "address_line2": "Suite 3",
+        "city": "Houston",
+        "state": "TX",
+        "zip_code": "77056",
+        "country": "USA",
+        "employer_name": "Rivera Plumbing LLC",
+        "employment_status": "self_employed",
+        "annual_income": 88000.0,
+        "account_status": "active",
+        "credit_score": 640,
+        "notes": "Small business owner. Seasonal income fluctuations. Missed payments during slow winter months. Generally cooperative and communicative."
+    },
+    "debts": [
+        {
+            "debt_type": "business_loan",
+            "original_amount": 25000.0,
+            "current_balance": 18400.0,
+            "interest_rate": 11.5,
+            "minimum_payment": 620.0,
+            "issue_date": "2022-09-01",
+            "due_date": "2025-03-01",
+            "last_payment_date": "2024-11-15",
+            "status": "active",
+            "days_past_due": 45,
+            "account_number": "BL-3311-7789",
+            "reference_number": "REF-CR-2022-001",
+            "notes": "Equipment financing for new truck and tools."
+        },
+        {
+            "debt_type": "credit_card",
+            "original_amount": 6000.0,
+            "current_balance": 5200.0,
+            "interest_rate": 22.99,
+            "minimum_payment": 155.0,
+            "issue_date": "2023-05-01",
+            "due_date": "2025-03-15",
+            "last_payment_date": "2024-11-20",
+            "status": "active",
+            "days_past_due": 45,
+            "account_number": "CC-7744-2211",
+            "reference_number": "REF-CR-2023-002",
+            "notes": "Business expenses card. Balance grew during slow season."
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "business_loan",
+            "amount": 620.0,
+            "payment_date": "2024-11-15",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-CR-2024-11-001",
+            "status": "done",
+            "notes": "November payment"
+        },
+        {
+            "debt_type": "business_loan",
+            "amount": 620.0,
+            "payment_date": "2024-10-14",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-CR-2024-10-001",
+            "status": "done",
+            "notes": "October payment"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 155.0,
+            "payment_date": "2024-11-20",
+            "payment_method": "check",
+            "transaction_id": "TXN-CR-2024-11-002",
+            "status": "done",
+            "notes": "Minimum payment"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-8821-4499",
+            "routing_number": "113000023",
+            "bank_name": "Frost Bank",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "Business checking account"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 240,
+            "contact_phone": "+17135552341",
+            "outcome": "payment_promised",
+            "notes": "Customer explained slow season. Promised to pay in full by March 15 when spring contracts begin.",
+            "timestamp": "2025-01-20T10:00:00",
+            "agent_id": "agent_002"
+        },
+        {
+            "communication_type": "email",
+            "direction": "outbound",
+            "contact_email": "carlos.rivera@outlook.com",
+            "outcome": "sent",
+            "notes": "Sent overdue notice and payment arrangement options.",
+            "timestamp": "2025-01-10T09:00:00",
+            "agent_id": "system_auto"
+        }
+    ]
+}

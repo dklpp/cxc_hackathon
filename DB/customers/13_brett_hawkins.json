@@ -1,0 +1,108 @@
+{
+    "customer": {
+        "first_name": "Brett",
+        "last_name": "Hawkins",
+        "middle_name": null,
+        "date_of_birth": "1965-12-01",
+        "ssn": "147-25-8369",
+        "email": "bhawkins55@yahoo.com",
+        "phone_primary": "+16025557732",
+        "phone_secondary": "+16025557733",
+        "address_line1": "9340 E Camelback Road",
+        "address_line2": null,
+        "city": "Scottsdale",
+        "state": "AZ",
+        "zip_code": "85251",
+        "country": "USA",
+        "employer_name": null,
+        "employment_status": "retired",
+        "annual_income": 42000.0,
+        "account_status": "active",
+        "credit_score": 601,
+        "notes": "Retired. Fixed income from Social Security and small pension. Accumulated credit card debt over several years. Willing to pay but budget is very tight."
+    },
+    "debts": [
+        {
+            "debt_type": "credit_card",
+            "original_amount": 9500.0,
+            "current_balance": 9100.0,
+            "interest_rate": 24.99,
+            "minimum_payment": 275.0,
+            "issue_date": "2020-03-01",
+            "due_date": "2025-02-20",
+            "last_payment_date": "2024-10-18",
+            "status": "active",
+            "days_past_due": 75,
+            "account_number": "CC-5566-8899",
+            "reference_number": "REF-BH-2020-001",
+            "notes": "Old card, high APR. Balance barely moving due to interest."
+        },
+        {
+            "debt_type": "medical",
+            "original_amount": 3200.0,
+            "current_balance": 3200.0,
+            "interest_rate": 0.0,
+            "minimum_payment": 100.0,
+            "issue_date": "2024-08-01",
+            "due_date": "2025-02-01",
+            "last_payment_date": null,
+            "status": "active",
+            "days_past_due": 90,
+            "account_number": "MED-0012-3344",
+            "reference_number": "REF-BH-2024-002",
+            "notes": "Hospital bill from hip surgery. Patient couldn't afford co-pay."
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "credit_card",
+            "amount": 275.0,
+            "payment_date": "2024-10-18",
+            "payment_method": "check",
+            "transaction_id": "TXN-BH-2024-10-001",
+            "status": "done",
+            "notes": "Mailed check payment"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 275.0,
+            "payment_date": "2024-09-16",
+            "payment_method": "check",
+            "transaction_id": "TXN-BH-2024-09-001",
+            "status": "done",
+            "notes": "Mailed check payment"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-2233-5577",
+            "routing_number": "122105155",
+            "bank_name": "Wells Fargo",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "Receives Social Security direct deposit"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 510,
+            "contact_phone": "+16025557732",
+            "outcome": "hardship_identified",
+            "notes": "Customer is on fixed income. Cannot increase payments. Agreed to minimum payment plan. Prefers letters and calls - no email.",
+            "timestamp": "2025-01-22T11:00:00",
+            "agent_id": "agent_001"
+        },
+        {
+            "communication_type": "letter",
+            "direction": "outbound",
+            "contact_phone": null,
+            "outcome": "sent",
+            "notes": "Mailed hardship program information and payment plan agreement.",
+            "timestamp": "2025-01-24T08:00:00",
+            "agent_id": "agent_001"
+        }
+    ]
+}

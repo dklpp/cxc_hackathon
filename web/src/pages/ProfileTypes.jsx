@@ -168,13 +168,6 @@ function ProfileTypes() {
                     <span className="text-sm font-semibold text-gray-800">{p.successRate}</span>
                   </div>
                 </div>
-                {p.warning && (
-                  <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-xs text-red-700">
-                      <span className="font-semibold">Note: </span>{p.warning}
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           </div>

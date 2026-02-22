@@ -1,0 +1,111 @@
+{
+    "customer": {
+        "first_name": "Priya",
+        "last_name": "Patel",
+        "middle_name": "Sunita",
+        "date_of_birth": "1988-09-14",
+        "ssn": "258-36-4719",
+        "email": "priya.patel@techstartup.io",
+        "phone_primary": "+16503334455",
+        "phone_secondary": null,
+        "address_line1": "1080 Castro Street",
+        "address_line2": "Apt 2A",
+        "city": "San Francisco",
+        "state": "CA",
+        "zip_code": "94114",
+        "country": "USA",
+        "employer_name": "NovaByte Inc.",
+        "employment_status": "employed",
+        "annual_income": 185000.0,
+        "account_status": "active",
+        "credit_score": 810,
+        "notes": "Senior software engineer. High income, high cost of living. Forgot to update payment method after switching banks. First missed payment in 5+ years."
+    },
+    "debts": [
+        {
+            "debt_type": "mortgage",
+            "original_amount": 750000.0,
+            "current_balance": 698000.0,
+            "interest_rate": 6.75,
+            "minimum_payment": 4870.0,
+            "issue_date": "2021-04-01",
+            "due_date": "2025-02-01",
+            "last_payment_date": "2024-12-28",
+            "status": "active",
+            "days_past_due": 20,
+            "account_number": "MTG-0099-1122",
+            "reference_number": "REF-PP-2021-001",
+            "notes": "30-year fixed mortgage. Single missed payment."
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "mortgage",
+            "amount": 4870.0,
+            "payment_date": "2024-12-28",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-PP-2024-12-001",
+            "status": "done",
+            "notes": "December payment - on time"
+        },
+        {
+            "debt_type": "mortgage",
+            "amount": 4870.0,
+            "payment_date": "2024-11-29",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-PP-2024-11-001",
+            "status": "done",
+            "notes": "November payment - on time"
+        },
+        {
+            "debt_type": "mortgage",
+            "amount": 4870.0,
+            "payment_date": "2025-02-01",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-PP-2025-02-001",
+            "status": "failed",
+            "notes": "Bank switch - old account closed, new routing not updated"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-7766-3344",
+            "routing_number": "321081669",
+            "bank_name": "Silicon Valley Bank",
+            "is_active": false,
+            "is_primary": false,
+            "notes": "Old account - now closed"
+        },
+        {
+            "account_type": "checking",
+            "account_number": "CHK-8899-5566",
+            "routing_number": "121042882",
+            "bank_name": "First Republic Bank",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "New primary account"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "email",
+            "direction": "outbound",
+            "contact_email": "priya.patel@techstartup.io",
+            "outcome": "opened",
+            "notes": "Sent missed payment notification. Customer responded quickly by email explaining bank switch.",
+            "timestamp": "2025-02-03T08:00:00",
+            "agent_id": "system_auto"
+        },
+        {
+            "communication_type": "call",
+            "direction": "inbound",
+            "duration_seconds": 90,
+            "contact_phone": "+16503334455",
+            "outcome": "resolved",
+            "notes": "Customer called immediately after email. Updated bank info. Processed payment same day. Very apologetic.",
+            "timestamp": "2025-02-03T09:45:00",
+            "agent_id": "agent_005"
+        }
+    ]
+}

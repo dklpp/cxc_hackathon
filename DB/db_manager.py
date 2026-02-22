@@ -87,7 +87,8 @@ class Customer(Base):
     preferred_communication_method = Column(Enum(CommunicationType), nullable=True)  # Preferred way to contact customer
     preferred_contact_time = Column(String(100), nullable=True)  # Preferred time range (e.g., "9 AM - 5 PM", "Evenings only")
     preferred_contact_days = Column(String(100), nullable=True)  # Preferred days (e.g., "Weekdays", "Monday-Friday", "Any day")
-    
+    preferred_language = Column(String(50), nullable=True)  # Preferred language (e.g., "English", "French")
+
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

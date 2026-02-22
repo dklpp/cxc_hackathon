@@ -192,6 +192,7 @@ class CustomerResponse(BaseModel):
     preferred_communication_method: Optional[str]
     preferred_contact_time: Optional[str] = None
     preferred_contact_days: Optional[str] = None
+    preferred_language: Optional[str] = None
     total_debt: Optional[float] = None
 
 class DebtResponse(BaseModel):
@@ -343,6 +344,7 @@ async def get_customer_detail(customer_id: int):
                 "preferred_communication_method": customer.preferred_communication_method.value if customer.preferred_communication_method else None,
                 "preferred_contact_time": customer.preferred_contact_time,
                 "preferred_contact_days": customer.preferred_contact_days,
+                "preferred_language": customer.preferred_language,
                 "notes": customer.notes,
                 "created_at": customer.created_at.isoformat() if customer.created_at else None,
                 "updated_at": customer.updated_at.isoformat() if customer.updated_at else None,

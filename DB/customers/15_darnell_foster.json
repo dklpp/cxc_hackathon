@@ -1,0 +1,150 @@
+{
+    "customer": {
+        "first_name": "Darnell",
+        "last_name": "Foster",
+        "middle_name": "Eugene",
+        "date_of_birth": "1983-05-19",
+        "ssn": "369-47-5820",
+        "email": "darnell.foster@comcast.net",
+        "phone_primary": "+13125558821",
+        "phone_secondary": "+13125558822",
+        "address_line1": "2714 S Michigan Avenue",
+        "address_line2": null,
+        "city": "Chicago",
+        "state": "IL",
+        "zip_code": "60616",
+        "country": "USA",
+        "employer_name": "Chicago Transit Authority",
+        "employment_status": "employed",
+        "annual_income": 58000.0,
+        "account_status": "active",
+        "credit_score": 558,
+        "notes": "Bus driver. Laid off for 8 months in 2023 during contract dispute, accumulated significant debt. Back to work since April 2024, trying to rebuild. Motivated to get back on track."
+    },
+    "debts": [
+        {
+            "debt_type": "credit_card",
+            "original_amount": 7200.0,
+            "current_balance": 6800.0,
+            "interest_rate": 27.99,
+            "minimum_payment": 205.0,
+            "issue_date": "2019-11-01",
+            "due_date": "2025-03-05",
+            "last_payment_date": "2025-01-08",
+            "status": "active",
+            "days_past_due": 0,
+            "account_number": "CC-3322-9988",
+            "reference_number": "REF-DF-2019-001",
+            "notes": "Maxed out during layoff period. Now making minimum payments."
+        },
+        {
+            "debt_type": "personal_loan",
+            "original_amount": 8000.0,
+            "current_balance": 7400.0,
+            "interest_rate": 16.0,
+            "minimum_payment": 230.0,
+            "issue_date": "2023-07-01",
+            "due_date": "2025-03-01",
+            "last_payment_date": "2024-12-15",
+            "status": "active",
+            "days_past_due": 20,
+            "account_number": "PL-4455-7711",
+            "reference_number": "REF-DF-2023-002",
+            "notes": "Emergency loan taken during layoff to cover rent."
+        },
+        {
+            "debt_type": "auto_loan",
+            "original_amount": 18000.0,
+            "current_balance": 14200.0,
+            "interest_rate": 9.5,
+            "minimum_payment": 380.0,
+            "issue_date": "2022-01-15",
+            "due_date": "2025-03-15",
+            "last_payment_date": "2025-01-15",
+            "status": "active",
+            "days_past_due": 0,
+            "account_number": "AL-6677-2200",
+            "reference_number": "REF-DF-2022-003",
+            "notes": "Vehicle needed for work commute. Current on payments."
+        }
+    ],
+    "payments": [
+        {
+            "debt_type": "credit_card",
+            "amount": 205.0,
+            "payment_date": "2025-01-08",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-DF-2025-01-001",
+            "status": "done",
+            "notes": "Minimum payment January"
+        },
+        {
+            "debt_type": "credit_card",
+            "amount": 205.0,
+            "payment_date": "2024-12-10",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-DF-2024-12-001",
+            "status": "done",
+            "notes": "Minimum payment December"
+        },
+        {
+            "debt_type": "personal_loan",
+            "amount": 230.0,
+            "payment_date": "2024-12-15",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-DF-2024-12-002",
+            "status": "done",
+            "notes": "December payment"
+        },
+        {
+            "debt_type": "auto_loan",
+            "amount": 380.0,
+            "payment_date": "2025-01-15",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-DF-2025-01-002",
+            "status": "done",
+            "notes": "January auto payment - current"
+        },
+        {
+            "debt_type": "auto_loan",
+            "amount": 380.0,
+            "payment_date": "2024-12-15",
+            "payment_method": "bank_transfer",
+            "transaction_id": "TXN-DF-2024-12-003",
+            "status": "done",
+            "notes": "December auto payment"
+        }
+    ],
+    "accounts": [
+        {
+            "account_type": "checking",
+            "account_number": "CHK-1100-9988",
+            "routing_number": "071000013",
+            "bank_name": "Chase Bank",
+            "is_active": true,
+            "is_primary": true,
+            "notes": "Main account, direct deposit from CTA"
+        }
+    ],
+    "communications": [
+        {
+            "communication_type": "call",
+            "direction": "outbound",
+            "duration_seconds": 360,
+            "contact_phone": "+13125558821",
+            "outcome": "payment_promised",
+            "notes": "Customer very forthcoming about layoff history. Committed to getting current on personal loan by end of February. Positive attitude.",
+            "timestamp": "2025-01-25T13:00:00",
+            "agent_id": "agent_003"
+        },
+        {
+            "communication_type": "sms",
+            "direction": "outbound",
+            "contact_phone": "+13125558821",
+            "outcome": "delivered",
+            "notes": "Sent payment reminder SMS for personal loan due date.",
+            "timestamp": "2025-02-10T09:00:00",
+            "agent_id": "system_auto"
+        }
+    ]
+}
